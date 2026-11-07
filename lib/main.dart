@@ -19,8 +19,13 @@ void main() {
 class Friend {
   final String name;
   final String phone;
+  final String? avatarUrl;
 
-  const Friend({required this.name, required this.phone});
+  const Friend({
+    required this.name,
+    required this.phone,
+    this.avatarUrl,
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -76,9 +81,26 @@ class _MainScreenState extends State<MainScreen> {
   ];
 
   final List<Friend> _friends = [
-    const Friend(name: 'Rahul Sharma', phone: '+91 98765 43210'),
-    const Friend(name: 'Sneha Patel', phone: '+91 91234 56789'),
-    const Friend(name: 'Amit Verma', phone: '+91 99887 76655'),
+    const Friend(
+      name: 'Alex Johnson',
+      phone: '+91 98765 43210',
+      avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',
+    ),
+    const Friend(
+      name: 'David Kalu',
+      phone: '+91 91234 56789',
+      avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80',
+    ),
+    const Friend(
+      name: 'Sophia Martinez',
+      phone: '+91 99887 76655',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    ),
+    const Friend(
+      name: 'Lucas Silva',
+      phone: '+91 98112 23344',
+      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+    ),
   ];
 
   void _showAddFriendDialog() {
@@ -481,6 +503,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final Set<int> _selectedFriendIndices = {};
 
   @override
+  void initState() {
+    super.initState();
+    // Pre-select initial friends so the container shows selected contacts on open
+    for (int i = 0; i < widget.friends.length && i < 4; i++) {
+      _selectedFriendIndices.add(i);
+    }
+  }
+
+  @override
   void dispose() {
     _groupNameController.dispose();
     super.dispose();
@@ -558,13 +589,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Rectangular Empty Container
+                // Rectangular Container for Selected Contacts (like screenshot)
                 Container(
                   width: double.infinity,
-                  height: 150,
+                  height: 110,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(22),
                     border: Border.all(
                       color: const Color(0xFFDCE5DC),
                       width: 1.5,
@@ -577,6 +609,127 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       ),
                     ],
                   ),
+                  child: _selectedFriendIndices.isEmpty
+                      ? Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.touch_app_outlined,
+                                color: Colors.grey.shade400,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Select friends below to add them here',
+                                style: TextStyle(
+                                  color: Colors.grey.shade500,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _selectedFriendIndices.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 18),
+                          itemBuilder: (context, idx) {
+                            final friendIndex = _selectedFriendIndices.elementAt(idx);
+                            final friend = widget.friends[friendIndex];
+                            final initials = friend.name
+                                .trim()
+                                .split(' ')
+                                .where((e) => e.isNotEmpty)
+                                .map((e) => e[0].toUpperCase())
+                                .take(2)
+                                .join();
+
+                            return Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                // Contact Avatar Squircle
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Container(
+                                    width: 72,
+                                    height: 72,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF86E829).withOpacity(0.18),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: const Color(0xFFE5EDE4),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: friend.avatarUrl != null
+                                        ? Image.network(
+                                            friend.avatarUrl!,
+                                            width: 72,
+                                            height: 72,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) => Center(
+                                              child: Text(
+                                                initials,
+                                                style: const TextStyle(
+                                                  color: Color(0xFF284821),
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 20,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        : Center(
+                                            child: Text(
+                                              initials,
+                                              style: const TextStyle(
+                                                color: Color(0xFF284821),
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 20,
+                                              ),
+                                            ),
+                                          ),
+                                  ),
+                                ),
+
+                                // Top-Right White Circle Badge with 'x' icon
+                                Positioned(
+                                  top: -5,
+                                  right: -5,
+                                  child: GestureDetector(
+                                    key: ValueKey('remove_selected_${friend.name}'),
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedFriendIndices.remove(friendIndex);
+                                      });
+                                    },
+                                    child: Container(
+                                      width: 22,
+                                      height: 22,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.25),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 1),
+                                          ),
+                                        ],
+                                      ),
+                                      child: const Icon(
+                                        Icons.close_rounded,
+                                        color: Color(0xFF131A15),
+                                        size: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
                 ),
                 const SizedBox(height: 28),
 

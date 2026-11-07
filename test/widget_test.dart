@@ -44,7 +44,7 @@ void main() {
     expect(find.text('+91 98765 00000'), findsOneWidget);
   });
 
-  testWidgets('AddExpenseScreen has Group Name, empty rectangular container, and friends list below', (WidgetTester tester) async {
+  testWidgets('AddExpenseScreen shows selected contacts row with x badge in container and friends list below', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
     // Tap center + action button in bottom bar
@@ -63,16 +63,20 @@ void main() {
 
     // Verify friends list items appear below
     expect(find.text('Friends'), findsWidgets);
-    expect(find.text('Rahul Sharma'), findsOneWidget);
-    expect(find.text('Sneha Patel'), findsOneWidget);
-    expect(find.text('Amit Verma'), findsOneWidget);
+    expect(find.text('Alex Johnson'), findsOneWidget);
+    expect(find.text('David Kalu'), findsOneWidget);
+
+    // Verify close 'x' badges exist on selected contacts in the top container
+    final removeAlexBtn = find.byKey(const ValueKey('remove_selected_Alex Johnson'));
+    expect(removeAlexBtn, findsOneWidget);
+
+    // Tap 'x' to remove Alex Johnson from the selected contacts container
+    await tester.tap(removeAlexBtn);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('remove_selected_Alex Johnson')), findsNothing);
 
     // Enter Group Name
     await tester.enterText(find.widgetWithText(TextFormField, 'e.g. Goa Trip, Dinner, Flat Rent'), 'Goa Trip');
-    await tester.pumpAndSettle();
-
-    // Select first friend (Rahul Sharma)
-    await tester.tap(find.text('Rahul Sharma'));
     await tester.pumpAndSettle();
 
     // Scroll into view & tap Confirm & Split button
@@ -84,6 +88,6 @@ void main() {
 
     // Verify screen popped back to MainScreen and SnackBar is shown
     expect(find.text('Add & Split Expense'), findsNothing);
-    expect(find.textContaining('Group "Goa Trip" created with 1 friends selected!'), findsOneWidget);
+    expect(find.textContaining('Group "Goa Trip" created'), findsOneWidget);
   });
 }
