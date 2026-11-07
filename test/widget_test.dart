@@ -3,45 +3,92 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bill_splitter/main.dart';
 
 void main() {
-  testWidgets('Renders bottom navigation bar and switches tabs', (WidgetTester tester) async {
+  testWidgets('Friends tab + button shows options: Add New Friend and Create New Group', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
-    // Initially on Home tab
-    expect(find.text('Home'), findsWidgets);
-
-    // Tap on friends tab
+    // Switch to friends tab
     final friendsTab = find.byIcon(Icons.people_outline_rounded);
-    expect(friendsTab, findsOneWidget);
     await tester.tap(friendsTab);
     await tester.pumpAndSettle();
 
-    // Now on Friends tab
-    expect(find.text('Friends'), findsOneWidget);
+    expect(find.text('Friends'), findsWidgets);
 
-    // Verify + button exists in Friends header row
-    final addFriendBtn = find.byTooltip('Add Friend');
-    expect(addFriendBtn, findsOneWidget);
-
-    // Tap + button to open Add Friend dialog
-    await tester.tap(addFriendBtn);
+    // Tap + button in Friends header
+    final addBtn = find.byTooltip('Add');
+    expect(addBtn, findsOneWidget);
+    await tester.tap(addBtn);
     await tester.pumpAndSettle();
 
+    // Verify Choose an Option modal displays both options
+    expect(find.text('Choose an Option'), findsOneWidget);
+    expect(find.text('Add New Friend'), findsOneWidget);
+    expect(find.text('Create New Group'), findsOneWidget);
+
+    // Select 'Add New Friend'
+    await tester.tap(find.text('Add New Friend'));
+    await tester.pumpAndSettle();
+
+    // Verify Add Friend dialog is shown
     expect(find.text('Add Friend'), findsOneWidget);
     expect(find.text('Friend Name'), findsOneWidget);
     expect(find.text('Mobile Number'), findsOneWidget);
 
-    // Enter name & phone
+    // Enter details & submit
     await tester.enterText(find.widgetWithText(TextFormField, 'Friend Name'), 'Pooja Hegde');
     await tester.enterText(find.widgetWithText(TextFormField, 'Mobile Number'), '+91 98765 00000');
     await tester.pumpAndSettle();
-
-    // Tap Add button
     await tester.tap(find.widgetWithText(ElevatedButton, 'Add'));
     await tester.pumpAndSettle();
 
-    // Verify newly added friend appears in the list
+    // Verify new friend added to the list
     expect(find.text('Pooja Hegde'), findsOneWidget);
-    expect(find.text('+91 98765 00000'), findsOneWidget);
+  });
+
+  testWidgets('Friends tab + button allows creating a new group with available friends', (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+
+    // Switch to friends tab
+    final friendsTab = find.byIcon(Icons.people_outline_rounded);
+    await tester.tap(friendsTab);
+    await tester.pumpAndSettle();
+
+    // Tap + button in Friends header
+    final addBtn = find.byTooltip('Add');
+    await tester.tap(addBtn);
+    await tester.pumpAndSettle();
+
+    // Select 'Create New Group'
+    await tester.tap(find.text('Create New Group'));
+    await tester.pumpAndSettle();
+
+    // Verify Create New Group bottom sheet is shown
+    expect(find.text('Create New Group'), findsOneWidget);
+    expect(find.text('Group Name'), findsOneWidget);
+    expect(find.text('Select Members'), findsOneWidget);
+
+    // Verify available friends are listed in modal
+    expect(find.widgetWithText(InkWell, 'Alex Johnson'), findsOneWidget);
+    expect(find.widgetWithText(InkWell, 'David Kalu'), findsOneWidget);
+
+    // Enter group name
+    await tester.enterText(find.widgetWithText(TextFormField, 'Group Name'), 'Weekend Trek');
+    await tester.pumpAndSettle();
+
+    // Select friends (Alex Johnson and David Kalu)
+    await tester.tap(find.widgetWithText(InkWell, 'Alex Johnson'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(InkWell, 'David Kalu'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('2 selected'), findsOneWidget);
+
+    // Tap Create Group
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Create Group'));
+    await tester.pumpAndSettle();
+
+    // Verify group was created and shows in Groups tab
+    expect(find.text('Weekend Trek'), findsOneWidget);
+    expect(find.text('2 members'), findsOneWidget);
   });
 
   testWidgets('AddExpenseScreen shows selected contacts row with x badge in container and friends list below', (WidgetTester tester) async {
