@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bill_splitter/main.dart';
 
 void main() {
-  testWidgets('Friends tab + button shows options: Add New Friend and Create New Group', (WidgetTester tester) async {
+  testWidgets(
+      'Friends tab + button shows options: Add New Friend and Create New Group',
+      (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
     // Switch to friends tab
@@ -34,8 +36,10 @@ void main() {
     expect(find.text('Mobile Number'), findsOneWidget);
 
     // Enter details & submit
-    await tester.enterText(find.widgetWithText(TextFormField, 'Friend Name'), 'Pooja Hegde');
-    await tester.enterText(find.widgetWithText(TextFormField, 'Mobile Number'), '+91 98765 00000');
+    await tester.enterText(
+        find.widgetWithText(TextFormField, 'Friend Name'), 'Pooja Hegde');
+    await tester.enterText(
+        find.widgetWithText(TextFormField, 'Mobile Number'), '+91 98765 00000');
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Add'));
     await tester.pumpAndSettle();
@@ -44,7 +48,9 @@ void main() {
     expect(find.text('Pooja Hegde'), findsOneWidget);
   });
 
-  testWidgets('Friends tab + button allows creating a new group with available friends', (WidgetTester tester) async {
+  testWidgets(
+      'Friends tab + button allows creating a new group with available friends',
+      (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
     // Switch to friends tab
@@ -71,7 +77,8 @@ void main() {
     expect(find.widgetWithText(InkWell, 'David Kalu'), findsOneWidget);
 
     // Enter group name
-    await tester.enterText(find.widgetWithText(TextFormField, 'Group Name'), 'Weekend Trek');
+    await tester.enterText(
+        find.widgetWithText(TextFormField, 'Group Name'), 'Weekend Trek');
     await tester.pumpAndSettle();
 
     // Select friends (Alex Johnson and David Kalu)
@@ -88,10 +95,12 @@ void main() {
 
     // Verify group was created and shows in Groups tab
     expect(find.text('Weekend Trek'), findsOneWidget);
-    expect(find.text('2 members'), findsOneWidget);
+    expect(find.text('2 members'), findsWidgets);
   });
 
-  testWidgets('AddExpenseScreen shows selected contacts row with x badge in container and friends list below', (WidgetTester tester) async {
+  testWidgets(
+      'AddExpenseScreen shows selected contacts row with x badge in container and friends list below',
+      (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
     // Tap center + action button in bottom bar
@@ -114,27 +123,29 @@ void main() {
     expect(find.text('David Kalu'), findsOneWidget);
 
     // Verify close 'x' badges exist on selected contacts in the top container
-    final removeAlexBtn = find.byKey(const ValueKey('remove_selected_Alex Johnson'));
+    final removeAlexBtn =
+        find.byKey(const ValueKey('remove_selected_Alex Johnson'));
     expect(removeAlexBtn, findsOneWidget);
 
     // Tap 'x' to remove Alex Johnson from the selected contacts container
     await tester.tap(removeAlexBtn);
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('remove_selected_Alex Johnson')), findsNothing);
+    expect(find.byKey(const ValueKey('remove_selected_Alex Johnson')),
+        findsNothing);
 
-    // Verify Available Groups horizontal section is rendered
-    expect(find.text('Available Groups'), findsOneWidget);
-    expect(find.text('3 groups'), findsOneWidget);
-    expect(find.text('Goa Trip'), findsWidgets);
+    // Verify Select group horizontal section is rendered
+    expect(find.text('Select group'), findsOneWidget);
+    expect(find.text('Hangout'), findsOneWidget);
+    expect(find.text('Dineout'), findsOneWidget);
     expect(find.text('Flatmates'), findsOneWidget);
-    expect(find.text('Office Lunch'), findsOneWidget);
+    expect(find.text('Add member'), findsWidgets);
 
-    // Tap 'Flatmates' group chip
-    await tester.tap(find.text('Flatmates'));
+    // Tap 'Hangout' group card
+    await tester.tap(find.text('Hangout'));
     await tester.pumpAndSettle();
 
-    // Verify group name text field is populated with 'Flatmates'
-    final groupField = find.widgetWithText(TextFormField, 'Flatmates');
+    // Verify group name text field is populated with 'Hangout'
+    final groupField = find.widgetWithText(TextFormField, 'Hangout');
     expect(groupField, findsOneWidget);
 
     // Scroll into view & tap Confirm & Split button
@@ -146,6 +157,30 @@ void main() {
 
     // Verify screen popped back to MainScreen and SnackBar is shown
     expect(find.text('Add & Split Expense'), findsNothing);
-    expect(find.textContaining('Group "Flatmates" created'), findsOneWidget);
+    expect(find.textContaining('Group "Hangout" created'), findsOneWidget);
+  });
+
+  testWidgets('AddExpenseScreen "Add member" opens member selector modal for group', (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+
+    // Tap center + action button in bottom bar
+    final centerAddBtn = find.byIcon(Icons.add).first;
+    await tester.tap(centerAddBtn);
+    await tester.pumpAndSettle();
+
+    // Tap 'Add member' on first group card
+    final addMemberBtn = find.text('Add member').first;
+    await tester.tap(addMemberBtn);
+    await tester.pumpAndSettle();
+
+    // Verify modal opens showing Members of Hangout
+    expect(find.textContaining('Members of Hangout'), findsOneWidget);
+    expect(find.text('Save Members'), findsOneWidget);
+
+    // Close modal
+    await tester.tap(find.text('Save Members'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Select group'), findsOneWidget);
   });
 }

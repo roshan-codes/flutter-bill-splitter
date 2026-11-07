@@ -92,12 +92,6 @@ class _MainScreenState extends State<MainScreen> {
 
   int _friendsSubTab = 0; // 0: Friends, 1: Groups
 
-  final List<Group> _groups = [
-    const Group(name: 'Goa Trip', members: []),
-    const Group(name: 'Flatmates', members: []),
-    const Group(name: 'Office Lunch', members: []),
-  ];
-
   final List<Friend> _friends = [
     const Friend(
       name: 'Alex Johnson',
@@ -118,6 +112,38 @@ class _MainScreenState extends State<MainScreen> {
       name: 'Lucas Silva',
       phone: '+91 98112 23344',
       avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+    ),
+    const Friend(
+      name: 'Elena Rostova',
+      phone: '+91 98223 34455',
+      avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+    ),
+  ];
+
+  late final List<Group> _groups = [
+    Group(
+      name: 'Hangout',
+      members: [
+        _friends[0],
+        _friends[1],
+        _friends[2],
+        _friends[3],
+        _friends[4],
+      ],
+    ),
+    Group(
+      name: 'Dineout',
+      members: [
+        _friends[2],
+        _friends[4],
+      ],
+    ),
+    Group(
+      name: 'Flatmates',
+      members: [
+        _friends[0],
+        _friends[1],
+      ],
     ),
   ];
 
@@ -1059,10 +1085,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _formKey = GlobalKey<FormState>();
   final Set<int> _selectedFriendIndices = {};
   int? _selectedGroupIndex;
+  late List<Group> _availableGroups;
 
   @override
   void initState() {
     super.initState();
+    _availableGroups = List.from(widget.groups);
     // Pre-select initial friends so the container shows selected contacts on open
     for (int i = 0; i < widget.friends.length && i < 4; i++) {
       _selectedFriendIndices.add(i);
@@ -1073,6 +1101,262 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   void dispose() {
     _groupNameController.dispose();
     super.dispose();
+  }
+
+  Widget _buildAvatarFallback(String name) {
+    final initials = name.trim().split(' ').where((e) => e.isNotEmpty).map((e) => e[0].toUpperCase()).take(2).join();
+    return Center(
+      child: Text(
+        initials.isNotEmpty ? initials : '?',
+        style: const TextStyle(
+          color: Color(0xFF284821),
+          fontWeight: FontWeight.w800,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+
+  void _showCreateGroupModal() {
+    final groupNameController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final Set<int> selectedMemberIndices = {};
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: 20,
+              right: 20,
+              top: 20,
+            ),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE5EDE4),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    const Text(
+                      'Create New Group',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF131A15),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Form(
+                      key: formKey,
+                      child: TextFormField(
+                        controller: groupNameController,
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          labelText: 'Group Name',
+                          hintText: 'e.g. Weekend Trek',
+                          prefixIcon: const Icon(Icons.groups_outlined),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        validator: (value) => (value == null || value.trim().isEmpty) ? 'Please enter group name' : null,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('Select Members', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 8),
+                    ...List.generate(widget.friends.length, (idx) {
+                      final friend = widget.friends[idx];
+                      final isSelected = selectedMemberIndices.contains(idx);
+                      return ListTile(
+                        dense: true,
+                        title: Text(friend.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        subtitle: Text(friend.phone),
+                        trailing: Icon(
+                          isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                          color: isSelected ? const Color(0xFF86E829) : Colors.grey,
+                        ),
+                        onTap: () {
+                          setModalState(() {
+                            if (isSelected) {
+                              selectedMemberIndices.remove(idx);
+                            } else {
+                              selectedMemberIndices.add(idx);
+                            }
+                          });
+                        },
+                      );
+                    }),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF86E829),
+                        foregroundColor: const Color(0xFF10210A),
+                        minimumSize: const Size.fromHeight(50),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      onPressed: () {
+                        if (formKey.currentState?.validate() ?? false) {
+                          final gName = groupNameController.text.trim();
+                          final selected = selectedMemberIndices.map((i) => widget.friends[i]).toList();
+                          final newGroup = Group(name: gName, members: selected);
+                          setState(() {
+                            _availableGroups.add(newGroup);
+                            _selectedGroupIndex = _availableGroups.length - 1;
+                            _groupNameController.text = gName;
+                            _selectedFriendIndices.clear();
+                            for (final f in selected) {
+                              final fIdx = widget.friends.indexOf(f);
+                              if (fIdx != -1) _selectedFriendIndices.add(fIdx);
+                            }
+                          });
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: const Text('Create Group', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _openAddMemberToGroup(Group group, int groupIndex) {
+    final Set<int> selectedIndices = {};
+    for (int i = 0; i < widget.friends.length; i++) {
+      final f = widget.friends[i];
+      if (group.members.any((m) => m.name == f.name || m.phone == f.phone)) {
+        selectedIndices.add(i);
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE5EDE4),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Members of ${group.name}',
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF131A15),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 300),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: widget.friends.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF0F4F0)),
+                      itemBuilder: (context, idx) {
+                        final friend = widget.friends[idx];
+                        final isSelected = selectedIndices.contains(idx);
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          leading: CircleAvatar(
+                            backgroundColor: const Color(0xFF86E829).withOpacity(0.2),
+                            child: Text(
+                              friend.name.isNotEmpty ? friend.name[0] : '?',
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF284821)),
+                            ),
+                          ),
+                          title: Text(friend.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle: Text(friend.phone, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                          trailing: Icon(
+                            isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                            color: isSelected ? const Color(0xFF86E829) : Colors.grey.shade400,
+                          ),
+                          onTap: () {
+                            setModalState(() {
+                              if (isSelected) {
+                                selectedIndices.remove(idx);
+                              } else {
+                                selectedIndices.add(idx);
+                              }
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF86E829),
+                      foregroundColor: const Color(0xFF10210A),
+                      minimumSize: const Size.fromHeight(50),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onPressed: () {
+                      final updatedMembers = selectedIndices.map((i) => widget.friends[i]).toList();
+                      setState(() {
+                        _availableGroups[groupIndex] = Group(
+                          name: group.name,
+                          members: updatedMembers,
+                        );
+                        if (_selectedGroupIndex == groupIndex) {
+                          _selectedFriendIndices.clear();
+                          _selectedFriendIndices.addAll(selectedIndices);
+                        }
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Save Members', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -1108,44 +1392,61 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Available Groups Section (Horizontally Scrollable)
+                // Select group Section (matching user's screenshot)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Available Groups',
+                      'Select group',
                       style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
                         color: Color(0xFF131A15),
                       ),
                     ),
-                    Text(
-                      '${widget.groups.length} groups',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF808B82),
-                        fontWeight: FontWeight.w500,
+                    InkWell(
+                      onTap: _showCreateGroupModal,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          color: Color(0xFFF7B731),
+                          size: 20,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
                 SizedBox(
-                  height: 58,
-                  child: widget.groups.isEmpty
+                  height: 170,
+                  child: _availableGroups.isEmpty
                       ? Center(
                           child: Text(
-                            'No groups created yet',
+                            'No groups available. Tap + to create one.',
                             style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
                           ),
                         )
                       : ListView.separated(
                           scrollDirection: Axis.horizontal,
-                          itemCount: widget.groups.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: 10),
+                          clipBehavior: Clip.none,
+                          itemCount: _availableGroups.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 14),
                           itemBuilder: (context, index) {
-                            final group = widget.groups[index];
+                            final group = _availableGroups[index];
                             final isSelected = _selectedGroupIndex == index ||
                                 _groupNameController.text.trim() == group.name;
 
@@ -1169,63 +1470,125 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                   }
                                 });
                               },
-                              borderRadius: BorderRadius.circular(16),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                              borderRadius: BorderRadius.circular(26),
+                              child: Container(
+                                width: 250,
+                                padding: const EdgeInsets.all(18),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? const Color(0xFF111713) : Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(26),
                                   border: Border.all(
-                                    color: isSelected ? const Color(0xFF86E829) : const Color(0xFFE5EDE4),
-                                    width: isSelected ? 1.5 : 1,
+                                    color: isSelected
+                                        ? const Color(0xFF86E829)
+                                        : const Color(0xFFF0F4F0),
+                                    width: isSelected ? 2 : 1,
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.02),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
+                                      color: isSelected
+                                          ? const Color(0xFF86E829).withOpacity(0.12)
+                                          : Colors.black.withOpacity(0.04),
+                                      blurRadius: 14,
+                                      offset: const Offset(0, 4),
                                     ),
                                   ],
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? const Color(0xFF86E829)
-                                            : const Color(0xFF86E829).withOpacity(0.18),
-                                        shape: BoxShape.circle,
+                                    // Group Title
+                                    Text(
+                                      group.name,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF131A15),
                                       ),
-                                      child: Icon(
-                                        Icons.groups_rounded,
-                                        size: 16,
-                                        color: isSelected ? const Color(0xFF10210A) : const Color(0xFF284821),
-                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    const SizedBox(width: 10),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          group.name,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                            color: isSelected ? Colors.white : const Color(0xFF131A15),
+
+                                    // Members Avatars Row (smooth horizontal list)
+                                    SizedBox(
+                                      height: 38,
+                                      child: group.members.isEmpty
+                                          ? Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(
+                                                'No members yet',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey.shade400,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            )
+                                          : ListView.separated(
+                                              scrollDirection: Axis.horizontal,
+                                              shrinkWrap: true,
+                                              physics: const BouncingScrollPhysics(),
+                                              itemCount: group.members.length,
+                                              separatorBuilder: (_, __) => const SizedBox(width: 6),
+                                              itemBuilder: (context, mIdx) {
+                                                final member = group.members[mIdx];
+                                                return ClipRRect(
+                                                  borderRadius: BorderRadius.circular(14),
+                                                  child: Container(
+                                                    width: 36,
+                                                    height: 36,
+                                                    color: const Color(0xFFE8EFE8),
+                                                    child: member.avatarUrl != null
+                                                        ? Image.network(
+                                                            member.avatarUrl!,
+                                                            fit: BoxFit.cover,
+                                                            errorBuilder: (_, __, ___) => _buildAvatarFallback(member.name),
+                                                          )
+                                                        : _buildAvatarFallback(member.name),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                    ),
+
+                                    // Add Member Row
+                                    InkWell(
+                                      onTap: () => _openAddMemberToGroup(group, index),
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 32,
+                                            height: 32,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF7B731),
+                                              borderRadius: BorderRadius.circular(10),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: const Color(0xFFF7B731).withOpacity(0.35),
+                                                  blurRadius: 6,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ],
+                                            ),
+                                            child: const Icon(
+                                              Icons.add,
+                                              color: Color(0xFF10210A),
+                                              size: 18,
+                                            ),
                                           ),
-                                        ),
-                                        Text(
-                                          '${group.members.length} members',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: isSelected ? Colors.white60 : const Color(0xFF808B82),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            'Add member',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.grey.shade500,
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 ),
