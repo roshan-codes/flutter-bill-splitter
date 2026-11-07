@@ -198,67 +198,336 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _showAddExpenseModal() {
+    final groupNameController = TextEditingController();
+    final amountController = TextEditingController();
+    final personController = TextEditingController(text: '2');
+    final formKey = GlobalKey<FormState>();
+
+    double calculatedSplit = 0.0;
+
+    void updateCalculation(StateSetter setModalState) {
+      final amount = double.tryParse(amountController.text.trim()) ?? 0.0;
+      final persons = int.tryParse(personController.text.trim()) ?? 0;
+      setModalState(() {
+        if (persons > 0 && amount > 0) {
+          calculatedSplit = amount / persons;
+        } else {
+          calculatedSplit = 0.0;
+        }
+      });
+    }
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Add Expense',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF131A15),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Create a new expense or split a bill with friends.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF86E829),
-                    foregroundColor: const Color(0xFF10210A),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final totalAmount = double.tryParse(amountController.text.trim()) ?? 0.0;
+          final totalPersons = int.tryParse(personController.text.trim()) ?? 0;
+          final groupName = groupNameController.text.trim();
+
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+            ),
+            child: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 44,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
                     ),
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    'Close',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF86E829).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.calculate_rounded,
+                            color: Color(0xFF131A15),
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Add & Split Expense',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF131A15),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Group Name Field
+                    TextFormField(
+                      controller: groupNameController,
+                      decoration: InputDecoration(
+                        labelText: 'Group Name',
+                        hintText: 'e.g. Goa Trip, Dinner, Rent',
+                        prefixIcon: const Icon(Icons.groups_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: Color(0xFF86E829), width: 2),
+                        ),
+                      ),
+                      onChanged: (_) => updateCalculation(setModalState),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter group name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Total Amount and Total Persons Row
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: TextFormField(
+                            controller: amountController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              labelText: 'Total Amount',
+                              hintText: '0.00',
+                              prefixIcon: const Icon(Icons.currency_rupee),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(color: Color(0xFF86E829), width: 2),
+                              ),
+                            ),
+                            onChanged: (_) => updateCalculation(setModalState),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Enter amount';
+                              }
+                              final val = double.tryParse(value.trim());
+                              if (val == null || val <= 0) {
+                                return 'Invalid amount';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: TextFormField(
+                            controller: personController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Total Person',
+                              hintText: '2',
+                              prefixIcon: const Icon(Icons.person_outline),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(color: Color(0xFF86E829), width: 2),
+                              ),
+                            ),
+                            onChanged: (_) => updateCalculation(setModalState),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Enter persons';
+                              }
+                              final val = int.tryParse(value.trim());
+                              if (val == null || val <= 0) {
+                                return 'Min 1';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Calculation Result Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF111713),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Split Per Person',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              if (totalPersons > 0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF86E829).withOpacity(0.18),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '$totalPersons persons',
+                                    style: const TextStyle(
+                                      color: Color(0xFF86E829),
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                calculatedSplit > 0
+                                    ? '₹${calculatedSplit.toStringAsFixed(2)}'
+                                    : '₹0.00',
+                                style: const TextStyle(
+                                  color: Color(0xFF86E829),
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Text(
+                                '/ person',
+                                style: TextStyle(
+                                  color: Colors.white60,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (groupName.isNotEmpty || totalAmount > 0) ...[
+                            const Divider(color: Colors.white12, height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                if (groupName.isNotEmpty)
+                                  Flexible(
+                                    child: Text(
+                                      'Group: $groupName',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                if (totalAmount > 0)
+                                  Text(
+                                    'Total: ₹${totalAmount.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Split & Confirm Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF86E829),
+                          foregroundColor: const Color(0xFF10210A),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: () {
+                          if (formKey.currentState?.validate() ?? false) {
+                            final gName = groupNameController.text.trim();
+                            final perPerson = calculatedSplit;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Expense for "$gName" split: ₹${perPerson.toStringAsFixed(2)} per person among $totalPersons people!',
+                                ),
+                                backgroundColor: const Color(0xFF111713),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text(
+                          'Confirm & Split',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
