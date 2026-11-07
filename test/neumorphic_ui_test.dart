@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/screens/activity_tab.dart';
+import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/search_name_group_bar.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/screens/home_tab.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/screens/profile_tab.dart';
@@ -257,6 +258,44 @@ void main() {
 
       expect(find.text('Dinner at Sakali'), findsOneWidget);
       expect(find.text('Groceries'), findsOneWidget);
+    });
+
+    testWidgets('AddExpenseScreen renders screenshot-matching neumorphic UI elements', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: AddExpenseScreen(
+            friends: [],
+            groups: [],
+          ),
+        ),
+      );
+
+      // Verify Header
+      expect(find.text('Add & Split Expense'), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
+
+      // Verify Expense Title Section
+      expect(find.text('Expense Title'), findsOneWidget);
+      expect(find.widgetWithText(TextFormField, 'e.g. Dinner, Groceries, Trip'), findsOneWidget);
+      expect(find.byIcon(Icons.restaurant_rounded), findsOneWidget);
+
+      // Verify Friends & Groups Toggle
+      expect(find.text('Friends'), findsWidgets);
+      expect(find.text('Groups'), findsOneWidget);
+
+      // Verify Search Bar
+      expect(find.widgetWithText(TextField, 'Search friends...'), findsOneWidget);
+
+      // Verify default screenshot friends
+      expect(find.text('Vinit'), findsOneWidget);
+      expect(find.text('Nishant'), findsOneWidget);
+      expect(find.text('Saurabh'), findsOneWidget);
+      expect(find.text('Akash'), findsOneWidget);
+      expect(find.text('Pratik'), findsOneWidget);
+
+      // Verify Continue button
+      expect(find.widgetWithText(ElevatedButton, 'Continue'), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_forward_rounded), findsOneWidget);
     });
   });
 }

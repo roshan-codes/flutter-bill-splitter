@@ -80,3 +80,4 @@ class ActivityFilterBar extends StatelessWidget {
     );
   }
 }
+

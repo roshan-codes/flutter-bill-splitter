@@ -124,7 +124,7 @@ void main() {
   });
 
   testWidgets(
-      'AddExpenseScreen sequence: group name, selected person container, group list, search bar, friend list, and fixed continue button',
+      'AddExpenseScreen sequence: expense title, friends/groups toggle, search bar, friend tiles, and fixed continue button',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
@@ -147,37 +147,33 @@ void main() {
     // Verify screen title
     expect(find.text('Add & Split Expense'), findsOneWidget);
 
-    // Verify 1: Group Name
-    expect(find.text('Group Name'), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, 'e.g. Goa Trip, Dinner, Flat Rent'), findsOneWidget);
+    // Verify 1: Expense Title Input
+    expect(find.text('Expense Title'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'e.g. Dinner, Groceries, Trip'), findsOneWidget);
 
-    // Verify 2: Selected person container (initially empty with no dummy data)
-    expect(find.text('Selected Members'), findsOneWidget);
-    expect(find.text('Select friends below to add them here'), findsOneWidget);
-
-    // Verify 3: Group list ("Select group")
-    expect(find.text('Select group'), findsOneWidget);
-
-    // Verify 4: Search name, group search bar before friends list
-    expect(find.text('Search name, group'), findsOneWidget);
-
-    // Verify 5: Friends list showing available friends
+    // Verify 2: Friends vs Groups Segmented Toggle
     expect(find.text('Friends'), findsWidgets);
+    expect(find.text('Groups'), findsOneWidget);
+
+    // Verify 3: Search Bar
+    expect(find.widgetWithText(TextField, 'Search friends...'), findsOneWidget);
+
+    // Verify 4: Friends list showing available friends
     expect(find.text('Alex Johnson'), findsOneWidget);
     expect(find.text('Sophia Martinez'), findsOneWidget);
 
-    // Verify 6: Fixed Continue Button (pinned, not inside scroll body)
+    // Verify 5: Fixed Continue Button (pinned, not inside scroll body)
     final continueBtn = find.widgetWithText(ElevatedButton, 'Continue');
     expect(continueBtn, findsOneWidget);
 
     // Test Search filter: search for 'Sophia'
-    await tester.enterText(find.widgetWithText(TextField, 'Search name, group'), 'Sophia');
+    await tester.enterText(find.widgetWithText(TextField, 'Search friends...'), 'Sophia');
     await tester.pumpAndSettle();
     expect(find.text('Sophia Martinez'), findsOneWidget);
     expect(find.text('Alex Johnson'), findsNothing);
 
     // Clear search
-    await tester.enterText(find.widgetWithText(TextField, 'Search name, group'), '');
+    await tester.enterText(find.widgetWithText(TextField, 'Search friends...'), '');
     await tester.pumpAndSettle();
     expect(find.text('Alex Johnson'), findsOneWidget);
 
@@ -195,13 +191,9 @@ void main() {
     await tester.tap(sophiaItem);
     await tester.pumpAndSettle();
 
-    // Verify both are in the selected container with 'x' badge
-    expect(find.byKey(const ValueKey('remove_selected_Alex Johnson')), findsOneWidget);
-    expect(find.byKey(const ValueKey('remove_selected_Sophia Martinez')), findsOneWidget);
-
-    // Enter group name
+    // Enter expense title
     await tester.enterText(
-        find.widgetWithText(TextFormField, 'e.g. Goa Trip, Dinner, Flat Rent'), 'Friday Dinner');
+        find.widgetWithText(TextFormField, 'e.g. Dinner, Groceries, Trip'), 'Friday Dinner');
     await tester.pumpAndSettle();
 
     // Tap fixed Continue button

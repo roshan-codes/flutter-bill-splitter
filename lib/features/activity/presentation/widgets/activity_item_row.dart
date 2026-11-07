@@ -167,3 +167,4 @@ class ActivityItemRow extends StatelessWidget {
     );
   }
 }
+

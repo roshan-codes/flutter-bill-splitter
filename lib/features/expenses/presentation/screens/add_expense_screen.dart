@@ -3,16 +3,16 @@ import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
-import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/add_member_to_group_sheet.dart';
-import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/available_friends_list.dart';
-import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/search_name_group_bar.dart';
-import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/select_group_section.dart';
-import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/selected_members_container.dart';
+import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/expense_title_input.dart';
+import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/friend_selection_tile.dart';
+import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/friends_groups_toggle.dart';
+import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/group_selection_tile.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/group.dart';
-import 'package:flutter_bill_splitter/features/friends/presentation/widgets/create_group_bottom_sheet.dart';
 
-/// Full-screen view for Adding an Expense & Splitting between groups/friends.
+/// Full-screen view for Adding an Expense & Splitting between friends or groups,
+/// matching the exact neumorphic design:
+/// Expense Title input, Friends/Groups toggle, Search bar, individual selection tiles, and fixed Continue button.
 class AddExpenseScreen extends StatefulWidget {
   final List<Friend> friends;
   final List<Group> groups;
@@ -23,82 +23,62 @@ class AddExpenseScreen extends StatefulWidget {
     required this.groups,
   });
 
+  static const List<Friend> defaultFriends = [
+    Friend(name: 'Vinit', phone: '+91 98765 11111'),
+    Friend(name: 'Nishant', phone: '+91 98765 22222'),
+    Friend(name: 'Saurabh', phone: '+91 98765 33333'),
+    Friend(name: 'Akash', phone: '+91 98765 44444'),
+    Friend(name: 'Pratik', phone: '+91 98765 55555'),
+  ];
+
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
 }
 
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
-  final _groupNameController = TextEditingController();
+  final _expenseTitleController = TextEditingController();
   final _searchController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+
+  int _selectedTab = 0; // 0: Friends, 1: Groups
   final Set<int> _selectedFriendIndices = {};
   int? _selectedGroupIndex;
-  late List<Group> _availableGroups;
   String _searchQuery = '';
+  late List<Friend> _effectiveFriends;
+  late List<Group> _availableGroups;
 
   @override
   void initState() {
     super.initState();
+    if (widget.friends.isNotEmpty) {
+      _effectiveFriends = List.from(widget.friends);
+    } else {
+      _effectiveFriends = List.from(AddExpenseScreen.defaultFriends);
+      // Preselect Vinit, Nishant, Saurabh to match screenshot
+      _selectedFriendIndices.addAll([0, 1, 2]);
+    }
     _availableGroups = List.from(widget.groups);
   }
 
   @override
   void dispose() {
-    _groupNameController.dispose();
+    _expenseTitleController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  void _showCreateGroupModal() {
-    CreateGroupBottomSheet.show(
-      context,
-      availableFriends: widget.friends,
-      onGroupCreated: (newGroup) {
-        setState(() {
-          _availableGroups.add(newGroup);
-          _selectedGroupIndex = _availableGroups.length - 1;
-          _groupNameController.text = newGroup.name;
-          _selectedFriendIndices.clear();
-          for (final f in newGroup.members) {
-            final fIdx = widget.friends.indexOf(f);
-            if (fIdx != -1) _selectedFriendIndices.add(fIdx);
-          }
-        });
-      },
-    );
-  }
-
-  void _openAddMemberToGroup(int groupIndex) {
-    final group = _availableGroups[groupIndex];
-    AddMemberToGroupSheet.show(
-      context,
-      group: group,
-      allFriends: widget.friends,
-      onMembersUpdated: (updatedMembers) {
-        setState(() {
-          _availableGroups[groupIndex] = group.copyWith(members: updatedMembers);
-          if (_selectedGroupIndex == groupIndex) {
-            _selectedFriendIndices.clear();
-            for (final m in updatedMembers) {
-              final idx = widget.friends.indexOf(m);
-              if (idx != -1) _selectedFriendIndices.add(idx);
-            }
-          }
-        });
-      },
-    );
-  }
-
   void _onGroupSelected(int index) {
-    final group = _availableGroups[index];
     setState(() {
-      _selectedGroupIndex = index;
-      _groupNameController.text = group.name;
-
-      if (group.members.isNotEmpty) {
-        _selectedFriendIndices.clear();
+      if (_selectedGroupIndex == index) {
+        _selectedGroupIndex = null;
+      } else {
+        _selectedGroupIndex = index;
+        final group = _availableGroups[index];
+        if (_expenseTitleController.text.trim().isEmpty) {
+          _expenseTitleController.text = group.name;
+        }
         for (final member in group.members) {
-          final found = widget.friends.indexWhere(
+          final found = _effectiveFriends.indexWhere(
             (f) => f.name == member.name || f.phone == member.phone,
           );
           if (found != -1) {
@@ -121,13 +101,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         return;
       }
 
-      final gName = _groupNameController.text.trim();
-      final selectedFriends = _selectedFriendIndices.map((i) => widget.friends[i]).toList();
+      final title = _expenseTitleController.text.trim();
+      final selectedFriends = _selectedFriendIndices.map((i) => _effectiveFriends[i]).toList();
 
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => SplitDetailScreen(
-            groupName: gName,
+            groupName: title,
             members: selectedFriends,
           ),
         ),
@@ -137,18 +117,20 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredFriends = widget.friends.where((f) {
+    final filteredFriends = _effectiveFriends.where((f) {
       if (_searchQuery.isEmpty) return true;
-      if (f.name.toLowerCase().contains(_searchQuery) || f.phone.toLowerCase().contains(_searchQuery)) {
-        return true;
-      }
-      final matchingGroups = _availableGroups.where((g) => g.name.toLowerCase().contains(_searchQuery));
-      return matchingGroups.any((g) => g.members.any((m) => m.name == f.name || m.phone == f.phone));
+      return f.name.toLowerCase().contains(_searchQuery);
+    }).toList();
+
+    final filteredGroups = _availableGroups.where((g) {
+      if (_searchQuery.isEmpty) return true;
+      return g.name.toLowerCase().contains(_searchQuery);
     }).toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        centerTitle: true,
         leading: Padding(
           padding: const EdgeInsets.only(left: 12),
           child: Center(
@@ -181,111 +163,169 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Group Name Field
-                const Text(
-                  'Group Name',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    letterSpacing: -0.2,
-                  ),
+                // 1. Expense Title Input
+                ExpenseTitleInput(
+                  controller: _expenseTitleController,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 18),
+
+                // 2. Friends vs Groups Segmented Toggle
+                FriendsGroupsToggle(
+                  selectedIndex: _selectedTab,
+                  onToggle: (index) {
+                    setState(() {
+                      _selectedTab = index;
+                      _searchQuery = '';
+                      _searchController.clear();
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // 3. Search Bar
                 FlutterNeumorphism(
-                  style: NeumorphicStyles.inset(borderRadius: 18, depth: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  child: TextFormField(
-                    controller: _groupNameController,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                    ),
-                    decoration: const InputDecoration(
-                      hintText: 'e.g. Goa Trip, Dinner, Flat Rent',
-                      prefixIcon: Icon(Icons.groups_outlined, color: AppColors.primaryDeep),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter group name';
-                      }
-                      return null;
-                    },
+                  style: NeumorphicStyles.inset(borderRadius: 18, depth: 3),
+                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.search_rounded,
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: (val) {
+                            setState(() {
+                              _searchQuery = val.trim().toLowerCase();
+                            });
+                          },
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: _selectedTab == 0 ? 'Search friends...' : 'Search groups...',
+                            hintStyle: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ),
+                      if (_searchController.text.isNotEmpty)
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _searchController.clear();
+                              _searchQuery = '';
+                            });
+                          },
+                          child: const Icon(
+                            Icons.close_rounded,
+                            size: 18,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
-                // 2. Selected Person Container
-                SelectedMembersContainer(
-                  allFriends: widget.friends,
-                  selectedIndices: _selectedFriendIndices,
-                  onRemove: (idx) {
-                    setState(() {
-                      _selectedFriendIndices.remove(idx);
-                    });
-                  },
-                ),
-                const SizedBox(height: 24),
-
-                // 3. Group List ("Select group")
-                SelectGroupSection(
-                  groups: _availableGroups,
-                  selectedGroupIndex: _selectedGroupIndex,
-                  currentGroupName: _groupNameController.text,
-                  onGroupSelected: _onGroupSelected,
-                  onCreateGroupPressed: _showCreateGroupModal,
-                  onAddMemberPressed: _openAddMemberToGroup,
-                ),
-                const SizedBox(height: 24),
-
-                // 4. Search by Group or Name Option
-                SearchNameGroupBar(
-                  controller: _searchController,
-                  onChanged: (val) {
-                    setState(() {
-                      _searchQuery = val.trim().toLowerCase();
-                    });
-                  },
-                  onSearchPressed: () {
-                    setState(() {
-                      _searchQuery = _searchController.text.trim().toLowerCase();
-                    });
-                  },
-                ),
-                const SizedBox(height: 24),
-
-                // 5. Friends List
-                AvailableFriendsList(
-                  allFriends: widget.friends,
-                  filteredFriends: filteredFriends,
-                  selectedIndices: _selectedFriendIndices,
-                  searchQuery: _searchQuery,
-                  onFriendToggled: (origIdx) {
-                    setState(() {
-                      if (_selectedFriendIndices.contains(origIdx)) {
-                        _selectedFriendIndices.remove(origIdx);
-                      } else {
-                        _selectedFriendIndices.add(origIdx);
-                      }
-                    });
-                  },
-                ),
-                const SizedBox(height: 24),
+                // 4. Selection Tiles (Friends or Groups)
+                if (_selectedTab == 0) ...[
+                  if (filteredFriends.isEmpty)
+                    FlutterNeumorphism(
+                      style: NeumorphicStyles.inset(borderRadius: 18, depth: 3),
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Text(
+                          'No friends matching "$_searchQuery"',
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    for (final friend in filteredFriends) ...[
+                      () {
+                        final origIdx = _effectiveFriends.indexOf(friend);
+                        final isSelected = _selectedFriendIndices.contains(origIdx);
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: FriendSelectionTile(
+                            friend: friend,
+                            isSelected: isSelected,
+                            onToggle: () {
+                              setState(() {
+                                if (isSelected) {
+                                  _selectedFriendIndices.remove(origIdx);
+                                } else {
+                                  _selectedFriendIndices.add(origIdx);
+                                }
+                              });
+                            },
+                          ),
+                        );
+                      }(),
+                    ],
+                ] else ...[
+                  if (filteredGroups.isEmpty)
+                    FlutterNeumorphism(
+                      style: NeumorphicStyles.inset(borderRadius: 18, depth: 3),
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      child: const Center(
+                        child: Text(
+                          'No groups available.\nCreate a group in the Friends tab to split by group.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    for (int i = 0; i < filteredGroups.length; i++) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: GroupSelectionTile(
+                          group: filteredGroups[i],
+                          isSelected: _selectedGroupIndex == i,
+                          onToggle: () => _onGroupSelected(i),
+                        ),
+                      ),
+                    ],
+                ],
+                const SizedBox(height: 20),
               ],
             ),
           ),
         ),
       ),
-      // 6. Continue Button: Fixed at bottom, does not react to scrolling
+
+      // 5. Fixed Bottom Continue Button with Arrow (Continue ->)
       bottomNavigationBar: Container(
         color: AppColors.background,
         padding: const EdgeInsets.fromLTRB(24, 10, 24, 20),
@@ -293,27 +333,39 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           top: false,
           child: SizedBox(
             width: double.infinity,
+            height: 54,
             child: FlutterNeumorphism(
-              style: NeumorphicStyles.primaryButton(borderRadius: 18, depth: 6),
+              style: NeumorphicStyles.primaryButton(borderRadius: 20, depth: 6),
               padding: EdgeInsets.zero,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   foregroundColor: AppColors.primaryDark,
                   shadowColor: Colors.transparent,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
                 onPressed: _onContinuePressed,
-                child: const Text(
-                  'Continue',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 17,
-                  ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Continue',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: AppColors.primaryDark,
+                      size: 20,
+                    ),
+                  ],
                 ),
               ),
             ),
