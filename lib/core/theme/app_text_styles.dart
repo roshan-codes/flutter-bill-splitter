@@ -41,3 +41,4 @@ class AppTextStyles {
     fontWeight: FontWeight.w500,
   );
 }
+

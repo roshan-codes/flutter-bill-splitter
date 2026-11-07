@@ -9,3 +9,4 @@ class StringUtils {
     return parts.map((e) => e[0].toUpperCase()).take(2).join();
   }
 }
+

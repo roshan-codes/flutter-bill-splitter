@@ -7,6 +7,7 @@ export 'features/friends/domain/models/friend.dart';
 export 'features/friends/domain/models/group.dart';
 export 'features/navigation/presentation/screens/main_screen.dart';
 export 'features/expenses/presentation/screens/add_expense_screen.dart';
+export 'features/expenses/presentation/screens/split_detail_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

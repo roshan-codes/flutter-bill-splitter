@@ -22,3 +22,4 @@ class AppColors {
   static const Color amber = Color(0xFFF7B731);
   static const Color danger = Colors.redAccent;
 }
+

@@ -21,3 +21,4 @@ class Friend {
   @override
   int get hashCode => name.hashCode ^ phone.hashCode;
 }
+

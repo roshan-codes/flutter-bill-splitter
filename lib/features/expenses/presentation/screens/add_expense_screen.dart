@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/add_member_to_group_sheet.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/available_friends_list.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/search_name_group_bar.dart';
@@ -108,18 +109,24 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   void _onContinuePressed() {
     if (_formKey.currentState?.validate() ?? false) {
-      final gName = _groupNameController.text.trim();
-      final selectedCount = _selectedFriendIndices.length;
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Group "$gName" created with $selectedCount friends selected!',
+      if (_selectedFriendIndices.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select at least 1 friend or group member to continue'),
+            behavior: SnackBarBehavior.floating,
           ),
-          backgroundColor: const Color(0xFF111713),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+        );
+        return;
+      }
+
+      final gName = _groupNameController.text.trim();
+      final selectedFriends = _selectedFriendIndices.map((i) => widget.friends[i]).toList();
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => SplitDetailScreen(
+            groupName: gName,
+            members: selectedFriends,
           ),
         ),
       );

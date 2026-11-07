@@ -192,8 +192,19 @@ void main() {
     await tester.tap(continueBtn);
     await tester.pumpAndSettle();
 
-    // Verify screen popped and snackbar shown
-    expect(find.text('Add & Split Expense'), findsNothing);
+    // Verify SplitDetailScreen is displayed with selected members
+    expect(find.text('Split with Members'), findsOneWidget);
+    expect(find.text('Friday Dinner'), findsOneWidget);
+    expect(find.text('1 members included in split'), findsOneWidget);
+    expect(find.text('Included'), findsOneWidget);
+
+    // Tap Confirm Split
+    final confirmSplitBtn = find.widgetWithText(ElevatedButton, 'Confirm Split');
+    await tester.tap(confirmSplitBtn);
+    await tester.pumpAndSettle();
+
+    // Verify screen popped back to MainScreen and success SnackBar is shown
+    expect(find.text('Split with Members'), findsNothing);
     expect(find.textContaining('Friday Dinner'), findsOneWidget);
   });
 }
