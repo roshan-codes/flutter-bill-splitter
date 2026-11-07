@@ -43,3 +43,4 @@ class OnboardingPageIndicator extends StatelessWidget {
     );
   }
 }
+
