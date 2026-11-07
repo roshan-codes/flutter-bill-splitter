@@ -238,22 +238,24 @@ void main() {
     // Verify SplitSummaryScreen is displayed
     expect(find.text('Split Summary'), findsOneWidget);
     expect(find.text('Total Expense'), findsOneWidget);
-    expect(find.text('₹600'), findsOneWidget);
-    expect(find.text('Each Person Pays'), findsOneWidget);
+    expect(find.text('₹600'), findsWidgets);
+    expect(find.text('Each Pays'), findsOneWidget);
     expect(find.text('₹300'), findsWidgets);
 
     // Verify Who Pays Whom section clearly shows whom should pay whom
     expect(find.text('Who Pays Whom'), findsOneWidget);
-    expect(find.textContaining('Sophia Martinez should pay ₹300 to Alex Johnson'), findsOneWidget);
+    expect(find.text('Sophia Martinez'), findsWidgets);
+    expect(find.text('Pay ₹300'), findsOneWidget);
+    expect(find.text('Alex Johnson'), findsWidgets);
 
     // Verify Member Breakdown section
     expect(find.text('Member Breakdown'), findsOneWidget);
-    expect(find.text('Gets ₹300'), findsOneWidget);
-    expect(find.text('Owes ₹300'), findsOneWidget);
+    expect(find.text('+₹300'), findsOneWidget);
+    expect(find.text('-₹300'), findsOneWidget);
 
-    // Tap Done button
-    final doneBtn = find.widgetWithText(ElevatedButton, 'Done');
-    await tester.tap(doneBtn);
+    // Tap Save & Track Settlement button
+    final saveBtn = find.widgetWithText(ElevatedButton, 'Save & Track Settlement');
+    await tester.tap(saveBtn);
     await tester.pumpAndSettle();
 
     // Verify screen popped back to MainScreen and success SnackBar is shown

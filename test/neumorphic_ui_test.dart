@@ -7,6 +7,7 @@ import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/screens/activity_tab.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
+import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_summary_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/search_name_group_bar.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/screens/home_tab.dart';
@@ -343,6 +344,69 @@ void main() {
       // Verify Confirm Split button
       expect(find.widgetWithText(ElevatedButton, 'Confirm Split'), findsOneWidget);
       expect(find.byIcon(Icons.arrow_forward_rounded), findsOneWidget);
+    });
+
+    testWidgets('SplitSummaryScreen renders screenshot-matching neumorphic UI elements', (tester) async {
+      final members = [
+        const Friend(name: 'Vinit', phone: '+91 98765 11111'),
+        const Friend(name: 'Nishant', phone: '+91 98765 22222'),
+        const Friend(name: 'Saurabh', phone: '+91 98765 33333'),
+      ];
+      final memberExpenses = {
+        'Vinit': 500.0,
+        'Nishant': 49.0,
+        'Saurabh': 0.0,
+      };
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SplitSummaryScreen(
+            groupName: 'Dinner at Sakali',
+            members: members,
+            memberExpenses: memberExpenses,
+          ),
+        ),
+      );
+
+      // Verify Header
+      expect(find.text('Split Summary'), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
+
+      // Verify Title & Members Card
+      expect(find.text('Dinner at Sakali'), findsOneWidget);
+      expect(find.text('3 members'), findsOneWidget);
+      expect(find.byIcon(Icons.restaurant_rounded), findsOneWidget);
+
+      // Verify Total Expense & Each Pays
+      expect(find.text('Total Expense'), findsOneWidget);
+      expect(find.text('₹549'), findsOneWidget);
+      expect(find.text('Each Pays'), findsOneWidget);
+      expect(find.text('₹183'), findsWidgets);
+
+      // Verify Who Pays Whom Section
+      expect(find.text('Who Pays Whom'), findsOneWidget);
+      expect(find.text('2 payments to settle this expense'), findsOneWidget);
+      expect(find.text('Saurabh'), findsWidgets);
+      expect(find.text('Pay ₹183'), findsOneWidget);
+      expect(find.text('Nishant'), findsWidgets);
+      expect(find.text('Pay ₹134'), findsOneWidget);
+      expect(find.text('Vinit'), findsWidgets);
+
+      // Verify Member Breakdown Section
+      expect(find.text('Member Breakdown'), findsOneWidget);
+      expect(find.text('Member'), findsOneWidget);
+      expect(find.text('Paid'), findsOneWidget);
+      expect(find.text('Share'), findsOneWidget);
+      expect(find.text('Net'), findsOneWidget);
+
+      // Verify Net Badges
+      expect(find.text('+₹317'), findsOneWidget);
+      expect(find.text('-₹134'), findsOneWidget);
+      expect(find.text('-₹183'), findsOneWidget);
+
+      // Verify Fixed Save & Track Settlement button
+      expect(find.widgetWithText(ElevatedButton, 'Save & Track Settlement'), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
     });
   });
 }

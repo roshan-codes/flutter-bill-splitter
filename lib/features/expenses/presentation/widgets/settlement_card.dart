@@ -5,7 +5,8 @@ import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/expenses/domain/models/settlement_transaction.dart';
 
-/// Neumorphic Card showing clearly who should pay whom and the exact amount.
+/// Neumorphic Card displaying an individual settlement transaction:
+/// Debtor (Avatar, Name, Pay ₹Amount) -> Arrow -> Creditor (Avatar, Name).
 class SettlementCard extends StatelessWidget {
   final SettlementTransaction transaction;
 
@@ -14,202 +15,125 @@ class SettlementCard extends StatelessWidget {
     required this.transaction,
   });
 
+  String _formatAmount(double amount) {
+    if (amount.truncateToDouble() == amount) {
+      final parts = amount.toInt().toString().replaceAllMapped(
+            RegExp(r'(\d+?)(?=(\d{3})+(?!\d))'),
+            (Match m) => '${m[1]},',
+          );
+      return '₹$parts';
+    }
+    return '₹${amount.toStringAsFixed(2)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final fromInitial = StringUtils.getSingleInitial(transaction.from.name);
     final toInitial = StringUtils.getSingleInitial(transaction.to.name);
-    final amountFormatted = '₹${transaction.amount.toStringAsFixed(transaction.amount.truncateToDouble() == transaction.amount ? 0 : 2)}';
+    final amountFormatted = _formatAmount(transaction.amount);
 
-    return FlutterNeumorphism(
-      style: NeumorphicStyles.card(borderRadius: 22, depth: 5),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Visual payer -> arrow with amount -> receiver flow
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Payer
-              Expanded(
-                child: Row(
-                  children: [
-                    FlutterNeumorphism(
-                      style: NeumorphicStyles.card(
-                        borderRadius: 14,
-                        depth: 3,
-                        color: const Color(0xFFFFECEC),
-                      ),
-                      width: 44,
-                      height: 44,
-                      padding: EdgeInsets.zero,
-                      child: Text(
-                        fromInitial,
-                        style: const TextStyle(
-                          color: Color(0xFFC92A2A),
-                          fontWeight: FontWeight.w900,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            transaction.from.name,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const Text(
-                            'Payer',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFFC92A2A),
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+    return Semantics(
+      label: '${transaction.from.name} should pay $amountFormatted to ${transaction.to.name}',
+      child: FlutterNeumorphism(
+        style: NeumorphicStyles.card(borderRadius: 20, depth: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            // Debtor Circular Avatar (Soft peach/pink)
+            Container(
+              width: 38,
+              height: 38,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFECE0),
+                shape: BoxShape.circle,
               ),
-
-              // Arrow with amount pill
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Column(
-                  children: [
-                    FlutterNeumorphism(
-                      style: NeumorphicStyles.primaryButton(borderRadius: 12, depth: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      child: Text(
-                        amountFormatted,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.primaryDark,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    const Icon(
-                      Icons.arrow_forward_rounded,
-                      size: 20,
-                      color: AppColors.primaryDeep,
-                    ),
-                  ],
-                ),
-              ),
-
-              // Receiver
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            transaction.to.name,
-                            textAlign: TextAlign.end,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const Text(
-                            'Receiver',
-                            textAlign: TextAlign.end,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFF284821),
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    FlutterNeumorphism(
-                      style: NeumorphicStyles.card(
-                        borderRadius: 14,
-                        depth: 3,
-                        color: AppColors.primaryLight,
-                      ),
-                      width: 44,
-                      height: 44,
-                      padding: EdgeInsets.zero,
-                      child: Text(
-                        toInitial,
-                        style: const TextStyle(
-                          color: Color(0xFF284821),
-                          fontWeight: FontWeight.w900,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: AppColors.border),
-          const SizedBox(height: 10),
-
-          // Explicit statement: "[From] should pay [Amount] to [To]"
-          Row(
-            children: [
-              const Icon(
-                Icons.info_outline_rounded,
-                size: 16,
-                color: AppColors.textSecondary,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text.rich(
-                  TextSpan(
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textPrimary,
-                    ),
-                    children: [
-                      TextSpan(
-                        text: transaction.from.name,
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                      const TextSpan(text: ' should pay '),
-                      TextSpan(
-                        text: amountFormatted,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primaryDeep,
-                        ),
-                      ),
-                      const TextSpan(text: ' to '),
-                      TextSpan(
-                        text: transaction.to.name,
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                    ],
+              child: Center(
+                child: Text(
+                  fromInitial,
+                  style: const TextStyle(
+                    color: Color(0xFFDC2626),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
                   ),
                 ),
               ),
-            ],
-          ),
-        ],
+            ),
+            const SizedBox(width: 12),
+
+            // Debtor Name & "Pay ₹Amount"
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    transaction.from.name,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Pay $amountFormatted',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Arrow Center
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: Icon(
+                Icons.arrow_forward_rounded,
+                color: AppColors.textPrimary,
+                size: 20,
+              ),
+            ),
+
+            // Creditor Circular Avatar (Soft lime)
+            Container(
+              width: 38,
+              height: 38,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE8F8D8),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  toInitial,
+                  style: const TextStyle(
+                    color: Color(0xFF284821),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // Creditor Name
+            Expanded(
+              child: Text(
+                transaction.to.name,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
