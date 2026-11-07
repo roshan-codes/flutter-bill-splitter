@@ -11,5 +11,17 @@ class SettlementTransaction {
     required this.to,
     required this.amount,
   });
-}
 
+  Map<String, dynamic> toJson() => {
+        'from': from.toJson(),
+        'to': to.toJson(),
+        'amount': amount,
+      };
+
+  factory SettlementTransaction.fromJson(Map<String, dynamic> json) =>
+      SettlementTransaction(
+        from: Friend.fromJson(Map<String, dynamic>.from(json['from'] as Map)),
+        to: Friend.fromJson(Map<String, dynamic>.from(json['to'] as Map)),
+        amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+      );
+}

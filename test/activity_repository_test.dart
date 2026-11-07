@@ -1,14 +1,18 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/expenses/domain/models/settlement_transaction.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('ActivityRepository Tests', () {
     late ActivityRepository repository;
 
     setUp(() {
+      SharedPreferences.setMockInitialValues({});
       repository = ActivityRepository();
     });
 

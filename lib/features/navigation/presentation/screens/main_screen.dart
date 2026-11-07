@@ -5,8 +5,7 @@ import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/screens/activity_tab.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
-import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
-import 'package:flutter_bill_splitter/features/friends/domain/models/group.dart';
+import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/friends/presentation/screens/friends_tab.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/screens/home_tab.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/screens/profile_tab.dart';
@@ -43,8 +42,21 @@ class _MainScreenState extends State<MainScreen> {
     Icons.person_rounded,
   ];
 
-  final List<Friend> _friends = [];
-  final List<Group> _groups = [];
+  @override
+  void initState() {
+    super.initState();
+    FriendsRepository.instance.addListener(_onFriendsRepoChanged);
+  }
+
+  @override
+  void dispose() {
+    FriendsRepository.instance.removeListener(_onFriendsRepoChanged);
+    super.dispose();
+  }
+
+  void _onFriendsRepoChanged() {
+    if (mounted) setState(() {});
+  }
 
   void _onNavTap(int index) {
     setState(() => _currentIndex = index);
@@ -54,8 +66,8 @@ class _MainScreenState extends State<MainScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => AddExpenseScreen(
-          friends: _friends,
-          groups: _groups,
+          friends: FriendsRepository.instance.friends,
+          groups: FriendsRepository.instance.groups,
         ),
       ),
     );
@@ -100,27 +112,19 @@ class _MainScreenState extends State<MainScreen> {
         );
       case 1:
         return FriendsTab(
-          friends: _friends,
-          groups: _groups,
+          friends: FriendsRepository.instance.friends,
+          groups: FriendsRepository.instance.groups,
           onFriendAdded: (newFriend) {
-            setState(() {
-              _friends.add(newFriend);
-            });
+            FriendsRepository.instance.addFriend(newFriend);
           },
           onGroupCreated: (newGroup) {
-            setState(() {
-              _groups.add(newGroup);
-            });
+            FriendsRepository.instance.addGroup(newGroup);
           },
           onFriendDeleted: (index) {
-            setState(() {
-              _friends.removeAt(index);
-            });
+            FriendsRepository.instance.removeFriendAt(index);
           },
           onGroupDeleted: (index) {
-            setState(() {
-              _groups.removeAt(index);
-            });
+            FriendsRepository.instance.removeGroupAt(index);
           },
         );
       case 2:

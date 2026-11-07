@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bill_splitter/main.dart';
 
 Future<void> _addFriendHelper(WidgetTester tester, String name, String phone) async {
@@ -20,7 +21,9 @@ Future<void> _addFriendHelper(WidgetTester tester, String name, String phone) as
 
 void main() {
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     ActivityRepository.instance.clearActivities();
+    FriendsRepository.instance.clearAll();
   });
 
   testWidgets(

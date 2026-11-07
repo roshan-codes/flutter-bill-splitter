@@ -10,6 +10,18 @@ class Friend {
     this.avatarUrl,
   });
 
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'phone': phone,
+        if (avatarUrl != null) 'avatarUrl': avatarUrl,
+      };
+
+  factory Friend.fromJson(Map<String, dynamic> json) => Friend(
+        name: json['name'] as String? ?? '',
+        phone: json['phone'] as String? ?? '',
+        avatarUrl: json['avatarUrl'] as String?,
+      );
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -21,4 +33,3 @@ class Friend {
   @override
   int get hashCode => name.hashCode ^ phone.hashCode;
 }
-
