@@ -15,6 +15,7 @@ dependencies:
   flutter_neumorphism_ui: ^1.0.2
   neumorphic_glass_navbar: ^0.0.1
   shared_preferences: ^2.5.3
+  flutter_contacts: ^1.1.9+2
 
 dev_dependencies:
   flutter_test:

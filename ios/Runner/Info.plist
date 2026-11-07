@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSContactsUsageDescription</key>
+	<string>BillSplit needs access to your contacts to quickly add friends for splitting bills.</string>
 </dict>
 </plist>
