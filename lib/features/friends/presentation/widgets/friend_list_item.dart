@@ -1,0 +1,90 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
+import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
+
+/// Single item tile for displaying a friend in the Friends list.
+class FriendListItem extends StatelessWidget {
+  final Friend friend;
+  final VoidCallback? onDelete;
+
+  const FriendListItem({
+    super.key,
+    required this.friend,
+    this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final initials = StringUtils.getInitials(friend.name);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.border,
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: AppColors.primary.withOpacity(0.2),
+            child: Text(
+              initials,
+              style: const TextStyle(
+                color: AppColors.primaryDeep,
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  friend.name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  friend.phone,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (onDelete != null)
+            IconButton(
+              icon: const Icon(
+                Icons.delete_outline_rounded,
+                color: AppColors.danger,
+                size: 20,
+              ),
+              onPressed: onDelete,
+            ),
+        ],
+      ),
+    );
+  }
+}
