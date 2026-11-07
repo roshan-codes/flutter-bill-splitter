@@ -122,9 +122,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('remove_selected_Alex Johnson')), findsNothing);
 
-    // Enter Group Name
-    await tester.enterText(find.widgetWithText(TextFormField, 'e.g. Goa Trip, Dinner, Flat Rent'), 'Goa Trip');
+    // Verify Available Groups horizontal section is rendered
+    expect(find.text('Available Groups'), findsOneWidget);
+    expect(find.text('3 groups'), findsOneWidget);
+    expect(find.text('Goa Trip'), findsWidgets);
+    expect(find.text('Flatmates'), findsOneWidget);
+    expect(find.text('Office Lunch'), findsOneWidget);
+
+    // Tap 'Flatmates' group chip
+    await tester.tap(find.text('Flatmates'));
     await tester.pumpAndSettle();
+
+    // Verify group name text field is populated with 'Flatmates'
+    final groupField = find.widgetWithText(TextFormField, 'Flatmates');
+    expect(groupField, findsOneWidget);
 
     // Scroll into view & tap Confirm & Split button
     final confirmBtn = find.widgetWithText(ElevatedButton, 'Confirm & Split');
@@ -135,6 +146,6 @@ void main() {
 
     // Verify screen popped back to MainScreen and SnackBar is shown
     expect(find.text('Add & Split Expense'), findsNothing);
-    expect(find.textContaining('Group "Goa Trip" created'), findsOneWidget);
+    expect(find.textContaining('Group "Flatmates" created'), findsOneWidget);
   });
 }

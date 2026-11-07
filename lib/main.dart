@@ -94,6 +94,8 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Group> _groups = [
     const Group(name: 'Goa Trip', members: []),
+    const Group(name: 'Flatmates', members: []),
+    const Group(name: 'Office Lunch', members: []),
   ];
 
   final List<Friend> _friends = [
@@ -638,7 +640,10 @@ class _MainScreenState extends State<MainScreen> {
   void _openAddExpenseScreen() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => AddExpenseScreen(friends: _friends),
+        builder: (context) => AddExpenseScreen(
+          friends: _friends,
+          groups: _groups,
+        ),
       ),
     );
   }
@@ -1034,13 +1039,15 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-/// Full-screen view for Adding an Expense with a rectangular container and Friends list.
+/// Full-screen view for Adding an Expense with Available Groups, rectangular container, and Friends list.
 class AddExpenseScreen extends StatefulWidget {
   final List<Friend> friends;
+  final List<Group> groups;
 
   const AddExpenseScreen({
     super.key,
     required this.friends,
+    required this.groups,
   });
 
   @override
@@ -1051,6 +1058,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _groupNameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final Set<int> _selectedFriendIndices = {};
+  int? _selectedGroupIndex;
 
   @override
   void initState() {
@@ -1100,6 +1108,134 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Available Groups Section (Horizontally Scrollable)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Available Groups',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF131A15),
+                      ),
+                    ),
+                    Text(
+                      '${widget.groups.length} groups',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF808B82),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 58,
+                  child: widget.groups.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No groups created yet',
+                            style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                          ),
+                        )
+                      : ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: widget.groups.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 10),
+                          itemBuilder: (context, index) {
+                            final group = widget.groups[index];
+                            final isSelected = _selectedGroupIndex == index ||
+                                _groupNameController.text.trim() == group.name;
+
+                            return InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _selectedGroupIndex = index;
+                                  _groupNameController.text = group.name;
+
+                                  // Pre-select group members if any
+                                  if (group.members.isNotEmpty) {
+                                    _selectedFriendIndices.clear();
+                                    for (final member in group.members) {
+                                      final found = widget.friends.indexWhere(
+                                        (f) => f.name == member.name || f.phone == member.phone,
+                                      );
+                                      if (found != -1) {
+                                        _selectedFriendIndices.add(found);
+                                      }
+                                    }
+                                  }
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(16),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? const Color(0xFF111713) : Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isSelected ? const Color(0xFF86E829) : const Color(0xFFE5EDE4),
+                                    width: isSelected ? 1.5 : 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.02),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? const Color(0xFF86E829)
+                                            : const Color(0xFF86E829).withOpacity(0.18),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.groups_rounded,
+                                        size: 16,
+                                        color: isSelected ? const Color(0xFF10210A) : const Color(0xFF284821),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          group.name,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: isSelected ? Colors.white : const Color(0xFF131A15),
+                                          ),
+                                        ),
+                                        Text(
+                                          '${group.members.length} members',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: isSelected ? Colors.white60 : const Color(0xFF808B82),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+                const SizedBox(height: 20),
+
                 // Group Name Field
                 const Text(
                   'Group Name',
