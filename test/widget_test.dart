@@ -135,9 +135,13 @@ void main() {
     await _addFriendHelper(tester, 'Alex Johnson', '+91 98765 43210');
     await _addFriendHelper(tester, 'Sophia Martinez', '+91 99887 76655');
 
-    // Tap center + action button in bottom bar to open AddExpenseScreen
-    final centerAddBtn = find.byIcon(Icons.add).last;
-    await tester.tap(centerAddBtn);
+    // Switch to Home tab and tap Add Expense quick action tile to open AddExpenseScreen
+    final homeTab = find.byIcon(Icons.home_outlined);
+    await tester.tap(homeTab);
+    await tester.pumpAndSettle();
+
+    final addExpenseTile = find.textContaining('Add\nExpense');
+    await tester.tap(addExpenseTile);
     await tester.pumpAndSettle();
 
     // Verify screen title

@@ -45,39 +45,8 @@ class _MainScreenState extends State<MainScreen> {
   final List<Friend> _friends = [];
   final List<Group> _groups = [];
 
-  int get _navbarIndex {
-    switch (_currentIndex) {
-      case 0:
-        return 0;
-      case 1:
-        return 1;
-      case 2:
-        return 3;
-      case 3:
-        return 4;
-      default:
-        return 0;
-    }
-  }
-
-  void _onNavTap(int navIndex) {
-    switch (navIndex) {
-      case 0:
-        setState(() => _currentIndex = 0);
-        break;
-      case 1:
-        setState(() => _currentIndex = 1);
-        break;
-      case 2:
-        _openAddExpenseScreen();
-        break;
-      case 3:
-        setState(() => _currentIndex = 2);
-        break;
-      case 4:
-        setState(() => _currentIndex = 3);
-        break;
-    }
+  void _onNavTap(int index) {
+    setState(() => _currentIndex = index);
   }
 
   void _openAddExpenseScreen() {
@@ -180,7 +149,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
       body: _buildBody(),
       bottomNavigationBar: NeumorphicGlassNavbar(
-        currentIndex: _navbarIndex,
+        currentIndex: _currentIndex,
         onTap: _onNavTap,
         height: 68,
         settings: const NeumorphicGlassNavbarSettings(
@@ -197,26 +166,19 @@ class _MainScreenState extends State<MainScreen> {
         ),
         items: [
           BottomNavigationBarItem(
-            icon: Icon(_navbarIndex == 0 ? _tabActiveIcons[0] : _tabIcons[0]),
+            icon: Icon(_currentIndex == 0 ? _tabActiveIcons[0] : _tabIcons[0]),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(_navbarIndex == 1 ? _tabActiveIcons[1] : _tabIcons[1]),
+            icon: Icon(_currentIndex == 1 ? _tabActiveIcons[1] : _tabIcons[1]),
             label: 'Friends',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(
-              Icons.add,
-              color: AppColors.primaryDeep,
-            ),
-            label: 'Add',
-          ),
           BottomNavigationBarItem(
-            icon: Icon(_navbarIndex == 3 ? _tabActiveIcons[2] : _tabIcons[2]),
+            icon: Icon(_currentIndex == 2 ? _tabActiveIcons[2] : _tabIcons[2]),
             label: 'Activity',
           ),
           BottomNavigationBarItem(
-            icon: Icon(_navbarIndex == 4 ? _tabActiveIcons[3] : _tabIcons[3]),
+            icon: Icon(_currentIndex == 3 ? _tabActiveIcons[3] : _tabIcons[3]),
             label: 'Profile',
           ),
         ],

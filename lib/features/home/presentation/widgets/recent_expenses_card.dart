@@ -117,3 +117,4 @@ class RecentExpensesCard extends StatelessWidget {
     );
   }
 }
+
