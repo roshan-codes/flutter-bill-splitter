@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/search_name_group_bar.dart';
+import 'package:flutter_bill_splitter/features/home/presentation/screens/home_tab.dart';
 import 'package:flutter_bill_splitter/shared/widgets/empty_state_view.dart';
 
 void main() {
@@ -98,6 +99,55 @@ void main() {
       await tester.tap(find.text('Friends'));
       await tester.pumpAndSettle();
       expect(tappedIndex, 1);
+    });
+
+    testWidgets('HomeTab renders screenshot-matching neumorphic UI elements', (tester) async {
+      bool addExpenseTapped = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: HomeTab(
+            onAddExpense: () {
+              addExpenseTapped = true;
+            },
+          ),
+        ),
+      );
+
+      // Verify header greeting & user name
+      expect(find.textContaining('Good'), findsOneWidget);
+      expect(find.text('Roshan'), findsOneWidget);
+      expect(find.text('👋'), findsOneWidget);
+      expect(find.byIcon(Icons.bolt_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
+
+      // Verify 3 quick action tiles
+      expect(find.textContaining('Add\nExpense'), findsOneWidget);
+      expect(find.text('Scan Bill'), findsOneWidget);
+      expect(find.text('Settle Up'), findsOneWidget);
+
+      // Verify Your Balance card
+      expect(find.text('Your Balance'), findsOneWidget);
+      expect(find.text('You get'), findsOneWidget);
+      expect(find.text('₹2,340'), findsOneWidget);
+      expect(find.text('You owe'), findsOneWidget);
+      expect(find.text('₹860'), findsOneWidget);
+
+      // Verify Recent Expenses section & items
+      expect(find.text('Recent Expenses'), findsOneWidget);
+      expect(find.text('Dinner at Sakali'), findsOneWidget);
+      expect(find.text('Sakali  •  3 members'), findsOneWidget);
+      expect(find.text('₹549'), findsOneWidget);
+      expect(find.text('Goa Trip Fuel'), findsOneWidget);
+      expect(find.text('Trip  •  4 members'), findsOneWidget);
+      expect(find.text('₹2,800'), findsOneWidget);
+      expect(find.text('Groceries'), findsOneWidget);
+      expect(find.text('Home  •  2 members'), findsOneWidget);
+      expect(find.text('₹620'), findsOneWidget);
+
+      // Verify tapping Add Expense tile triggers onAddExpense callback
+      await tester.tap(find.textContaining('Add\nExpense'));
+      await tester.pumpAndSettle();
+      expect(addExpenseTapped, isTrue);
     });
   });
 }

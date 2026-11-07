@@ -8,6 +8,7 @@ import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/group.dart';
 import 'package:flutter_bill_splitter/features/friends/presentation/screens/friends_tab.dart';
+import 'package:flutter_bill_splitter/features/home/presentation/screens/home_tab.dart';
 
 /// Main scaffold with bottom navigation bar and active tab rendering.
 class MainScreen extends StatefulWidget {
@@ -123,6 +124,10 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildBody() {
     switch (_currentIndex) {
+      case 0:
+        return HomeTab(
+          onAddExpense: _openAddExpenseScreen,
+        );
       case 1:
         return FriendsTab(
           friends: _friends,
@@ -157,7 +162,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hasCustomHeader = _currentIndex == 1 || _currentIndex == 2;
+    final hasCustomHeader = _currentIndex == 0 || _currentIndex == 1 || _currentIndex == 2;
 
     return Scaffold(
       extendBody: true,
