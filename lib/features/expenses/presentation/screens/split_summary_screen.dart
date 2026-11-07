@@ -40,7 +40,7 @@ class SplitSummaryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = groupName.trim().isNotEmpty ? groupName : 'Dinner at Sakali';
+    final title = groupName.trim().isNotEmpty ? groupName : 'Expense';
     final totalExpense = ExpenseCalculator.calculateTotal(memberExpenses);
     final sharePerPerson = ExpenseCalculator.calculateSharePerPerson(totalExpense, members.length);
     final List<SettlementTransaction> settlements = ExpenseCalculator.calculateSettlements(

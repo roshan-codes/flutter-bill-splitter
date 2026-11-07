@@ -6,12 +6,11 @@ import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_detail_sheet.dart';
-import 'package:flutter_bill_splitter/features/expenses/domain/models/settlement_transaction.dart';
-import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/home/domain/models/recent_expense.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/recent_expense_item.dart';
 
 /// Neumorphic Card container displaying "Recent Expenses".
+/// Displays real activities from [ActivityRepository], custom expenses, or a clean empty state.
 class RecentExpensesCard extends StatelessWidget {
   final List<RecentExpense>? customExpenses;
   final void Function(RecentExpense expense)? onExpenseTap;
@@ -22,9 +21,10 @@ class RecentExpensesCard extends StatelessWidget {
     this.onExpenseTap,
   });
 
-  static const List<RecentExpense> _defaultExpenses = [
+  /// Sample expenses available for tests or preview.
+  static const List<RecentExpense> sampleExpenses = [
     RecentExpense(
-      id: 'default_1',
+      id: 'sample_1',
       title: 'Dinner at Sakali',
       category: 'Sakali',
       memberCount: 3,
@@ -34,7 +34,7 @@ class RecentExpensesCard extends StatelessWidget {
       iconColor: Color(0xFF284821),
     ),
     RecentExpense(
-      id: 'default_2',
+      id: 'sample_2',
       title: 'Goa Trip Fuel',
       category: 'Trip',
       memberCount: 4,
@@ -44,7 +44,7 @@ class RecentExpensesCard extends StatelessWidget {
       iconColor: Color(0xFFC85A17),
     ),
     RecentExpense(
-      id: 'default_3',
+      id: 'sample_3',
       title: 'Groceries',
       category: 'Home',
       memberCount: 2,
@@ -54,68 +54,6 @@ class RecentExpensesCard extends StatelessWidget {
       iconColor: Color(0xFF0284C7),
     ),
   ];
-
-  static final Map<String, SplitActivity> _defaultActivityMap = {
-    'default_1': SplitActivity(
-      id: 'default_1',
-      groupName: 'Dinner at Sakali',
-      totalAmount: 549.0,
-      sharePerPerson: 183.0,
-      members: const [
-        Friend(name: 'Vinit', phone: '+91 98765 11111'),
-        Friend(name: 'Nishant', phone: '+91 98765 22222'),
-        Friend(name: 'Saurabh', phone: '+91 98765 33333'),
-      ],
-      memberExpenses: const {'Vinit': 500.0, 'Nishant': 49.0, 'Saurabh': 0.0},
-      settlements: const [
-        SettlementTransaction(
-          from: Friend(name: 'Saurabh', phone: '+91 98765 33333'),
-          to: Friend(name: 'Vinit', phone: '+91 98765 11111'),
-          amount: 183.0,
-        ),
-        SettlementTransaction(
-          from: Friend(name: 'Nishant', phone: '+91 98765 22222'),
-          to: Friend(name: 'Vinit', phone: '+91 98765 11111'),
-          amount: 134.0,
-        ),
-      ],
-      timestamp: DateTime.now(),
-    ),
-    'default_2': SplitActivity(
-      id: 'default_2',
-      groupName: 'Goa Trip Fuel',
-      totalAmount: 2800.0,
-      sharePerPerson: 700.0,
-      members: const [
-        Friend(name: 'Roshan', phone: '+91 98765 43210'),
-        Friend(name: 'Vinit', phone: '+91 98765 11111'),
-        Friend(name: 'Nishant', phone: '+91 98765 22222'),
-        Friend(name: 'Saurabh', phone: '+91 98765 33333'),
-      ],
-      memberExpenses: const {'Vinit': 2800.0, 'Roshan': 0.0, 'Nishant': 0.0, 'Saurabh': 0.0},
-      settlements: const [
-        SettlementTransaction(
-          from: Friend(name: 'Roshan', phone: '+91 98765 43210'),
-          to: Friend(name: 'Vinit', phone: '+91 98765 11111'),
-          amount: 700.0,
-        ),
-      ],
-      timestamp: DateTime.now(),
-    ),
-    'default_3': SplitActivity(
-      id: 'default_3',
-      groupName: 'Groceries',
-      totalAmount: 620.0,
-      sharePerPerson: 310.0,
-      members: const [
-        Friend(name: 'Roshan', phone: '+91 98765 43210'),
-        Friend(name: 'Vinit', phone: '+91 98765 11111'),
-      ],
-      memberExpenses: const {'Roshan': 310.0, 'Vinit': 310.0},
-      settlements: const [],
-      timestamp: DateTime.now(),
-    ),
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -152,10 +90,53 @@ class RecentExpensesCard extends StatelessWidget {
               );
             }).toList();
 
-            final displayExpenses = customExpenses ??
-                (dynamicExpenses.isNotEmpty
-                    ? [...dynamicExpenses, ..._defaultExpenses]
-                    : _defaultExpenses);
+            final displayExpenses = customExpenses ?? dynamicExpenses;
+
+            if (displayExpenses.isEmpty) {
+              return FlutterNeumorphism(
+                style: NeumorphicStyles.card(borderRadius: 24, depth: 4),
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F8D8),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.receipt_long_outlined,
+                          color: Color(0xFF284821),
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'No Recent Expenses',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Splits you create will appear here.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
 
             return FlutterNeumorphism(
               style: NeumorphicStyles.card(borderRadius: 24, depth: 6),
@@ -171,13 +152,15 @@ class RecentExpensesCard extends StatelessWidget {
                         if (onExpenseTap != null) {
                           onExpenseTap!(displayExpenses[i]);
                         } else {
-                          final activity = ActivityRepository.instance.activities.firstWhere(
+                          final activity = ActivityRepository.instance.activities
+                              .firstWhere(
                             (a) => a.id == displayExpenses[i].id,
-                            orElse: () => _defaultActivityMap[displayExpenses[i].id] ?? SplitActivity(
+                            orElse: () => SplitActivity(
                               id: displayExpenses[i].id,
                               groupName: displayExpenses[i].title,
                               totalAmount: displayExpenses[i].amount,
-                              sharePerPerson: displayExpenses[i].amount / displayExpenses[i].memberCount,
+                              sharePerPerson: displayExpenses[i].amount /
+                                  displayExpenses[i].memberCount,
                               members: const [],
                               memberExpenses: const {},
                               settlements: const [],

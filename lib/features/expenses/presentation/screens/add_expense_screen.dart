@@ -24,7 +24,8 @@ class AddExpenseScreen extends StatefulWidget {
     required this.groups,
   });
 
-  static const List<Friend> defaultFriends = [
+  /// Sample friends available for tests or preview.
+  static const List<Friend> sampleFriends = [
     Friend(name: 'Vinit', phone: '+91 98765 11111'),
     Friend(name: 'Nishant', phone: '+91 98765 22222'),
     Friend(name: 'Saurabh', phone: '+91 98765 33333'),
@@ -51,13 +52,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.friends.isNotEmpty) {
-      _effectiveFriends = List.from(widget.friends);
-    } else {
-      _effectiveFriends = List.from(AddExpenseScreen.defaultFriends);
-      // Preselect Vinit, Nishant, Saurabh to match screenshot
-      _selectedFriendIndices.addAll([0, 1, 2]);
-    }
+    _effectiveFriends = List.from(widget.friends);
     _availableGroups = List.from(widget.groups);
   }
 
@@ -261,7 +256,43 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
                 // 4. Selection Tiles (Friends or Groups)
                 if (_selectedTab == 0) ...[
-                  if (filteredFriends.isEmpty)
+                  if (_effectiveFriends.isEmpty)
+                    FlutterNeumorphism(
+                      style: NeumorphicStyles.inset(borderRadius: 18, depth: 3),
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+                      child: const Center(
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.people_outline_rounded,
+                              size: 40,
+                              color: AppColors.textSecondary,
+                            ),
+                            SizedBox(height: 12),
+                            Text(
+                              'No Friends Added Yet',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              'Add friends in the Friends tab to select them here.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else if (filteredFriends.isEmpty)
                     FlutterNeumorphism(
                       style: NeumorphicStyles.inset(borderRadius: 18, depth: 3),
                       width: double.infinity,

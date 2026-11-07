@@ -1,56 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/activity_display_item.dart';
-import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_section_card.dart';
-import 'package:flutter_bill_splitter/features/expenses/domain/models/settlement_transaction.dart';
-import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
+import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 
-/// Activity Tab displaying neumorphic activity feed with This Week and Last Week sections.
+/// Activity Tab displaying neumorphic activity feed with real activity records or a clean empty state.
 class ActivityTab extends StatelessWidget {
   final ActivityRepository? repository;
+  final List<ActivityDisplayItem>? customItems;
 
   const ActivityTab({
     super.key,
     this.repository,
+    this.customItems,
   });
 
-  static const _friendVinit =
-      Friend(name: 'Vinit', phone: '+91 98765 11111');
-  static const _friendNishant =
-      Friend(name: 'Nishant', phone: '+91 98765 22222');
-  static const _friendSaurabh =
-      Friend(name: 'Saurabh', phone: '+91 98765 33333');
-  static const _friendRoshan =
-      Friend(name: 'Roshan', phone: '+91 98765 43210');
-
-  static final List<ActivityDisplayItem> _defaultThisWeek = [
+  /// Sample items available for tests or preview.
+  static const List<ActivityDisplayItem> sampleThisWeek = [
     ActivityDisplayItem(
       id: 'tw_1',
       title: 'Dinner at Sakali',
       memberCount: 3,
       totalAmount: 549.0,
       statusText: 'You get ₹317',
-      statusColor: const Color(0xFF16A34A),
+      statusColor: Color(0xFF16A34A),
       icon: Icons.restaurant_rounded,
-      iconBgColor: const Color(0xFFE8F8D8),
-      iconColor: const Color(0xFF284821),
+      iconBgColor: Color(0xFFE8F8D8),
+      iconColor: Color(0xFF284821),
       section: 'This Week',
       isSettlement: false,
-      splitActivity: SplitActivity(
-        id: 'tw_1',
-        groupName: 'Dinner at Sakali',
-        totalAmount: 549.0,
-        sharePerPerson: 183.0,
-        members: const [_friendVinit, _friendNishant, _friendSaurabh],
-        memberExpenses: const {'Vinit': 500.0, 'Nishant': 49.0, 'Saurabh': 0.0},
-        settlements: const [
-          SettlementTransaction(from: _friendSaurabh, to: _friendVinit, amount: 183.0),
-          SettlementTransaction(from: _friendNishant, to: _friendVinit, amount: 134.0),
-        ],
-        timestamp: DateTime.now().subtract(const Duration(days: 2)),
-      ),
     ),
     ActivityDisplayItem(
       id: 'tw_2',
@@ -60,20 +40,10 @@ class ActivityTab extends StatelessWidget {
       statusText: 'Settled',
       statusColor: AppColors.textSecondary,
       icon: Icons.shopping_bag_outlined,
-      iconBgColor: const Color(0xFFE0F2FE),
-      iconColor: const Color(0xFF0284C7),
+      iconBgColor: Color(0xFFE0F2FE),
+      iconColor: Color(0xFF0284C7),
       section: 'This Week',
       isSettlement: true,
-      splitActivity: SplitActivity(
-        id: 'tw_2',
-        groupName: 'Groceries',
-        totalAmount: 620.0,
-        sharePerPerson: 310.0,
-        members: const [_friendRoshan, _friendVinit],
-        memberExpenses: const {'Roshan': 310.0, 'Vinit': 310.0},
-        settlements: const [],
-        timestamp: DateTime.now().subtract(const Duration(days: 4)),
-      ),
     ),
     ActivityDisplayItem(
       id: 'tw_3',
@@ -81,30 +51,16 @@ class ActivityTab extends StatelessWidget {
       memberCount: 4,
       totalAmount: 2800.0,
       statusText: 'You owe ₹700',
-      statusColor: const Color(0xFFDC2626),
+      statusColor: Color(0xFFDC2626),
       icon: Icons.local_gas_station_rounded,
-      iconBgColor: const Color(0xFFFFECE0),
-      iconColor: const Color(0xFFC85A17),
+      iconBgColor: Color(0xFFFFECE0),
+      iconColor: Color(0xFFC85A17),
       section: 'This Week',
       isSettlement: false,
-      splitActivity: SplitActivity(
-        id: 'tw_3',
-        groupName: 'Goa Trip Fuel',
-        totalAmount: 2800.0,
-        sharePerPerson: 700.0,
-        members: const [_friendRoshan, _friendVinit, _friendNishant, _friendSaurabh],
-        memberExpenses: const {'Vinit': 2800.0, 'Roshan': 0.0, 'Nishant': 0.0, 'Saurabh': 0.0},
-        settlements: const [
-          SettlementTransaction(from: _friendRoshan, to: _friendVinit, amount: 700.0),
-          SettlementTransaction(from: _friendNishant, to: _friendVinit, amount: 700.0),
-          SettlementTransaction(from: _friendSaurabh, to: _friendVinit, amount: 700.0),
-        ],
-        timestamp: DateTime.now().subtract(const Duration(days: 6)),
-      ),
     ),
   ];
 
-  static final List<ActivityDisplayItem> _defaultLastWeek = [
+  static const List<ActivityDisplayItem> sampleLastWeek = [
     ActivityDisplayItem(
       id: 'lw_1',
       title: 'Movie Night',
@@ -113,20 +69,10 @@ class ActivityTab extends StatelessWidget {
       statusText: 'Settled',
       statusColor: AppColors.textSecondary,
       icon: Icons.local_movies_rounded,
-      iconBgColor: const Color(0xFFE0F2FE),
-      iconColor: const Color(0xFF0284C7),
+      iconBgColor: Color(0xFFE0F2FE),
+      iconColor: Color(0xFF0284C7),
       section: 'Last Week',
       isSettlement: true,
-      splitActivity: SplitActivity(
-        id: 'lw_1',
-        groupName: 'Movie Night',
-        totalAmount: 480.0,
-        sharePerPerson: 160.0,
-        members: const [_friendRoshan, _friendVinit, _friendNishant],
-        memberExpenses: const {'Roshan': 160.0, 'Vinit': 160.0, 'Nishant': 160.0},
-        settlements: const [],
-        timestamp: DateTime.now().subtract(const Duration(days: 10)),
-      ),
     ),
   ];
 
@@ -156,47 +102,112 @@ class ActivityTab extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // Sections: This Week & Last Week with dynamic repository listener
+              // Dynamic Activity Content
               AnimatedBuilder(
                 animation: repo,
                 builder: (context, _) {
+                  if (customItems != null && customItems!.isNotEmpty) {
+                    final sections = <String, List<ActivityDisplayItem>>{};
+                    for (final item in customItems!) {
+                      sections.putIfAbsent(item.section, () => []).add(item);
+                    }
+                    return Column(
+                      children: [
+                        for (final entry in sections.entries) ...[
+                          ActivitySectionCard(
+                            title: entry.key,
+                            items: entry.value,
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ],
+                    );
+                  }
+
                   final recordedActivities = repo.activities;
-                  final dynamicThisWeek = recordedActivities.map((act) {
+
+                  if (recordedActivities.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 40),
+                      child: FlutterNeumorphism(
+                        style: NeumorphicStyles.card(
+                          borderRadius: 24,
+                          depth: 4,
+                        ),
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 40,
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 64,
+                                height: 64,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE8F8D8),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: const Icon(
+                                  Icons.receipt_long_rounded,
+                                  size: 32,
+                                  color: Color(0xFF284821),
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                              const Text(
+                                'No Activity Yet',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              const Text(
+                                'When you create and settle splits with friends,\nyour activity will appear here.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textSecondary,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  final dynamicItems = recordedActivities.map((act) {
                     final isSettled = act.settlements.isEmpty;
                     return ActivityDisplayItem(
                       id: act.id,
                       title: act.groupName,
                       memberCount: act.members.length,
                       totalAmount: act.totalAmount,
-                      statusText: isSettled ? 'Settled' : 'You get ₹${act.sharePerPerson.toInt()}',
-                      statusColor: isSettled ? AppColors.textSecondary : const Color(0xFF16A34A),
+                      statusText: isSettled
+                          ? 'Settled'
+                          : 'You get ₹${act.sharePerPerson.toInt()}',
+                      statusColor: isSettled
+                          ? AppColors.textSecondary
+                          : const Color(0xFF16A34A),
                       icon: Icons.receipt_long_rounded,
                       iconBgColor: const Color(0xFFE8F8D8),
                       iconColor: const Color(0xFF284821),
-                      section: 'This Week',
+                      section: 'Recent Activity',
                       isSettlement: isSettled,
                       splitActivity: act,
                     );
                   }).toList();
 
-                  final thisWeekItems = [...dynamicThisWeek, ..._defaultThisWeek];
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Section 1: This Week
-                      ActivitySectionCard(
-                        title: 'This Week',
-                        items: thisWeekItems,
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Section 2: Last Week
-                      ActivitySectionCard(
-                        title: 'Last Week',
-                        items: _defaultLastWeek,
-                      ),
-                    ],
+                  return ActivitySectionCard(
+                    title: 'Recent Activity',
+                    items: dynamicItems,
                   );
                 },
               ),

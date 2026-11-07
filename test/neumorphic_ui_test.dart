@@ -11,6 +11,7 @@ import 'package:flutter_bill_splitter/features/expenses/presentation/screens/spl
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/search_name_group_bar.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/screens/home_tab.dart';
+import 'package:flutter_bill_splitter/features/home/presentation/widgets/recent_expenses_card.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/splash_screen.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/screens/profile_tab.dart';
@@ -117,6 +118,9 @@ void main() {
             onAddExpense: () {
               addExpenseTapped = true;
             },
+            youGetAmount: 2340.0,
+            youOweAmount: 860.0,
+            customExpenses: RecentExpensesCard.sampleExpenses,
           ),
         ),
       );
@@ -204,7 +208,12 @@ void main() {
     testWidgets('ActivityTab renders screenshot-matching neumorphic UI elements with filter bar removed', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: ActivityTab(),
+          home: ActivityTab(
+            customItems: [
+              ...ActivityTab.sampleThisWeek,
+              ...ActivityTab.sampleLastWeek,
+            ],
+          ),
         ),
       );
 
@@ -242,7 +251,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: AddExpenseScreen(
-            friends: [],
+            friends: AddExpenseScreen.sampleFriends,
             groups: [],
           ),
         ),

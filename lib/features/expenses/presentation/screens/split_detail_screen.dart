@@ -151,7 +151,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title = widget.groupName.trim().isNotEmpty ? widget.groupName : 'Lunch';
+    final title = widget.groupName.trim().isNotEmpty ? widget.groupName : 'Expense';
 
     return Scaffold(
       backgroundColor: AppColors.background,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/features/home/domain/models/recent_expense.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/balance_card.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/home_header.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/home_quick_actions.dart';
@@ -11,6 +12,9 @@ class HomeTab extends StatelessWidget {
   final VoidCallback? onScanBill;
   final VoidCallback? onSettleUp;
   final VoidCallback? onBalanceTap;
+  final double? youGetAmount;
+  final double? youOweAmount;
+  final List<RecentExpense>? customExpenses;
 
   const HomeTab({
     super.key,
@@ -18,6 +22,9 @@ class HomeTab extends StatelessWidget {
     this.onScanBill,
     this.onSettleUp,
     this.onBalanceTap,
+    this.youGetAmount,
+    this.youOweAmount,
+    this.customExpenses,
   });
 
   @override
@@ -32,7 +39,7 @@ class HomeTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: Lightning badge, bell icon, Good Evening Roshan 👋
+              // Header: Lightning badge, bell icon, Good Evening greeting
               HomeHeader(
                 userName: 'Roshan',
                 onNotificationPressed: () {
@@ -79,11 +86,15 @@ class HomeTab extends StatelessWidget {
               // Balance Card: You get vs You owe
               BalanceCard(
                 onTap: onBalanceTap,
+                youGetAmount: youGetAmount,
+                youOweAmount: youOweAmount,
               ),
               const SizedBox(height: 22),
 
-              // Recent Expenses Card: Dinner at Sakali, Goa Trip Fuel, Groceries
-              const RecentExpensesCard(),
+              // Recent Expenses Card
+              RecentExpensesCard(
+                customExpenses: customExpenses,
+              ),
             ],
           ),
         ),
@@ -91,4 +102,3 @@ class HomeTab extends StatelessWidget {
     );
   }
 }
-
