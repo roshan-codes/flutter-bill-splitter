@@ -11,6 +11,8 @@ import 'package:flutter_bill_splitter/features/expenses/presentation/screens/spl
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/search_name_group_bar.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/screens/home_tab.dart';
+import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/onboarding_screen.dart';
+import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/splash_screen.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/screens/profile_tab.dart';
 import 'package:flutter_bill_splitter/shared/widgets/empty_state_view.dart';
 
@@ -380,6 +382,53 @@ void main() {
       // Verify Fixed Save & Track Settlement button
       expect(find.widgetWithText(ElevatedButton, 'Save & Track Settlement'), findsOneWidget);
       expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
+    });
+
+    testWidgets('SplashScreen renders screenshot-matching branding and waves', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: SplashScreen(autoNavigate: false),
+        ),
+      );
+
+      // Verify Lightning squircle badge
+      expect(find.byIcon(Icons.bolt_rounded), findsOneWidget);
+
+      // Verify Title & Subtitle
+      expect(find.text('BillSplit'), findsOneWidget);
+      expect(find.textContaining('Split expenses, track balances'), findsOneWidget);
+      expect(find.textContaining('and settle easily'), findsOneWidget);
+    });
+
+    testWidgets('OnboardingScreen renders screenshot-matching receipt visual, copy, and actions', (tester) async {
+      bool getStartedTapped = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: OnboardingScreen(
+            onGetStarted: () {
+              getStartedTapped = true;
+            },
+          ),
+        ),
+      );
+
+      // Verify 3D Receipt visual with Rupee symbol
+      expect(find.text('₹'), findsOneWidget);
+
+      // Verify Headline & Body
+      expect(find.textContaining('Split Expenses'), findsOneWidget);
+      expect(find.textContaining('with Friends'), findsOneWidget);
+      expect(find.textContaining('Add bills, split fairly and'), findsOneWidget);
+      expect(find.textContaining('track who owes whom.'), findsOneWidget);
+
+      // Verify Buttons
+      expect(find.widgetWithText(ElevatedButton, 'Get Started'), findsOneWidget);
+      expect(find.text('I already have an account'), findsOneWidget);
+
+      // Tap Get Started
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Get Started'));
+      await tester.pumpAndSettle();
+      expect(getStartedTapped, isTrue);
     });
   });
 }

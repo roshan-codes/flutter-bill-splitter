@@ -26,7 +26,7 @@ void main() {
   testWidgets(
       'Friends tab + button shows options: Add New Friend and Create New Group',
       (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const MyApp(home: MainScreen()));
 
     // Switch to friends tab
     final friendsTab = find.byIcon(Icons.people_outline_rounded);
@@ -72,7 +72,7 @@ void main() {
   testWidgets(
       'Friends tab allows creating a new group after adding friends',
       (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const MyApp(home: MainScreen()));
 
     // Switch to friends tab
     final friendsTab = find.byIcon(Icons.people_outline_rounded);
@@ -126,7 +126,7 @@ void main() {
   testWidgets(
       'AddExpenseScreen sequence: expense title, friends/groups toggle, search bar, friend tiles, and fixed continue button',
       (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const MyApp(home: MainScreen()));
 
     // Switch to friends tab and add a friend first so available friends exists
     final friendsTab = find.byIcon(Icons.people_outline_rounded);

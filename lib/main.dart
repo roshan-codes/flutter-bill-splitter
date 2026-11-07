@@ -18,6 +18,8 @@ export 'features/activity/data/repositories/activity_repository.dart';
 export 'features/activity/presentation/screens/activity_tab.dart';
 export 'features/home/presentation/screens/home_tab.dart';
 export 'features/profile/presentation/screens/profile_tab.dart';
+export 'features/onboarding/presentation/screens/splash_screen.dart';
+export 'features/onboarding/presentation/screens/onboarding_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
