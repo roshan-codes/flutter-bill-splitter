@@ -69,6 +69,7 @@ class FriendListItem extends StatelessWidget {
           ),
           if (onDelete != null)
             IconButton(
+              tooltip: 'Delete friend',
               icon: Icon(
                 Icons.delete_outline_rounded,
                 color: Colors.red.shade400,

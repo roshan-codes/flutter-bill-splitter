@@ -64,6 +64,7 @@ class GroupListItem extends StatelessWidget {
           ),
           if (onDelete != null)
             IconButton(
+              tooltip: 'Delete group',
               icon: Icon(
                 Icons.delete_outline_rounded,
                 color: Colors.red.shade400,

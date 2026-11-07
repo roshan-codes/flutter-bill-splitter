@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/activity_display_item.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_detail_sheet.dart';
@@ -30,6 +31,7 @@ class ActivityItemRow extends StatelessWidget {
     return InkWell(
       onTap: onTap ??
           () {
+            HapticFeedback.lightImpact();
             if (item.splitActivity != null) {
               ActivityDetailSheet.show(context, item.splitActivity!);
             }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
@@ -99,10 +100,16 @@ class HomeQuickActions extends StatelessWidget {
     required Widget iconWidget,
     required String label,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(22),
-      child: FlutterNeumorphism(
+    return Semantics(
+      label: label.replaceAll('\n', ' '),
+      button: true,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(22),
+        child: FlutterNeumorphism(
         style: NeumorphicStyles.card(borderRadius: 22, depth: 5),
         height: 124,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
@@ -124,7 +131,8 @@ class HomeQuickActions extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 

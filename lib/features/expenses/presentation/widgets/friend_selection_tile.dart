@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
@@ -66,10 +67,23 @@ class FriendSelectionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final initial = friend.name.isNotEmpty ? friend.name[0].toUpperCase() : '?';
 
-    return InkWell(
-      onTap: onToggle,
-      borderRadius: BorderRadius.circular(18),
-      child: FlutterNeumorphism(
+    return Semantics(
+      label: friend.name,
+      checked: isSelected,
+      button: true,
+      enabled: true,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onToggle();
+      },
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onToggle();
+        },
+        borderRadius: BorderRadius.circular(18),
+        child: FlutterNeumorphism(
         style: NeumorphicStyles.card(borderRadius: 18, depth: 4),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
@@ -131,7 +145,8 @@ class FriendSelectionTile extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 

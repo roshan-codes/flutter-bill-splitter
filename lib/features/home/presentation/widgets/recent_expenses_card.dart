@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
+import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
+import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_detail_sheet.dart';
+import 'package:flutter_bill_splitter/features/expenses/domain/models/settlement_transaction.dart';
+import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/home/domain/models/recent_expense.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/recent_expense_item.dart';
 
@@ -49,6 +54,68 @@ class RecentExpensesCard extends StatelessWidget {
       iconColor: Color(0xFF0284C7),
     ),
   ];
+
+  static final Map<String, SplitActivity> _defaultActivityMap = {
+    'default_1': SplitActivity(
+      id: 'default_1',
+      groupName: 'Dinner at Sakali',
+      totalAmount: 549.0,
+      sharePerPerson: 183.0,
+      members: const [
+        Friend(name: 'Vinit', phone: '+91 98765 11111'),
+        Friend(name: 'Nishant', phone: '+91 98765 22222'),
+        Friend(name: 'Saurabh', phone: '+91 98765 33333'),
+      ],
+      memberExpenses: const {'Vinit': 500.0, 'Nishant': 49.0, 'Saurabh': 0.0},
+      settlements: const [
+        SettlementTransaction(
+          from: Friend(name: 'Saurabh', phone: '+91 98765 33333'),
+          to: Friend(name: 'Vinit', phone: '+91 98765 11111'),
+          amount: 183.0,
+        ),
+        SettlementTransaction(
+          from: Friend(name: 'Nishant', phone: '+91 98765 22222'),
+          to: Friend(name: 'Vinit', phone: '+91 98765 11111'),
+          amount: 134.0,
+        ),
+      ],
+      timestamp: DateTime.now(),
+    ),
+    'default_2': SplitActivity(
+      id: 'default_2',
+      groupName: 'Goa Trip Fuel',
+      totalAmount: 2800.0,
+      sharePerPerson: 700.0,
+      members: const [
+        Friend(name: 'Roshan', phone: '+91 98765 43210'),
+        Friend(name: 'Vinit', phone: '+91 98765 11111'),
+        Friend(name: 'Nishant', phone: '+91 98765 22222'),
+        Friend(name: 'Saurabh', phone: '+91 98765 33333'),
+      ],
+      memberExpenses: const {'Vinit': 2800.0, 'Roshan': 0.0, 'Nishant': 0.0, 'Saurabh': 0.0},
+      settlements: const [
+        SettlementTransaction(
+          from: Friend(name: 'Roshan', phone: '+91 98765 43210'),
+          to: Friend(name: 'Vinit', phone: '+91 98765 11111'),
+          amount: 700.0,
+        ),
+      ],
+      timestamp: DateTime.now(),
+    ),
+    'default_3': SplitActivity(
+      id: 'default_3',
+      groupName: 'Groceries',
+      totalAmount: 620.0,
+      sharePerPerson: 310.0,
+      members: const [
+        Friend(name: 'Roshan', phone: '+91 98765 43210'),
+        Friend(name: 'Vinit', phone: '+91 98765 11111'),
+      ],
+      memberExpenses: const {'Roshan': 310.0, 'Vinit': 310.0},
+      settlements: const [],
+      timestamp: DateTime.now(),
+    ),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +166,27 @@ class RecentExpensesCard extends StatelessWidget {
                   for (int i = 0; i < displayExpenses.length; i++) ...[
                     RecentExpenseItem(
                       expense: displayExpenses[i],
-                      onTap: () => onExpenseTap?.call(displayExpenses[i]),
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        if (onExpenseTap != null) {
+                          onExpenseTap!(displayExpenses[i]);
+                        } else {
+                          final activity = ActivityRepository.instance.activities.firstWhere(
+                            (a) => a.id == displayExpenses[i].id,
+                            orElse: () => _defaultActivityMap[displayExpenses[i].id] ?? SplitActivity(
+                              id: displayExpenses[i].id,
+                              groupName: displayExpenses[i].title,
+                              totalAmount: displayExpenses[i].amount,
+                              sharePerPerson: displayExpenses[i].amount / displayExpenses[i].memberCount,
+                              members: const [],
+                              memberExpenses: const {},
+                              settlements: const [],
+                              timestamp: DateTime.now(),
+                            ),
+                          );
+                          ActivityDetailSheet.show(context, activity);
+                        }
+                      },
                     ),
                     if (i < displayExpenses.length - 1)
                       const Divider(
@@ -117,4 +204,3 @@ class RecentExpensesCard extends StatelessWidget {
     );
   }
 }
-

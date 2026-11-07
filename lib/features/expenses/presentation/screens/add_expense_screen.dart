@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
@@ -90,6 +91,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   void _onContinuePressed() {
+    HapticFeedback.lightImpact();
     if (_formKey.currentState?.validate() ?? false) {
       if (_selectedFriendIndices.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -132,20 +134,30 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       appBar: AppBar(
         centerTitle: true,
         leading: Padding(
-          padding: const EdgeInsets.only(left: 12),
+          padding: const EdgeInsets.only(left: 10),
           child: Center(
-            child: InkWell(
-              onTap: () => Navigator.of(context).pop(),
-              borderRadius: BorderRadius.circular(20),
-              child: FlutterNeumorphism(
-                style: NeumorphicStyles.circle(depth: 4),
-                width: 38,
-                height: 38,
-                padding: EdgeInsets.zero,
-                child: const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: AppColors.textPrimary,
-                  size: 16,
+            child: Semantics(
+              label: 'Back',
+              button: true,
+              child: Tooltip(
+                message: 'Back',
+                child: InkWell(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    Navigator.of(context).pop();
+                  },
+                  borderRadius: BorderRadius.circular(22),
+                  child: FlutterNeumorphism(
+                    style: NeumorphicStyles.circle(depth: 4),
+                    width: 44,
+                    height: 44,
+                    padding: EdgeInsets.zero,
+                    child: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: AppColors.textPrimary,
+                      size: 16,
+                    ),
+                  ),
                 ),
               ),
             ),

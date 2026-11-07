@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
@@ -175,6 +176,104 @@ class _FriendsTabState extends State<FriendsTab> {
     );
   }
 
+  void _confirmDeleteFriend(int index, Friend friend) {
+    HapticFeedback.lightImpact();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Delete ${friend.name}?',
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: const Text(
+          'This will remove this friend from your saved list.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              Navigator.of(ctx).pop();
+              widget.onFriendDeleted(index);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${friend.name} removed'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteGroup(int index, Group group) {
+    HapticFeedback.lightImpact();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Delete ${group.name}?',
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: const Text(
+          'This will remove this group from your saved list.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              Navigator.of(ctx).pop();
+              widget.onGroupDeleted(index);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${group.name} removed'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFriendsList() {
     if (widget.friends.isEmpty) {
       return Center(
@@ -216,7 +315,7 @@ class _FriendsTabState extends State<FriendsTab> {
         final friend = widget.friends[index];
         return FriendListItem(
           friend: friend,
-          onDelete: () => widget.onFriendDeleted(index),
+          onDelete: () => _confirmDeleteFriend(index, friend),
         );
       },
     );
@@ -263,7 +362,7 @@ class _FriendsTabState extends State<FriendsTab> {
         final group = widget.groups[index];
         return GroupListItem(
           group: group,
-          onDelete: () => widget.onGroupDeleted(index),
+          onDelete: () => _confirmDeleteGroup(index, group),
         );
       },
     );

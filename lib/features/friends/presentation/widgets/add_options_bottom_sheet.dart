@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
@@ -19,6 +20,7 @@ class AddOptionsBottomSheet extends StatelessWidget {
     required VoidCallback onAddFriend,
     required VoidCallback onCreateGroup,
   }) {
+    HapticFeedback.lightImpact();
     return showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.background,

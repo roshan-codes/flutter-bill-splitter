@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:neumorphic_glass_navbar/neumorphic_glass_navbar.dart';
 import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
@@ -59,6 +60,9 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _onNavTap(int index) {
+    if (_currentIndex != index) {
+      HapticFeedback.selectionClick();
+    }
     setState(() => _currentIndex = index);
   }
 

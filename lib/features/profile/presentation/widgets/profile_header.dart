@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 
 /// Top header for Profile Tab displaying screen title and edit profile shortcut.
@@ -25,7 +26,10 @@ class ProfileHeader extends StatelessWidget {
           ),
         ),
         IconButton(
-          onPressed: onEditPressed,
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            onEditPressed?.call();
+          },
           icon: const Icon(
             Icons.edit_outlined,
             color: AppColors.textPrimary,

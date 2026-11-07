@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
@@ -49,18 +50,28 @@ class HomeHeader extends StatelessWidget {
                 size: 26,
               ),
             ),
-            InkWell(
-              onTap: onNotificationPressed,
-              borderRadius: BorderRadius.circular(20),
-              child: FlutterNeumorphism(
-                style: NeumorphicStyles.circle(depth: 4),
-                width: 46,
-                height: 46,
-                padding: EdgeInsets.zero,
-                child: const Icon(
-                  Icons.notifications_none_rounded,
-                  color: AppColors.textPrimary,
-                  size: 24,
+            Semantics(
+              label: 'Notifications',
+              button: true,
+              child: Tooltip(
+                message: 'Notifications',
+                child: InkWell(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    onNotificationPressed?.call();
+                  },
+                  borderRadius: BorderRadius.circular(23),
+                  child: FlutterNeumorphism(
+                    style: NeumorphicStyles.circle(depth: 4),
+                    width: 46,
+                    height: 46,
+                    padding: EdgeInsets.zero,
+                    child: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: AppColors.textPrimary,
+                      size: 24,
+                    ),
+                  ),
                 ),
               ),
             ),
