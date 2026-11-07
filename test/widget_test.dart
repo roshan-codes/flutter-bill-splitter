@@ -180,8 +180,16 @@ void main() {
     await tester.tap(alexItem);
     await tester.pumpAndSettle();
 
-    // Verify Alex Johnson is now in the selected container with 'x' badge
+    // Select friend Sophia Martinez as well
+    final sophiaItem = find.text('Sophia Martinez');
+    await tester.ensureVisible(sophiaItem);
+    await tester.pumpAndSettle();
+    await tester.tap(sophiaItem);
+    await tester.pumpAndSettle();
+
+    // Verify both are in the selected container with 'x' badge
     expect(find.byKey(const ValueKey('remove_selected_Alex Johnson')), findsOneWidget);
+    expect(find.byKey(const ValueKey('remove_selected_Sophia Martinez')), findsOneWidget);
 
     // Enter group name
     await tester.enterText(
@@ -196,37 +204,60 @@ void main() {
     expect(find.text('Split with Members'), findsOneWidget);
     expect(find.text('Friday Dinner'), findsOneWidget);
     expect(find.text('Alex Johnson'), findsOneWidget);
+    expect(find.text('Sophia Martinez'), findsOneWidget);
 
-    // Verify mobile number is removed from the member item
+    // Verify mobile numbers are removed from the member items
     expect(find.text('+91 98765 43210'), findsNothing);
+    expect(find.text('+91 99887 76655'), findsNothing);
 
-    // Verify Add expense button is shown for the member
-    expect(find.text('Add expense'), findsOneWidget);
+    // Verify Add expense button is shown for the members
+    expect(find.text('Add expense'), findsNWidgets(2));
 
-    // Tap Add expense button to add person expense
-    await tester.tap(find.text('Add expense'));
+    // Tap Add expense button for Alex Johnson
+    await tester.tap(find.text('Add expense').first);
     await tester.pumpAndSettle();
 
     // Verify dialog opens
     expect(find.textContaining('Expense for Alex Johnson'), findsOneWidget);
-    await tester.enterText(find.widgetWithText(TextFormField, 'Enter amount e.g. 250'), '350');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Enter amount e.g. 250'), '600');
     await tester.pumpAndSettle();
 
     // Save expense
     await tester.tap(find.widgetWithText(ElevatedButton, 'Save Expense'));
     await tester.pumpAndSettle();
 
-    // Verify expense badge updated with ₹350
-    expect(find.text('₹350'), findsOneWidget);
+    // Verify expense badge updated with ₹600
+    expect(find.text('₹600'), findsOneWidget);
     expect(find.text('Edit expense'), findsOneWidget);
 
-    // Tap Confirm Split
+    // Tap Confirm Split to navigate to SplitSummaryScreen
     final confirmSplitBtn = find.widgetWithText(ElevatedButton, 'Confirm Split');
     await tester.tap(confirmSplitBtn);
     await tester.pumpAndSettle();
 
+    // Verify SplitSummaryScreen is displayed
+    expect(find.text('Split Summary'), findsOneWidget);
+    expect(find.text('Total Expense'), findsOneWidget);
+    expect(find.text('₹600'), findsOneWidget);
+    expect(find.text('Each Person Pays'), findsOneWidget);
+    expect(find.text('₹300'), findsWidgets);
+
+    // Verify Who Pays Whom section clearly shows whom should pay whom
+    expect(find.text('Who Pays Whom'), findsOneWidget);
+    expect(find.textContaining('Sophia Martinez should pay ₹300 to Alex Johnson'), findsOneWidget);
+
+    // Verify Member Breakdown section
+    expect(find.text('Member Breakdown'), findsOneWidget);
+    expect(find.text('Gets ₹300'), findsOneWidget);
+    expect(find.text('Owes ₹300'), findsOneWidget);
+
+    // Tap Done button
+    final doneBtn = find.widgetWithText(ElevatedButton, 'Done');
+    await tester.tap(doneBtn);
+    await tester.pumpAndSettle();
+
     // Verify screen popped back to MainScreen and success SnackBar is shown
-    expect(find.text('Split with Members'), findsNothing);
-    expect(find.textContaining('Friday Dinner'), findsOneWidget);
+    expect(find.text('Split Summary'), findsNothing);
+    expect(find.textContaining('Split settled successfully for "Friday Dinner"!'), findsOneWidget);
   });
 }

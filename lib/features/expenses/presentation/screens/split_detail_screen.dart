@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
+import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_summary_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/split_member_card.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 
@@ -340,16 +341,12 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                 ),
               ),
               onPressed: () {
-                Navigator.of(context).popUntil((route) => route.isFirst);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Split confirmed for "${widget.groupName}" (${widget.members.length} members)!',
-                    ),
-                    backgroundColor: const Color(0xFF111713),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => SplitSummaryScreen(
+                      groupName: widget.groupName,
+                      members: widget.members,
+                      memberExpenses: _memberExpenses,
                     ),
                   ),
                 );
