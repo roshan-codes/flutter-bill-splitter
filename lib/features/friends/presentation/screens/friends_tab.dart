@@ -10,6 +10,7 @@ import 'package:flutter_bill_splitter/features/friends/presentation/widgets/add_
 import 'package:flutter_bill_splitter/features/friends/presentation/widgets/create_group_bottom_sheet.dart';
 import 'package:flutter_bill_splitter/features/friends/presentation/widgets/friend_list_item.dart';
 import 'package:flutter_bill_splitter/features/friends/presentation/widgets/group_list_item.dart';
+import 'package:flutter_bill_splitter/features/friends/presentation/widgets/import_contacts_sheet.dart';
 
 /// Friends & Groups view tab.
 class FriendsTab extends StatefulWidget {
@@ -43,6 +44,15 @@ class _FriendsTabState extends State<FriendsTab> {
       onAddFriend: () => AddFriendDialog.show(
         context,
         onFriendAdded: widget.onFriendAdded,
+      ),
+      onImportContacts: () => ImportContactsSheet.show(
+        context,
+        existingFriends: widget.friends,
+        onContactsImported: (imported) {
+          for (final friend in imported) {
+            widget.onFriendAdded(friend);
+          }
+        },
       ),
       onCreateGroup: () => CreateGroupBottomSheet.show(
         context,

@@ -45,10 +45,13 @@ void main() {
     await tester.tap(addBtn);
     await tester.pumpAndSettle();
 
-    // Verify Choose an Option modal displays both options
+    // Verify Choose an Option modal displays all three options without subtitles
     expect(find.text('Choose an Option'), findsOneWidget);
     expect(find.text('Add New Friend'), findsOneWidget);
+    expect(find.text('Import from Contacts'), findsOneWidget);
     expect(find.text('Create New Group'), findsOneWidget);
+    expect(find.text('Add an individual friend with name & phone'), findsNothing);
+    expect(find.text('Select multiple friends to create a split group'), findsNothing);
 
     // Select 'Add New Friend'
     await tester.tap(find.text('Add New Friend'));
@@ -70,6 +73,44 @@ void main() {
 
     // Verify new friend added to the list
     expect(find.text('Pooja Hegde'), findsOneWidget);
+  });
+
+  testWidgets(
+      'Friends tab + button -> Import from Contacts opens bottom sheet and imports contact',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp(home: MainScreen()));
+
+    // Switch to friends tab
+    final friendsTab = find.byIcon(Icons.people_outline_rounded);
+    await tester.tap(friendsTab);
+    await tester.pumpAndSettle();
+
+    // Tap + button
+    final addBtn = find.byTooltip('Add');
+    await tester.tap(addBtn);
+    await tester.pumpAndSettle();
+
+    // Tap 'Import from Contacts'
+    await tester.tap(find.text('Import from Contacts'));
+    await tester.pumpAndSettle();
+
+    // Verify Import Contacts bottom sheet is displayed
+    expect(find.text('Search contacts...'), findsOneWidget);
+    expect(find.text('Rahul Sharma'), findsOneWidget);
+
+    // Tap contact to select
+    await tester.tap(find.text('Rahul Sharma'));
+    await tester.pumpAndSettle();
+
+    // Verify button says 'Import 1 Contact'
+    expect(find.widgetWithText(ElevatedButton, 'Import 1 Contact'), findsOneWidget);
+
+    // Tap import button
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Import 1 Contact'));
+    await tester.pumpAndSettle();
+
+    // Verify contact imported into Friends tab
+    expect(find.text('Rahul Sharma'), findsOneWidget);
   });
 
   testWidgets(
