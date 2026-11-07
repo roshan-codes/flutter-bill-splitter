@@ -44,7 +44,7 @@ void main() {
     expect(find.text('+91 98765 00000'), findsOneWidget);
   });
 
-  testWidgets('Add Expense bottom sheet calculates split between persons', (WidgetTester tester) async {
+  testWidgets('Full screen AddExpenseScreen calculates split between persons', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
     // Tap center + action button in bottom bar
@@ -52,28 +52,32 @@ void main() {
     await tester.tap(centerAddBtn);
     await tester.pumpAndSettle();
 
-    // Verify modal is open
+    // Verify full screen AddExpenseScreen is pushed
     expect(find.text('Add & Split Expense'), findsOneWidget);
+    expect(find.text('Expense Details'), findsOneWidget);
     expect(find.text('Group Name'), findsOneWidget);
     expect(find.text('Total Amount'), findsOneWidget);
-    expect(find.text('Total Person'), findsOneWidget);
+    expect(find.text('Total Persons'), findsOneWidget);
 
     // Enter Group Name: 'Goa Trip', Amount: '3000', Persons: '3'
-    await tester.enterText(find.widgetWithText(TextFormField, 'Group Name'), 'Goa Trip');
-    await tester.enterText(find.widgetWithText(TextFormField, 'Total Amount'), '3000');
-    await tester.enterText(find.widgetWithText(TextFormField, 'Total Person'), '3');
+    await tester.enterText(find.widgetWithText(TextFormField, 'e.g. Goa Trip, Dinner, Flat Rent'), 'Goa Trip');
+    await tester.enterText(find.widgetWithText(TextFormField, '0.00'), '3000');
+    await tester.enterText(find.widgetWithText(TextFormField, '2'), '3');
     await tester.pumpAndSettle();
 
     // Calculated split: 3000 / 3 = ₹1000.00
     expect(find.text('₹1000.00'), findsOneWidget);
-    expect(find.text('Group: Goa Trip'), findsOneWidget);
+    expect(find.text('Goa Trip'), findsWidgets);
 
-    // Tap Confirm & Split
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Confirm & Split'));
+    // Scroll into view & tap Confirm & Split button
+    final confirmBtn = find.widgetWithText(ElevatedButton, 'Confirm & Split');
+    await tester.ensureVisible(confirmBtn);
+    await tester.pumpAndSettle();
+    await tester.tap(confirmBtn);
     await tester.pumpAndSettle();
 
-    // Verify modal dismissed and SnackBar shown
-    expect(find.text('Add & Split Expense'), findsNothing);
+    // Verify screen popped back to MainScreen and SnackBar is shown
+    expect(find.text('Expense Details'), findsNothing);
     expect(find.textContaining('Expense for "Goa Trip" split: ₹1000.00'), findsOneWidget);
   });
 }
