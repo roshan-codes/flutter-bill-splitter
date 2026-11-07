@@ -44,7 +44,7 @@ void main() {
     expect(find.text('+91 98765 00000'), findsOneWidget);
   });
 
-  testWidgets('Full screen AddExpenseScreen calculates split between persons', (WidgetTester tester) async {
+  testWidgets('AddExpenseScreen has Group Name, empty rectangular container, and friends list below', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
     // Tap center + action button in bottom bar
@@ -54,20 +54,26 @@ void main() {
 
     // Verify full screen AddExpenseScreen is pushed
     expect(find.text('Add & Split Expense'), findsOneWidget);
-    expect(find.text('Expense Details'), findsOneWidget);
     expect(find.text('Group Name'), findsOneWidget);
-    expect(find.text('Total Amount'), findsOneWidget);
-    expect(find.text('Total Persons'), findsOneWidget);
 
-    // Enter Group Name: 'Goa Trip', Amount: '3000', Persons: '3'
+    // Verify Total Amount and Total Persons and Split Per Person are removed
+    expect(find.text('Total Amount'), findsNothing);
+    expect(find.text('Total Persons'), findsNothing);
+    expect(find.text('Split Per Person'), findsNothing);
+
+    // Verify friends list items appear below
+    expect(find.text('Friends'), findsWidgets);
+    expect(find.text('Rahul Sharma'), findsOneWidget);
+    expect(find.text('Sneha Patel'), findsOneWidget);
+    expect(find.text('Amit Verma'), findsOneWidget);
+
+    // Enter Group Name
     await tester.enterText(find.widgetWithText(TextFormField, 'e.g. Goa Trip, Dinner, Flat Rent'), 'Goa Trip');
-    await tester.enterText(find.widgetWithText(TextFormField, '0.00'), '3000');
-    await tester.enterText(find.widgetWithText(TextFormField, '2'), '3');
     await tester.pumpAndSettle();
 
-    // Calculated split: 3000 / 3 = ₹1000.00
-    expect(find.text('₹1000.00'), findsOneWidget);
-    expect(find.text('Goa Trip'), findsWidgets);
+    // Select first friend (Rahul Sharma)
+    await tester.tap(find.text('Rahul Sharma'));
+    await tester.pumpAndSettle();
 
     // Scroll into view & tap Confirm & Split button
     final confirmBtn = find.widgetWithText(ElevatedButton, 'Confirm & Split');
@@ -77,7 +83,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify screen popped back to MainScreen and SnackBar is shown
-    expect(find.text('Expense Details'), findsNothing);
-    expect(find.textContaining('Expense for "Goa Trip" split: ₹1000.00'), findsOneWidget);
+    expect(find.text('Add & Split Expense'), findsNothing);
+    expect(find.textContaining('Group "Goa Trip" created with 1 friends selected!'), findsOneWidget);
   });
 }

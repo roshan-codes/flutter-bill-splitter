@@ -200,7 +200,7 @@ class _MainScreenState extends State<MainScreen> {
   void _openAddExpenseScreen() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const AddExpenseScreen(),
+        builder: (context) => AddExpenseScreen(friends: _friends),
       ),
     );
   }
@@ -462,9 +462,14 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-/// Full-screen view for Adding and Calculating an Expense Split.
+/// Full-screen view for Adding an Expense with a rectangular container and Friends list.
 class AddExpenseScreen extends StatefulWidget {
-  const AddExpenseScreen({super.key});
+  final List<Friend> friends;
+
+  const AddExpenseScreen({
+    super.key,
+    required this.friends,
+  });
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -472,38 +477,17 @@ class AddExpenseScreen extends StatefulWidget {
 
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _groupNameController = TextEditingController();
-  final _amountController = TextEditingController();
-  final _personController = TextEditingController(text: '2');
   final _formKey = GlobalKey<FormState>();
-
-  double _calculatedSplit = 0.0;
-
-  void _updateCalculation() {
-    final amount = double.tryParse(_amountController.text.trim()) ?? 0.0;
-    final persons = int.tryParse(_personController.text.trim()) ?? 0;
-    setState(() {
-      if (persons > 0 && amount > 0) {
-        _calculatedSplit = amount / persons;
-      } else {
-        _calculatedSplit = 0.0;
-      }
-    });
-  }
+  final Set<int> _selectedFriendIndices = {};
 
   @override
   void dispose() {
     _groupNameController.dispose();
-    _amountController.dispose();
-    _personController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final totalAmount = double.tryParse(_amountController.text.trim()) ?? 0.0;
-    final totalPersons = int.tryParse(_personController.text.trim()) ?? 0;
-    final groupName = _groupNameController.text.trim();
-
     return Scaffold(
       backgroundColor: const Color(0xFFF7FAF7),
       appBar: AppBar(
@@ -535,47 +519,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header badge & description
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF86E829).withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.calculate_rounded,
-                        color: Color(0xFF131A15),
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Expense Details',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF131A15),
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Enter group info to calculate equal split',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF808B82),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 28),
-
                 // Group Name Field
                 const Text(
                   'Group Name',
@@ -606,7 +549,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       borderSide: const BorderSide(color: Color(0xFF86E829), width: 2),
                     ),
                   ),
-                  onChanged: (_) => _updateCalculation(),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Please enter group name';
@@ -614,237 +556,171 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
-                // Total Amount and Total Persons Row
+                // Rectangular Empty Container
+                Container(
+                  width: double.infinity,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: const Color(0xFFDCE5DC),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.02),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 28),
+
+                // Friends Section Header
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(
-                      flex: 3,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Total Amount',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF131A15),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _amountController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: InputDecoration(
-                              hintText: '0.00',
-                              filled: true,
-                              fillColor: Colors.white,
-                              prefixIcon: const Icon(Icons.currency_rupee, color: Color(0xFF808B82)),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: Color(0xFFE5EDE4)),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: Color(0xFFE5EDE4)),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: Color(0xFF86E829), width: 2),
-                              ),
-                            ),
-                            onChanged: (_) => _updateCalculation(),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Enter amount';
-                              }
-                              final val = double.tryParse(value.trim());
-                              if (val == null || val <= 0) {
-                                return 'Invalid amount';
-                              }
-                              return null;
-                            },
-                          ),
-                        ],
+                    const Text(
+                      'Friends',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF131A15),
                       ),
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      flex: 2,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Total Persons',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF131A15),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _personController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              hintText: '2',
-                              filled: true,
-                              fillColor: Colors.white,
-                              prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF808B82)),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: Color(0xFFE5EDE4)),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: Color(0xFFE5EDE4)),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: Color(0xFF86E829), width: 2),
-                              ),
-                            ),
-                            onChanged: (_) => _updateCalculation(),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Enter count';
-                              }
-                              final val = int.tryParse(value.trim());
-                              if (val == null || val <= 0) {
-                                return 'Min 1';
-                              }
-                              return null;
-                            },
-                          ),
-                        ],
+                    Text(
+                      '${widget.friends.length} available',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF808B82),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 12),
 
-                // Live Calculation Result Card
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF111713),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.18),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
+                // Items from Friend List
+                if (widget.friends.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFFE5EDE4)),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'No friends in your list.\nAdd friends in the Friends tab.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Color(0xFF808B82), fontSize: 14),
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Split Per Person',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
+                    ),
+                  )
+                else
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: widget.friends.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final friend = widget.friends[index];
+                      final isSelected = _selectedFriendIndices.contains(index);
+                      final initials = friend.name
+                          .trim()
+                          .split(' ')
+                          .where((e) => e.isNotEmpty)
+                          .map((e) => e[0].toUpperCase())
+                          .take(2)
+                          .join();
+
+                      return InkWell(
+                        onTap: () {
+                          setState(() {
+                            if (isSelected) {
+                              _selectedFriendIndices.remove(index);
+                            } else {
+                              _selectedFriendIndices.add(index);
+                            }
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isSelected ? const Color(0xFF86E829) : const Color(0xFFE5EDE4),
+                              width: isSelected ? 1.5 : 1,
                             ),
-                          ),
-                          if (totalPersons > 0)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF86E829).withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.02),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
-                              child: Text(
-                                '$totalPersons people',
-                                style: const TextStyle(
-                                  color: Color(0xFF86E829),
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 20,
+                                backgroundColor: isSelected
+                                    ? const Color(0xFF86E829)
+                                    : const Color(0xFF86E829).withOpacity(0.18),
+                                child: Text(
+                                  initials.isNotEmpty ? initials : '?',
+                                  style: TextStyle(
+                                    color: isSelected ? const Color(0xFF10210A) : const Color(0xFF284821),
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 14,
+                                  ),
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            _calculatedSplit > 0
-                                ? '₹${_calculatedSplit.toStringAsFixed(2)}'
-                                : '₹0.00',
-                            style: const TextStyle(
-                              color: Color(0xFF86E829),
-                              fontSize: 38,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            '/ person',
-                            style: TextStyle(
-                              color: Colors.white60,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (groupName.isNotEmpty || totalAmount > 0) ...[
-                        const Divider(color: Colors.white12, height: 28),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            if (groupName.isNotEmpty)
-                              Flexible(
-                                child: Row(
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Icon(
-                                      Icons.groups_outlined,
-                                      color: Colors.white54,
-                                      size: 16,
+                                    Text(
+                                      friend.name,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF131A15),
+                                      ),
                                     ),
-                                    const SizedBox(width: 6),
-                                    Flexible(
-                                      child: Text(
-                                        groupName,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      friend.phone,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF808B82),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            if (totalAmount > 0)
-                              Text(
-                                'Total: ₹${totalAmount.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                              Icon(
+                                isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                                color: isSelected ? const Color(0xFF86E829) : const Color(0xFFC4CDC3),
+                                size: 22,
                               ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ],
-                    ],
+                      );
+                    },
                   ),
-                ),
-                const SizedBox(height: 36),
+                const SizedBox(height: 32),
 
-                // Confirm & Split Action Button
+                // Confirm Action Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -860,13 +736,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     onPressed: () {
                       if (_formKey.currentState?.validate() ?? false) {
                         final gName = _groupNameController.text.trim();
-                        final perPerson = _calculatedSplit;
-                        final count = totalPersons;
+                        final selectedCount = _selectedFriendIndices.length;
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              'Expense for "$gName" split: ₹${perPerson.toStringAsFixed(2)} per person among $count people!',
+                              'Group "$gName" created with $selectedCount friends selected!',
                             ),
                             backgroundColor: const Color(0xFF111713),
                             behavior: SnackBarBehavior.floating,
