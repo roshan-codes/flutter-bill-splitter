@@ -1,24 +1,23 @@
-name: dark_glassmorphic_bottom_bar
-description: A sleek, customizable dark glassmorphic bottom navigation bar for Flutter featuring frosted glass blur, smooth tab transitions, and center action button.
-version: 0.0.2
-repository: https://github.com/roshan-codes/dark-glass-navbar
-issue_tracker: https://github.com/roshan-codes/dark-glass-navbar/issues
-topics:
-  - navigation
-  - bottom-navigation-bar
-  - glassmorphism
-  - dark-mode
-  - ui
+name: flutter_bill_splitter
+description: "A sleek, modern dark-themed Bill Splitter Flutter application."
+publish_to: 'none'
+
+version: 1.0.0+1
 
 environment:
-  sdk: ^3.0.0
-  flutter: ">=3.10.0"
+  sdk: ^3.5.4
 
 dependencies:
   flutter:
     sdk: flutter
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  dark_glassmorphic_bottom_bar: ^0.0.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

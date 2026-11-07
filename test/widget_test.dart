@@ -1,77 +1,46 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dark_glassmorphic_bottom_bar/dark_glassmorphic_bottom_bar.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bill_splitter/main.dart';
 
 void main() {
-  testWidgets('DarkGlassmorphicBottomBar renders and switches tabs correctly', (WidgetTester tester) async {
-    int selectedIndex = 0;
-    bool actionTapped = false;
+  testWidgets('Renders bottom navigation bar and switches tabs', (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: StatefulBuilder(
-          builder: (context, setState) {
-            return Scaffold(
-              bottomNavigationBar: DarkGlassmorphicBottomBar(
-                selectedIndex: selectedIndex,
-                onTabSelected: (index) {
-                  setState(() {
-                    selectedIndex = index;
-                  });
-                },
-                centerAction: DarkGlassActionItem(
-                  icon: Icons.add,
-                  onTap: () {
-                    actionTapped = true;
-                  },
-                ),
-                items: const [
-                  DarkGlassNavItem(
-                    icon: Icons.home_outlined,
-                    activeIcon: Icons.home_rounded,
-                    label: 'Home',
-                  ),
-                  DarkGlassNavItem(
-                    icon: Icons.people_outline_rounded,
-                    activeIcon: Icons.people_rounded,
-                    label: 'Friends',
-                  ),
-                  DarkGlassNavItem(
-                    icon: Icons.access_time_rounded,
-                    activeIcon: Icons.access_time_filled_rounded,
-                    label: 'Activity',
-                  ),
-                  DarkGlassNavItem(
-                    icon: Icons.person_outline_rounded,
-                    activeIcon: Icons.person_rounded,
-                    label: 'Profile',
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-    );
+    // Initially on Home tab
+    expect(find.text('Home'), findsWidgets);
 
-    // Initial state: index 0 is active (home_rounded is rendered)
-    expect(find.byIcon(Icons.home_rounded), findsOneWidget);
-
-    // Tap on friends tab (tab index 1)
+    // Tap on friends tab
     final friendsTab = find.byIcon(Icons.people_outline_rounded);
     expect(friendsTab, findsOneWidget);
     await tester.tap(friendsTab);
     await tester.pumpAndSettle();
 
-    expect(selectedIndex, 1);
-    expect(find.byIcon(Icons.people_rounded), findsOneWidget);
+    // Now on Friends tab
+    expect(find.text('Friends'), findsOneWidget);
 
-    // Tap on center action button (+)
-    final addAction = find.byIcon(Icons.add);
-    expect(addAction, findsOneWidget);
-    await tester.tap(addAction);
+    // Verify + button exists in Friends header row
+    final addFriendBtn = find.byTooltip('Add Friend');
+    expect(addFriendBtn, findsOneWidget);
+
+    // Tap + button to open Add Friend dialog
+    await tester.tap(addFriendBtn);
     await tester.pumpAndSettle();
 
-    expect(actionTapped, isTrue);
+    expect(find.text('Add Friend'), findsOneWidget);
+    expect(find.text('Friend Name'), findsOneWidget);
+    expect(find.text('Mobile Number'), findsOneWidget);
+
+    // Enter name & phone
+    await tester.enterText(find.widgetWithText(TextFormField, 'Friend Name'), 'Pooja Hegde');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Mobile Number'), '+91 98765 00000');
+    await tester.pumpAndSettle();
+
+    // Tap Add button
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Add'));
+    await tester.pumpAndSettle();
+
+    // Verify newly added friend appears in the list
+    expect(find.text('Pooja Hegde'), findsOneWidget);
+    expect(find.text('+91 98765 00000'), findsOneWidget);
   });
 }

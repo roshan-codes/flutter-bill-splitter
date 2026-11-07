@@ -1,121 +1,504 @@
 import 'package:flutter/material.dart';
-import 'dark_glassmorphic_bottom_bar.dart';
+import 'package:flutter/services.dart';
+import 'package:dark_glassmorphic_bottom_bar/dark_glassmorphic_bottom_bar.dart';
 
 void main() {
-  runApp(const ExampleApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.black,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
+
+  runApp(const MyApp());
 }
 
-class ExampleApp extends StatelessWidget {
-  const ExampleApp({super.key});
+class Friend {
+  final String name;
+  final String phone;
+
+  const Friend({required this.name, required this.phone});
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Dark Glassmorphic Bottom Bar',
+      title: 'Bill Splitter',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(useMaterial3: true).copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0F1511),
+      theme: ThemeData(
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFFF7FAF7),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF86E829),
+          brightness: Brightness.light,
+        ),
       ),
-      home: const HomeScreen(),
+      home: const MainScreen(),
     );
   }
 }
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  final List<String> _titles = const [
+  final List<String> _tabTitles = const [
     'Home',
     'Friends',
     'Activity',
     'Profile',
   ];
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      appBar: AppBar(
-        title: Text(_titles[_currentIndex]),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: Stack(
-        children: [
-          Positioned(
-            top: 100,
-            left: -50,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [Color(0xFF86E829), Colors.transparent],
-                ),
+  final List<IconData> _tabIcons = const [
+    Icons.home_outlined,
+    Icons.people_outline_rounded,
+    Icons.access_time_rounded,
+    Icons.person_outline_rounded,
+  ];
+
+  final List<IconData> _tabActiveIcons = const [
+    Icons.home_rounded,
+    Icons.people_rounded,
+    Icons.access_time_filled_rounded,
+    Icons.person_rounded,
+  ];
+
+  final List<Friend> _friends = [
+    const Friend(name: 'Rahul Sharma', phone: '+91 98765 43210'),
+    const Friend(name: 'Sneha Patel', phone: '+91 91234 56789'),
+    const Friend(name: 'Amit Verma', phone: '+91 99887 76655'),
+  ];
+
+  void _showAddFriendDialog() {
+    final nameController = TextEditingController();
+    final phoneController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF86E829)),
+            SizedBox(width: 10),
+            Text(
+              'Add Friend',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF131A15),
               ),
             ),
-          ),
-          Positioned(
-            bottom: 40,
-            right: -50,
-            child: Container(
-              width: 280,
-              height: 280,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [Color(0xFF22A847), Colors.transparent],
-                ),
-              ),
-            ),
-          ),
-          ListView.builder(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
-            itemCount: 15,
-            itemBuilder: (context, index) {
-              return Card(
-                color: const Color(0xFF161E17),
-                margin: const EdgeInsets.only(bottom: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(
-                    color: Colors.white.withOpacity(0.08),
+          ],
+        ),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: nameController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'Friend Name',
+                  hintText: 'Enter name',
+                  prefixIcon: const Icon(Icons.person_outline),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: Color(0xFF86E829), width: 2),
                   ),
                 ),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: const Color(0xFF86E829).withOpacity(0.2),
-                    child: Text(
-                      '${index + 1}',
-                      style: const TextStyle(
-                        color: Color(0xFF86E829),
-                        fontWeight: FontWeight.bold,
-                      ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter a name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: 'Mobile Number',
+                  hintText: 'Enter mobile no',
+                  prefixIcon: const Icon(Icons.phone_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: Color(0xFF86E829), width: 2),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter mobile number';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF86E829),
+              foregroundColor: const Color(0xFF10210A),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                setState(() {
+                  _friends.add(
+                    Friend(
+                      name: nameController.text.trim(),
+                      phone: phoneController.text.trim(),
                     ),
-                  ),
-                  title: Text(
-                    '${_titles[_currentIndex]} Card #$index',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    'Scroll down to observe the glassmorphic backdrop blur.',
-                    style: TextStyle(color: Colors.white.withOpacity(0.6)),
-                  ),
-                ),
-              );
+                  );
+                });
+                Navigator.pop(context);
+              }
             },
+            child: const Text('Add', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
+    );
+  }
+
+  void _showAddExpenseModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Add Expense',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF131A15),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Create a new expense or split a bill with friends.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF86E829),
+                    foregroundColor: const Color(0xFF10210A),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFriendsTab() {
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Horizontal Row with Title "Friends" and "+" Icon Button
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 16, 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Friends',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF131A15),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Add Friend',
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF86E829),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF86E829).withOpacity(0.35),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.add,
+                      color: Color(0xFF10210A),
+                      size: 22,
+                    ),
+                  ),
+                  onPressed: _showAddFriendDialog,
+                ),
+              ],
+            ),
+          ),
+
+          // List of Friends Below
+          Expanded(
+            child: _friends.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.people_outline_rounded,
+                          size: 64,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No friends yet',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Tap + to add your first friend',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
+                    itemCount: _friends.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final friend = _friends[index];
+                      final initials = friend.name
+                          .trim()
+                          .split(' ')
+                          .where((e) => e.isNotEmpty)
+                          .map((e) => e[0].toUpperCase())
+                          .take(2)
+                          .join();
+
+                      return Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: const Color(0xFFE5EDE4),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor: const Color(0xFF86E829).withOpacity(0.2),
+                              child: Text(
+                                initials.isNotEmpty ? initials : '?',
+                                style: const TextStyle(
+                                  color: Color(0xFF284821),
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    friend.name,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF131A15),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.phone_outlined,
+                                        size: 14,
+                                        color: Color(0xFF808B82),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        friend.phone,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          color: Color(0xFF808B82),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete_outline_rounded,
+                                color: Colors.redAccent,
+                                size: 20,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _friends.removeAt(index);
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDefaultTab(int index) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: const BoxDecoration(
+              color: Color(0xFF86E829),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              _tabActiveIcons[index],
+              size: 40,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _tabTitles[index],
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF131A15),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isFriendsTab = _currentIndex == 1;
+
+    return Scaffold(
+      extendBody: true,
+      appBar: isFriendsTab
+          ? null
+          : AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              centerTitle: true,
+              title: Text(
+                _tabTitles[_currentIndex],
+                style: const TextStyle(
+                  color: Color(0xFF131A15),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+      body: isFriendsTab ? _buildFriendsTab() : _buildDefaultTab(_currentIndex),
       bottomNavigationBar: DarkGlassmorphicBottomBar(
         selectedIndex: _currentIndex,
         onTabSelected: (index) {
@@ -125,37 +508,16 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         centerAction: DarkGlassActionItem(
           icon: Icons.add,
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Center Action Button Tapped!'),
-                duration: Duration(seconds: 1),
-              ),
-            );
-          },
+          onTap: _showAddExpenseModal,
         ),
-        items: const [
-          DarkGlassNavItem(
-            icon: Icons.home_outlined,
-            activeIcon: Icons.home_rounded,
-            label: 'Home',
+        items: List.generate(
+          _tabTitles.length,
+          (i) => DarkGlassNavItem(
+            icon: _tabIcons[i],
+            activeIcon: _tabActiveIcons[i],
+            label: _tabTitles[i],
           ),
-          DarkGlassNavItem(
-            icon: Icons.people_outline_rounded,
-            activeIcon: Icons.people_rounded,
-            label: 'Friends',
-          ),
-          DarkGlassNavItem(
-            icon: Icons.access_time_rounded,
-            activeIcon: Icons.access_time_filled_rounded,
-            label: 'Activity',
-          ),
-          DarkGlassNavItem(
-            icon: Icons.person_outline_rounded,
-            activeIcon: Icons.person_rounded,
-            label: 'Profile',
-          ),
-        ],
+        ),
       ),
     );
   }
