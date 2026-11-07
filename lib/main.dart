@@ -92,60 +92,8 @@ class _MainScreenState extends State<MainScreen> {
 
   int _friendsSubTab = 0; // 0: Friends, 1: Groups
 
-  final List<Friend> _friends = [
-    const Friend(
-      name: 'Alex Johnson',
-      phone: '+91 98765 43210',
-      avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',
-    ),
-    const Friend(
-      name: 'David Kalu',
-      phone: '+91 91234 56789',
-      avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80',
-    ),
-    const Friend(
-      name: 'Sophia Martinez',
-      phone: '+91 99887 76655',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-    ),
-    const Friend(
-      name: 'Lucas Silva',
-      phone: '+91 98112 23344',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-    ),
-    const Friend(
-      name: 'Elena Rostova',
-      phone: '+91 98223 34455',
-      avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
-    ),
-  ];
-
-  late final List<Group> _groups = [
-    Group(
-      name: 'Hangout',
-      members: [
-        _friends[0],
-        _friends[1],
-        _friends[2],
-        _friends[3],
-        _friends[4],
-      ],
-    ),
-    Group(
-      name: 'Dineout',
-      members: [
-        _friends[2],
-        _friends[4],
-      ],
-    ),
-    Group(
-      name: 'Flatmates',
-      members: [
-        _friends[0],
-        _friends[1],
-      ],
-    ),
-  ];
+  final List<Friend> _friends = [];
+  final List<Group> _groups = [];
 
   void _showAddOptionsMenu() {
     showModalBottomSheet(
@@ -1082,24 +1030,23 @@ class AddExpenseScreen extends StatefulWidget {
 
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _groupNameController = TextEditingController();
+  final _searchController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final Set<int> _selectedFriendIndices = {};
   int? _selectedGroupIndex;
   late List<Group> _availableGroups;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _availableGroups = List.from(widget.groups);
-    // Pre-select initial friends so the container shows selected contacts on open
-    for (int i = 0; i < widget.friends.length && i < 4; i++) {
-      _selectedFriendIndices.add(i);
-    }
   }
 
   @override
   void dispose() {
     _groupNameController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -1181,28 +1128,37 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     const SizedBox(height: 16),
                     const Text('Select Members', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 8),
-                    ...List.generate(widget.friends.length, (idx) {
-                      final friend = widget.friends[idx];
-                      final isSelected = selectedMemberIndices.contains(idx);
-                      return ListTile(
-                        dense: true,
-                        title: Text(friend.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text(friend.phone),
-                        trailing: Icon(
-                          isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                          color: isSelected ? const Color(0xFF86E829) : Colors.grey,
+                    if (widget.friends.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(
+                          'No friends added yet to add to group.',
+                          style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
                         ),
-                        onTap: () {
-                          setModalState(() {
-                            if (isSelected) {
-                              selectedMemberIndices.remove(idx);
-                            } else {
-                              selectedMemberIndices.add(idx);
-                            }
-                          });
-                        },
-                      );
-                    }),
+                      )
+                    else
+                      ...List.generate(widget.friends.length, (idx) {
+                        final friend = widget.friends[idx];
+                        final isSelected = selectedMemberIndices.contains(idx);
+                        return ListTile(
+                          dense: true,
+                          title: Text(friend.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle: Text(friend.phone),
+                          trailing: Icon(
+                            isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                            color: isSelected ? const Color(0xFF86E829) : Colors.grey,
+                          ),
+                          onTap: () {
+                            setModalState(() {
+                              if (isSelected) {
+                                selectedMemberIndices.remove(idx);
+                              } else {
+                                selectedMemberIndices.add(idx);
+                              }
+                            });
+                          },
+                        );
+                      }),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -1288,43 +1244,52 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 300),
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: widget.friends.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF0F4F0)),
-                      itemBuilder: (context, idx) {
-                        final friend = widget.friends[idx];
-                        final isSelected = selectedIndices.contains(idx);
-                        return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                          leading: CircleAvatar(
-                            backgroundColor: const Color(0xFF86E829).withOpacity(0.2),
-                            child: Text(
-                              friend.name.isNotEmpty ? friend.name[0] : '?',
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF284821)),
+                  if (widget.friends.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        'No friends in your list yet.\nAdd friends in the Friends tab.',
+                        style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                      ),
+                    )
+                  else
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 300),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: widget.friends.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF0F4F0)),
+                        itemBuilder: (context, idx) {
+                          final friend = widget.friends[idx];
+                          final isSelected = selectedIndices.contains(idx);
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            leading: CircleAvatar(
+                              backgroundColor: const Color(0xFF86E829).withOpacity(0.2),
+                              child: Text(
+                                friend.name.isNotEmpty ? friend.name[0] : '?',
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF284821)),
+                              ),
                             ),
-                          ),
-                          title: Text(friend.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                          subtitle: Text(friend.phone, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                          trailing: Icon(
-                            isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                            color: isSelected ? const Color(0xFF86E829) : Colors.grey.shade400,
-                          ),
-                          onTap: () {
-                            setModalState(() {
-                              if (isSelected) {
-                                selectedIndices.remove(idx);
-                              } else {
-                                selectedIndices.add(idx);
-                              }
-                            });
-                          },
-                        );
-                      },
+                            title: Text(friend.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                            subtitle: Text(friend.phone, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                            trailing: Icon(
+                              isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                              color: isSelected ? const Color(0xFF86E829) : Colors.grey.shade400,
+                            ),
+                            onTap: () {
+                              setModalState(() {
+                                if (isSelected) {
+                                  selectedIndices.remove(idx);
+                                } else {
+                                  selectedIndices.add(idx);
+                                }
+                              });
+                            },
+                          );
+                        },
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -1361,6 +1326,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Filter available friends based on search query (by friend name/phone or group name)
+    final filteredFriends = widget.friends.where((f) {
+      if (_searchQuery.isEmpty) return true;
+      if (f.name.toLowerCase().contains(_searchQuery) || f.phone.toLowerCase().contains(_searchQuery)) {
+        return true;
+      }
+      final matchingGroups = _availableGroups.where((g) => g.name.toLowerCase().contains(_searchQuery));
+      return matchingGroups.any((g) => g.members.any((m) => m.name == f.name || m.phone == f.phone));
+    }).toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7FAF7),
       appBar: AppBar(
@@ -1392,7 +1367,213 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Select group Section (matching user's screenshot)
+                // 1. Group Name Field
+                const Text(
+                  'Group Name',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF131A15),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _groupNameController,
+                  decoration: InputDecoration(
+                    hintText: 'e.g. Goa Trip, Dinner, Flat Rent',
+                    filled: true,
+                    fillColor: Colors.white,
+                    prefixIcon: const Icon(Icons.groups_outlined, color: Color(0xFF808B82)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Color(0xFFE5EDE4)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Color(0xFFE5EDE4)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Color(0xFF86E829), width: 2),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter group name';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // 2. Selected Person Container (Rectangular Container for Selected Contacts)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Selected Members',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF131A15),
+                      ),
+                    ),
+                    if (_selectedFriendIndices.isNotEmpty)
+                      Text(
+                        '${_selectedFriendIndices.length} selected',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF284821),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  height: 110,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: const Color(0xFFDCE5DC),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.02),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: _selectedFriendIndices.isEmpty
+                      ? Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.touch_app_outlined,
+                                color: Colors.grey.shade400,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Select friends below to add them here',
+                                style: TextStyle(
+                                  color: Colors.grey.shade500,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _selectedFriendIndices.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 18),
+                          itemBuilder: (context, idx) {
+                            final friendIndex = _selectedFriendIndices.elementAt(idx);
+                            final friend = widget.friends[friendIndex];
+                            final initials = friend.name
+                                .trim()
+                                .split(' ')
+                                .where((e) => e.isNotEmpty)
+                                .map((e) => e[0].toUpperCase())
+                                .take(2)
+                                .join();
+
+                            return Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                // Contact Avatar Squircle
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Container(
+                                    width: 72,
+                                    height: 72,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF86E829).withOpacity(0.18),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: const Color(0xFFE5EDE4),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: friend.avatarUrl != null
+                                        ? Image.network(
+                                            friend.avatarUrl!,
+                                            width: 72,
+                                            height: 72,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) => Center(
+                                              child: Text(
+                                                initials,
+                                                style: const TextStyle(
+                                                  color: Color(0xFF284821),
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 20,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        : Center(
+                                            child: Text(
+                                              initials,
+                                              style: const TextStyle(
+                                                color: Color(0xFF284821),
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 20,
+                                              ),
+                                            ),
+                                          ),
+                                  ),
+                                ),
+
+                                // Top-Right White Circle Badge with 'x' icon
+                                Positioned(
+                                  top: -5,
+                                  right: -5,
+                                  child: GestureDetector(
+                                    key: ValueKey('remove_selected_${friend.name}'),
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedFriendIndices.remove(friendIndex);
+                                      });
+                                    },
+                                    child: Container(
+                                      width: 22,
+                                      height: 22,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.25),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 1),
+                                          ),
+                                        ],
+                                      ),
+                                      child: const Icon(
+                                        Icons.close_rounded,
+                                        color: Color(0xFF131A15),
+                                        size: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                ),
+                const SizedBox(height: 24),
+
+                // 3. Group List ("Select group" horizontally scrollable cards)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1434,10 +1615,20 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 SizedBox(
                   height: 170,
                   child: _availableGroups.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No groups available. Tap + to create one.',
-                            style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                      ? Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFE5EDE4)),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'No groups created yet.\nTap + above to create a group.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                            ),
                           ),
                         )
                       : ListView.separated(
@@ -1597,192 +1788,83 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           },
                         ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
-                // Group Name Field
-                const Text(
-                  'Group Name',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF131A15),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _groupNameController,
-                  decoration: InputDecoration(
-                    hintText: 'e.g. Goa Trip, Dinner, Flat Rent',
-                    filled: true,
-                    fillColor: Colors.white,
-                    prefixIcon: const Icon(Icons.groups_outlined, color: Color(0xFF808B82)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFE5EDE4)),
+                // 4. Search by Group or Name Option (before friends list)
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: (val) {
+                            setState(() {
+                              _searchQuery = val.trim().toLowerCase();
+                            });
+                          },
+                          decoration: const InputDecoration(
+                            hintText: 'Search name, group',
+                            hintStyle: TextStyle(
+                              color: Color(0xFFB0B8B0),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search_rounded,
+                              color: Color(0xFF808B82),
+                              size: 22,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      ),
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFE5EDE4)),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7B731),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFF7B731).withOpacity(0.35),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.search_rounded,
+                          color: Color(0xFF10210A),
+                          size: 24,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _searchQuery = _searchController.text.trim().toLowerCase();
+                          });
+                        },
+                      ),
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFF86E829), width: 2),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter group name';
-                    }
-                    return null;
-                  },
+                  ],
                 ),
                 const SizedBox(height: 24),
 
-                // Rectangular Container for Selected Contacts (like screenshot)
-                Container(
-                  width: double.infinity,
-                  height: 110,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
-                      color: const Color(0xFFDCE5DC),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.02),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: _selectedFriendIndices.isEmpty
-                      ? Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.touch_app_outlined,
-                                color: Colors.grey.shade400,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Select friends below to add them here',
-                                style: TextStyle(
-                                  color: Colors.grey.shade500,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _selectedFriendIndices.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: 18),
-                          itemBuilder: (context, idx) {
-                            final friendIndex = _selectedFriendIndices.elementAt(idx);
-                            final friend = widget.friends[friendIndex];
-                            final initials = friend.name
-                                .trim()
-                                .split(' ')
-                                .where((e) => e.isNotEmpty)
-                                .map((e) => e[0].toUpperCase())
-                                .take(2)
-                                .join();
-
-                            return Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                // Contact Avatar Squircle
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Container(
-                                    width: 72,
-                                    height: 72,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF86E829).withOpacity(0.18),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: const Color(0xFFE5EDE4),
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: friend.avatarUrl != null
-                                        ? Image.network(
-                                            friend.avatarUrl!,
-                                            width: 72,
-                                            height: 72,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) => Center(
-                                              child: Text(
-                                                initials,
-                                                style: const TextStyle(
-                                                  color: Color(0xFF284821),
-                                                  fontWeight: FontWeight.w800,
-                                                  fontSize: 20,
-                                                ),
-                                              ),
-                                            ),
-                                          )
-                                        : Center(
-                                            child: Text(
-                                              initials,
-                                              style: const TextStyle(
-                                                color: Color(0xFF284821),
-                                                fontWeight: FontWeight.w800,
-                                                fontSize: 20,
-                                              ),
-                                            ),
-                                          ),
-                                  ),
-                                ),
-
-                                // Top-Right White Circle Badge with 'x' icon
-                                Positioned(
-                                  top: -5,
-                                  right: -5,
-                                  child: GestureDetector(
-                                    key: ValueKey('remove_selected_${friend.name}'),
-                                    onTap: () {
-                                      setState(() {
-                                        _selectedFriendIndices.remove(friendIndex);
-                                      });
-                                    },
-                                    child: Container(
-                                      width: 22,
-                                      height: 22,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(0.25),
-                                            blurRadius: 4,
-                                            offset: const Offset(0, 1),
-                                          ),
-                                        ],
-                                      ),
-                                      child: const Icon(
-                                        Icons.close_rounded,
-                                        color: Color(0xFF131A15),
-                                        size: 14,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                ),
-                const SizedBox(height: 28),
-
-                // Friends Section Header
+                // 5. Friends List
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1795,7 +1877,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       ),
                     ),
                     Text(
-                      '${widget.friends.length} available',
+                      '${filteredFriends.length} available',
                       style: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFF808B82),
@@ -1807,7 +1889,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 const SizedBox(height: 12),
 
                 // Items from Friend List
-                if (widget.friends.isEmpty)
+                if (filteredFriends.isEmpty)
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(24),
@@ -1816,11 +1898,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: const Color(0xFFE5EDE4)),
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Text(
-                        'No friends in your list.\nAdd friends in the Friends tab.',
+                        widget.friends.isEmpty
+                            ? 'No friends available in your list.\nAdd friends in the Friends tab.'
+                            : 'No friends matching "$_searchQuery"',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Color(0xFF808B82), fontSize: 14),
+                        style: const TextStyle(color: Color(0xFF808B82), fontSize: 14),
                       ),
                     ),
                   )
@@ -1828,11 +1912,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: widget.friends.length,
+                    itemCount: filteredFriends.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
-                      final friend = widget.friends[index];
-                      final isSelected = _selectedFriendIndices.contains(index);
+                      final friend = filteredFriends[index];
+                      final originalIndex = widget.friends.indexOf(friend);
+                      final isSelected = _selectedFriendIndices.contains(originalIndex);
                       final initials = friend.name
                           .trim()
                           .split(' ')
@@ -1845,9 +1930,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         onTap: () {
                           setState(() {
                             if (isSelected) {
-                              _selectedFriendIndices.remove(index);
+                              _selectedFriendIndices.remove(originalIndex);
                             } else {
-                              _selectedFriendIndices.add(index);
+                              _selectedFriendIndices.add(originalIndex);
                             }
                           });
                         },
@@ -1920,50 +2005,56 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       );
                     },
                   ),
-                const SizedBox(height: 32),
-
-                // Confirm Action Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF86E829),
-                      foregroundColor: const Color(0xFF10210A),
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-                    onPressed: () {
-                      if (_formKey.currentState?.validate() ?? false) {
-                        final gName = _groupNameController.text.trim();
-                        final selectedCount = _selectedFriendIndices.length;
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Group "$gName" created with $selectedCount friends selected!',
-                            ),
-                            backgroundColor: const Color(0xFF111713),
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    child: const Text(
-                      'Confirm & Split',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 17,
-                      ),
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 24),
               ],
+            ),
+          ),
+        ),
+      ),
+      // 6. Continue Button: Fixed at bottom, does not react to scrolling
+      bottomNavigationBar: Container(
+        color: const Color(0xFFF7FAF7),
+        padding: const EdgeInsets.fromLTRB(24, 10, 24, 20),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF86E829),
+                foregroundColor: const Color(0xFF10210A),
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+              onPressed: () {
+                if (_formKey.currentState?.validate() ?? false) {
+                  final gName = _groupNameController.text.trim();
+                  final selectedCount = _selectedFriendIndices.length;
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Group "$gName" created with $selectedCount friends selected!',
+                      ),
+                      backgroundColor: const Color(0xFF111713),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: const Text(
+                'Continue',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 17,
+                ),
+              ),
             ),
           ),
         ),
