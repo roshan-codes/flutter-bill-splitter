@@ -96,3 +96,4 @@ class ActivityTab extends StatelessWidget {
     );
   }
 }
+

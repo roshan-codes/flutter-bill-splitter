@@ -21,3 +21,4 @@ class ActivityRepository extends ChangeNotifier {
     notifyListeners();
   }
 }
+
