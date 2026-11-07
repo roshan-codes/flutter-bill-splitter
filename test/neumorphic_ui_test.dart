@@ -6,6 +6,7 @@ import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/search_name_group_bar.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/screens/home_tab.dart';
+import 'package:flutter_bill_splitter/features/profile/presentation/screens/profile_tab.dart';
 import 'package:flutter_bill_splitter/shared/widgets/empty_state_view.dart';
 
 void main() {
@@ -148,6 +149,49 @@ void main() {
       await tester.tap(find.textContaining('Add\nExpense'));
       await tester.pumpAndSettle();
       expect(addExpenseTapped, isTrue);
+    });
+
+    testWidgets('ProfileTab renders screenshot-matching neumorphic UI elements', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: ProfileTab(),
+        ),
+      );
+
+      // Verify Header
+      expect(find.text('Profile'), findsOneWidget);
+      expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
+
+      // Verify Avatar & User Info
+      expect(find.text('R'), findsOneWidget);
+      expect(find.text('Roshan Badwaik'), findsOneWidget);
+      expect(find.text('+91 9876543210'), findsOneWidget);
+
+      // Verify Neumorphic Menu Items
+      expect(find.text('Edit Profile'), findsOneWidget);
+      expect(find.byIcon(Icons.person_outline_rounded), findsOneWidget);
+
+      expect(find.text('Payment & Settlement'), findsOneWidget);
+      expect(find.byIcon(Icons.account_balance_wallet_outlined), findsOneWidget);
+
+      expect(find.text('App Settings'), findsOneWidget);
+      expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+
+      expect(find.text('Help & Support'), findsOneWidget);
+      expect(find.byIcon(Icons.help_outline_rounded), findsOneWidget);
+
+      expect(find.text('About BillSplit'), findsOneWidget);
+      expect(find.byIcon(Icons.info_outline_rounded), findsOneWidget);
+
+      // Verify Logout Button
+      expect(find.text('Logout'), findsOneWidget);
+      expect(find.byIcon(Icons.logout_rounded), findsOneWidget);
+
+      // Tap Logout button and verify confirmation dialog opens
+      await tester.tap(find.text('Logout'));
+      await tester.pumpAndSettle();
+      expect(find.text('Confirm Logout'), findsOneWidget);
+      expect(find.text('Are you sure you want to log out of BillSplit?'), findsOneWidget);
     });
   });
 }

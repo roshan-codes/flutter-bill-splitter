@@ -16,6 +16,7 @@ export 'features/activity/domain/models/split_activity.dart';
 export 'features/activity/data/repositories/activity_repository.dart';
 export 'features/activity/presentation/screens/activity_tab.dart';
 export 'features/home/presentation/screens/home_tab.dart';
+export 'features/profile/presentation/screens/profile_tab.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
