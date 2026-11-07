@@ -52,3 +52,4 @@ class ProfileLogoutButton extends StatelessWidget {
     );
   }
 }
+

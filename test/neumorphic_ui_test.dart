@@ -4,6 +4,7 @@ import 'package:neumorphic_glass_navbar/neumorphic_glass_navbar.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
+import 'package:flutter_bill_splitter/features/activity/presentation/screens/activity_tab.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/search_name_group_bar.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/screens/home_tab.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/screens/profile_tab.dart';
@@ -192,6 +193,70 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Confirm Logout'), findsOneWidget);
       expect(find.text('Are you sure you want to log out of BillSplit?'), findsOneWidget);
+    });
+
+    testWidgets('ActivityTab renders screenshot-matching neumorphic UI elements and filters', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: ActivityTab(),
+        ),
+      );
+
+      // Verify Header
+      expect(find.text('Activity'), findsOneWidget);
+
+      // Verify Segmented Filter Pills
+      expect(find.text('All'), findsOneWidget);
+      expect(find.text('Expenses'), findsOneWidget);
+      expect(find.text('Settlements'), findsOneWidget);
+
+      // Verify Section Headers
+      expect(find.text('This Week'), findsOneWidget);
+      expect(find.text('Last Week'), findsOneWidget);
+
+      // Verify This Week items
+      expect(find.text('Dinner at Sakali'), findsOneWidget);
+      expect(find.text('You get ₹317'), findsOneWidget);
+      expect(find.text('₹549'), findsOneWidget);
+
+      expect(find.text('Groceries'), findsOneWidget);
+      expect(find.text('Settled'), findsNWidgets(2)); // Groceries & Movie Night
+      expect(find.text('₹620'), findsOneWidget);
+
+      expect(find.text('Goa Trip Fuel'), findsOneWidget);
+      expect(find.text('You owe ₹700'), findsOneWidget);
+      expect(find.text('₹2,800'), findsOneWidget);
+
+      // Verify Last Week items
+      expect(find.text('Movie Night'), findsOneWidget);
+      expect(find.text('₹480'), findsOneWidget);
+
+      // Tap Settlements filter
+      await tester.tap(find.text('Settlements'));
+      await tester.pumpAndSettle();
+
+      // In Settlements filter: Groceries & Movie Night visible, Dinner at Sakali and Goa Trip Fuel hidden
+      expect(find.text('Groceries'), findsOneWidget);
+      expect(find.text('Movie Night'), findsOneWidget);
+      expect(find.text('Dinner at Sakali'), findsNothing);
+      expect(find.text('Goa Trip Fuel'), findsNothing);
+
+      // Tap Expenses filter
+      await tester.tap(find.text('Expenses'));
+      await tester.pumpAndSettle();
+
+      // In Expenses filter: Dinner at Sakali & Goa Trip Fuel visible, Groceries & Movie Night hidden
+      expect(find.text('Dinner at Sakali'), findsOneWidget);
+      expect(find.text('Goa Trip Fuel'), findsOneWidget);
+      expect(find.text('Groceries'), findsNothing);
+      expect(find.text('Movie Night'), findsNothing);
+
+      // Tap All filter
+      await tester.tap(find.text('All'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Dinner at Sakali'), findsOneWidget);
+      expect(find.text('Groceries'), findsOneWidget);
     });
   });
 }

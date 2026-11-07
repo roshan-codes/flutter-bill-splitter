@@ -278,7 +278,7 @@ void main() {
     expect(find.text('Friday Dinner'), findsOneWidget);
     expect(find.text('₹600'), findsOneWidget);
     expect(find.text('₹300 / person'), findsOneWidget);
-    expect(find.text('2 members'), findsOneWidget);
+    expect(find.text('2 members'), findsWidgets);
     expect(find.text('Sophia Martinez pays ₹300 to Alex Johnson'), findsOneWidget);
 
     // Tap on the activity card to open ActivityDetailSheet

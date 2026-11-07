@@ -13,6 +13,7 @@ export 'features/expenses/presentation/screens/split_summary_screen.dart';
 export 'features/expenses/domain/models/settlement_transaction.dart';
 export 'features/expenses/domain/services/expense_calculator.dart';
 export 'features/activity/domain/models/split_activity.dart';
+export 'features/activity/domain/models/activity_display_item.dart';
 export 'features/activity/data/repositories/activity_repository.dart';
 export 'features/activity/presentation/screens/activity_tab.dart';
 export 'features/home/presentation/screens/home_tab.dart';
