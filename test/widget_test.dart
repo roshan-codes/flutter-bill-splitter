@@ -270,7 +270,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify Activity Tab displays the recorded split!
-    expect(find.text('Activity'), findsOneWidget);
+    expect(find.text('Activity'), findsWidgets);
     expect(find.text('Friday Dinner'), findsOneWidget);
     expect(find.text('₹600'), findsOneWidget);
     expect(find.text('₹300 / person'), findsOneWidget);

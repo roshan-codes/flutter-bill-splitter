@@ -12,8 +12,8 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   google_fonts: ^6.2.1
-  dark_glassmorphic_bottom_bar: ^0.0.2
   flutter_neumorphism_ui: ^1.0.2
+  neumorphic_glass_navbar: ^0.0.1
 
 dev_dependencies:
   flutter_test:

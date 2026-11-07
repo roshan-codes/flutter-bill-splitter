@@ -57,14 +57,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.8"
-  dark_glassmorphic_bottom_bar:
-    dependency: "direct main"
-    description:
-      name: dark_glassmorphic_bottom_bar
-      sha256: bc1807160f64067f7757005e9deb289164070117cfe2cded48a873ae0a0a43c3
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.2"
   fake_async:
     dependency: transitive
     description:
@@ -187,6 +179,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.15.0"
+  neumorphic_glass_navbar:
+    dependency: "direct main"
+    description:
+      name: neumorphic_glass_navbar
+      sha256: da37864a1abe4041cc60492f8d34806661bf5ceb47340602d661fa8847aa9a11
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.1"
   path:
     dependency: transitive
     description:

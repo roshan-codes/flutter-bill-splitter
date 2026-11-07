@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
+import 'package:neumorphic_glass_navbar/neumorphic_glass_navbar.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
@@ -60,5 +61,44 @@ void main() {
       expect(find.byType(FlutterNeumorphism), findsNWidgets(2));
       expect(find.byType(TextField), findsOneWidget);
     });
+
+    testWidgets('NeumorphicGlassNavbar renders with glass settings and items', (tester) async {
+      int tappedIndex = -1;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            bottomNavigationBar: NeumorphicGlassNavbar(
+              currentIndex: 0,
+              onTap: (idx) => tappedIndex = idx,
+              height: 68,
+              settings: const NeumorphicGlassNavbarSettings(
+                tintColor: AppColors.background,
+                opacity: 0.65,
+                borderRadius: 28.0,
+              ),
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home_outlined),
+                  label: 'Home',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.people_outline_rounded),
+                  label: 'Friends',
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(NeumorphicGlassNavbar), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Friends'), findsOneWidget);
+
+      await tester.tap(find.text('Friends'));
+      await tester.pumpAndSettle();
+      expect(tappedIndex, 1);
+    });
   });
 }
+
