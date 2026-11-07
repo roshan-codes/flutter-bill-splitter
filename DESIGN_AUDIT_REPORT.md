@@ -137,3 +137,4 @@ The app excels in visual discipline: it respects the two-layer material separati
 | **4** | Integrate iOS `HapticFeedback` across taps, selection, and split saves. | `split_summary_screen.dart`, `friend_selection_tile.dart`, `main_screen.dart` | **Medium** |
 | **5** | Connect Onboarding page dots to a swipeable `PageView`. | `onboarding_screen.dart` | **Medium** |
 | **6** | Enable `ActivityDetailSheet` for default mock activities. | `activity_tab.dart`, `activity_item_row.dart` | **Low** |
+

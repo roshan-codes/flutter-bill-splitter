@@ -160,3 +160,4 @@ Before merging any UI pull request or adding new screens, run this audit checkli
 - [ ] **Lens 5: Copywriting**:
   - Are buttons labeled with specific, action-oriented verbs?
   - Are numbers formatted with `₹` and proper thousands separators?
+
