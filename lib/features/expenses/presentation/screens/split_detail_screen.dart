@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/split_member_card.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
-import 'package:flutter_bill_splitter/shared/widgets/squircle_avatar.dart';
 
-/// Screen displaying the list of selected friends / members of the selected group to split with.
-class SplitDetailScreen extends StatelessWidget {
+/// Screen displaying the list of selected friends / members with options to add person expenses.
+class SplitDetailScreen extends StatefulWidget {
   final String groupName;
   final List<Friend> members;
 
@@ -14,6 +14,133 @@ class SplitDetailScreen extends StatelessWidget {
     required this.groupName,
     required this.members,
   });
+
+  @override
+  State<SplitDetailScreen> createState() => _SplitDetailScreenState();
+}
+
+class _SplitDetailScreenState extends State<SplitDetailScreen> {
+  final Map<String, double> _memberExpenses = {};
+
+  double get _totalExpense =>
+      _memberExpenses.values.fold(0.0, (sum, val) => sum + val);
+
+  void _showAddExpenseDialog(Friend friend) {
+    final currentAmount = _memberExpenses[friend.name];
+    final controller = TextEditingController(
+      text: currentAmount != null ? currentAmount.toStringAsFixed(0) : '',
+    );
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        title: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F8D8),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Text(
+                  StringUtils.getSingleInitial(friend.name),
+                  style: const TextStyle(
+                    color: Color(0xFF284821),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Expense for ${friend.name}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: controller,
+                autofocus: true,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: 'Amount (₹)',
+                  hintText: 'Enter amount e.g. 250',
+                  prefixIcon: const Icon(Icons.currency_rupee_rounded, color: AppColors.primaryDeep),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                  ),
+                ),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Please enter an amount';
+                  }
+                  final parsed = double.tryParse(val.trim());
+                  if (parsed == null || parsed <= 0) {
+                    return 'Please enter a valid amount';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.primaryDark,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                final amount = double.parse(controller.text.trim());
+                setState(() {
+                  _memberExpenses[friend.name] = amount;
+                });
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Save Expense', style: TextStyle(fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +209,7 @@ class SplitDetailScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                groupName,
+                                widget.groupName,
                                 style: const TextStyle(
                                   fontSize: 19,
                                   fontWeight: FontWeight.w800,
@@ -91,11 +218,13 @@ class SplitDetailScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${members.length} members included in split',
-                                style: const TextStyle(
+                                _totalExpense > 0
+                                    ? 'Total expense: ₹${_totalExpense.toStringAsFixed(_totalExpense.truncateToDouble() == _totalExpense ? 0 : 2)}'
+                                    : '${widget.members.length} members included in split',
+                                style: TextStyle(
                                   fontSize: 13,
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w500,
+                                  color: _totalExpense > 0 ? AppColors.primaryDeep : AppColors.textSecondary,
+                                  fontWeight: _totalExpense > 0 ? FontWeight.w700 : FontWeight.w500,
                                 ),
                               ),
                             ],
@@ -106,20 +235,38 @@ class SplitDetailScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     const Divider(height: 1, color: AppColors.border),
                     const SizedBox(height: 14),
-                    // Avatars preview row
+
+                    // Avatars preview row with light lime green squircle avatars (matching user screenshot)
                     SizedBox(
-                      height: 38,
+                      height: 42,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
-                        itemCount: members.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemCount: widget.members.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 10),
                         itemBuilder: (context, idx) {
-                          final m = members[idx];
-                          return SquircleAvatar(
-                            name: m.name,
-                            avatarUrl: m.avatarUrl,
-                            size: 38,
-                            borderRadius: 12,
+                          final m = widget.members[idx];
+                          final initial = StringUtils.getSingleInitial(m.name);
+                          return Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F8D8),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: const Color(0xFFD6F0BE),
+                                width: 1,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                initial,
+                                style: const TextStyle(
+                                  color: Color(0xFF284821),
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 17,
+                                ),
+                              ),
+                            ),
                           );
                         },
                       ),
@@ -142,7 +289,7 @@ class SplitDetailScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${members.length} total',
+                    '${widget.members.length} total',
                     style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,
@@ -153,16 +300,19 @@ class SplitDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 14),
 
-              // List of Selected Members
+              // List of Selected Members with Add Expense Option
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: members.length,
+                itemCount: widget.members.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
+                  final member = widget.members[index];
                   return SplitMemberCard(
-                    friend: members[index],
+                    friend: member,
                     index: index,
+                    expenseAmount: _memberExpenses[member.name],
+                    onAddExpense: () => _showAddExpenseDialog(member),
                   );
                 },
               ),
@@ -171,6 +321,7 @@ class SplitDetailScreen extends StatelessWidget {
           ),
         ),
       ),
+      // Fixed bottom button
       bottomNavigationBar: Container(
         color: AppColors.background,
         padding: const EdgeInsets.fromLTRB(24, 10, 24, 20),
@@ -189,12 +340,11 @@ class SplitDetailScreen extends StatelessWidget {
                 ),
               ),
               onPressed: () {
-                // Navigate back to main screen
                 Navigator.of(context).popUntil((route) => route.isFirst);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      'Split confirmed for "$groupName" with ${members.length} members!',
+                      'Split confirmed for "${widget.groupName}" (${widget.members.length} members)!',
                     ),
                     backgroundColor: const Color(0xFF111713),
                     behavior: SnackBarBehavior.floating,

@@ -195,8 +195,30 @@ void main() {
     // Verify SplitDetailScreen is displayed with selected members
     expect(find.text('Split with Members'), findsOneWidget);
     expect(find.text('Friday Dinner'), findsOneWidget);
-    expect(find.text('1 members included in split'), findsOneWidget);
-    expect(find.text('Included'), findsOneWidget);
+    expect(find.text('Alex Johnson'), findsOneWidget);
+
+    // Verify mobile number is removed from the member item
+    expect(find.text('+91 98765 43210'), findsNothing);
+
+    // Verify Add expense button is shown for the member
+    expect(find.text('Add expense'), findsOneWidget);
+
+    // Tap Add expense button to add person expense
+    await tester.tap(find.text('Add expense'));
+    await tester.pumpAndSettle();
+
+    // Verify dialog opens
+    expect(find.textContaining('Expense for Alex Johnson'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextFormField, 'Enter amount e.g. 250'), '350');
+    await tester.pumpAndSettle();
+
+    // Save expense
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Save Expense'));
+    await tester.pumpAndSettle();
+
+    // Verify expense badge updated with ₹350
+    expect(find.text('₹350'), findsOneWidget);
+    expect(find.text('Edit expense'), findsOneWidget);
 
     // Tap Confirm Split
     final confirmSplitBtn = find.widgetWithText(ElevatedButton, 'Confirm Split');
