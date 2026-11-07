@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 
-/// Rectangular container displaying selected members with 'x' remove badges.
+/// Neumorphic rectangular container displaying selected members with 'x' remove badges.
 class SelectedMembersContainer extends StatelessWidget {
   final List<Friend> allFriends;
   final Set<int> selectedIndices;
@@ -27,9 +29,10 @@ class SelectedMembersContainer extends StatelessWidget {
             const Text(
               'Selected Members',
               style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
+                letterSpacing: -0.2,
               ),
             ),
             if (selectedIndices.isNotEmpty)
@@ -37,32 +40,20 @@ class SelectedMembersContainer extends StatelessWidget {
                 '${selectedIndices.length} selected',
                 style: const TextStyle(
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.primaryDeep,
                 ),
               ),
           ],
         ),
         const SizedBox(height: 10),
-        Container(
+        FlutterNeumorphism(
+          style: selectedIndices.isEmpty
+              ? NeumorphicStyles.inset(borderRadius: 24, depth: 4)
+              : NeumorphicStyles.card(borderRadius: 24, depth: 5),
           width: double.infinity,
           height: 110,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: AppColors.borderMedium,
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
           child: selectedIndices.isEmpty
               ? Center(
                   child: Row(
@@ -79,7 +70,7 @@ class SelectedMembersContainer extends StatelessWidget {
                         style: TextStyle(
                           color: Colors.grey.shade500,
                           fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
@@ -97,19 +88,17 @@ class SelectedMembersContainer extends StatelessWidget {
                     return Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            width: 72,
-                            height: 72,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.18),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: AppColors.border,
-                                width: 1.5,
-                              ),
-                            ),
+                        FlutterNeumorphism(
+                          style: NeumorphicStyles.card(
+                            borderRadius: 20,
+                            depth: 4,
+                            color: AppColors.primaryLight,
+                          ),
+                          width: 72,
+                          height: 72,
+                          padding: EdgeInsets.zero,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
                             child: friend.avatarUrl != null && friend.avatarUrl!.isNotEmpty
                                 ? Image.network(
                                     friend.avatarUrl!,
@@ -122,25 +111,19 @@ class SelectedMembersContainer extends StatelessWidget {
                           ),
                         ),
                         Positioned(
-                          top: -5,
-                          right: -5,
+                          top: -6,
+                          right: -6,
                           child: GestureDetector(
                             key: ValueKey('remove_selected_${friend.name}'),
                             onTap: () => onRemove(friendIndex),
-                            child: Container(
-                              width: 22,
-                              height: 22,
-                              decoration: BoxDecoration(
+                            child: FlutterNeumorphism(
+                              style: NeumorphicStyles.circle(
+                                depth: 3,
                                 color: AppColors.surface,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.25),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
                               ),
+                              width: 26,
+                              height: 26,
+                              padding: EdgeInsets.zero,
                               child: const Icon(
                                 Icons.close_rounded,
                                 color: AppColors.textPrimary,

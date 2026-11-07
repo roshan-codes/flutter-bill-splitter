@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_card.dart';
 import 'package:flutter_bill_splitter/shared/widgets/empty_state_view.dart';
 
-/// Activity Tab displaying all historical recorded splits.
+/// Activity Tab displaying all historical recorded splits with Neumorphic UI styling.
 class ActivityTab extends StatelessWidget {
   final ActivityRepository? repository;
 
@@ -24,7 +26,7 @@ class ActivityTab extends StatelessWidget {
         children: [
           // Header matching Friends tab style
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -42,12 +44,13 @@ class ActivityTab extends StatelessWidget {
                   builder: (context, _) {
                     final count = repo.activities.length;
                     if (count == 0) return const SizedBox.shrink();
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
+                    return FlutterNeumorphism(
+                      style: NeumorphicStyles.card(
+                        borderRadius: 14,
+                        depth: 3,
                         color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(12),
                       ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       child: Text(
                         '$count split${count > 1 ? 's' : ''}',
                         style: const TextStyle(
@@ -82,7 +85,7 @@ class ActivityTab extends StatelessWidget {
                 return ListView.separated(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
                   itemCount: activities.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 14),
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
                     final activity = activities[index];
                     return ActivityCard(activity: activity);
@@ -96,4 +99,3 @@ class ActivityTab extends StatelessWidget {
     );
   }
 }
-

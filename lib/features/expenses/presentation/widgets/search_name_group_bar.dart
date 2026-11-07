@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 
-/// Search input bar with yellow squircle search action button.
+/// Neumorphic Search input bar with debossed search well and raised action button.
 class SearchNameGroupBar extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
@@ -19,22 +21,18 @@ class SearchNameGroupBar extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Container(
-            height: 52,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
+          child: FlutterNeumorphism(
+            style: NeumorphicStyles.inset(borderRadius: 28, depth: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            height: 54,
             child: TextField(
               controller: controller,
               onChanged: onChanged,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
               decoration: const InputDecoration(
                 hintText: 'Search name, group',
                 hintStyle: TextStyle(
@@ -48,26 +46,23 @@ class SearchNameGroupBar extends StatelessWidget {
                   size: 22,
                 ),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 14),
+                contentPadding: EdgeInsets.symmetric(vertical: 16),
               ),
             ),
           ),
         ),
         const SizedBox(width: 12),
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
+        FlutterNeumorphism(
+          style: NeumorphismStyle(
             color: AppColors.amber,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.amber.withOpacity(0.35),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
+            borderRadius: 18,
+            depth: 5,
+            lightShadow: Colors.white.withOpacity(0.6),
+            darkShadow: const Color(0xFFC78F1A),
           ),
+          width: 54,
+          height: 54,
+          padding: EdgeInsets.zero,
           child: IconButton(
             icon: const Icon(
               Icons.search_rounded,

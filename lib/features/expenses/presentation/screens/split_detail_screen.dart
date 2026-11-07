@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
@@ -39,27 +41,23 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.background,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(26),
         ),
         title: Row(
           children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F8D8),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Text(
-                  StringUtils.getSingleInitial(friend.name),
-                  style: const TextStyle(
-                    color: Color(0xFF284821),
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                  ),
+            FlutterNeumorphism(
+              style: NeumorphicStyles.circle(depth: 3, color: AppColors.primaryLight),
+              width: 38,
+              height: 38,
+              padding: EdgeInsets.zero,
+              child: Text(
+                StringUtils.getSingleInitial(friend.name),
+                style: const TextStyle(
+                  color: Color(0xFF284821),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
                 ),
               ),
             ),
@@ -83,32 +81,31 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
-                controller: controller,
-                autofocus: true,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: 'Amount (₹)',
-                  hintText: 'Enter amount e.g. 250',
-                  prefixIcon: const Icon(Icons.currency_rupee_rounded, color: AppColors.primaryDeep),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+              FlutterNeumorphism(
+                style: NeumorphicStyles.inset(borderRadius: 16, depth: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: TextFormField(
+                  controller: controller,
+                  autofocus: true,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Amount (₹)',
+                    hintText: 'Enter amount e.g. 250',
+                    prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.primaryDeep),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                  ),
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) {
+                      return 'Please enter an amount';
+                    }
+                    final parsed = double.tryParse(val.trim());
+                    if (parsed == null || parsed <= 0) {
+                      return 'Please enter a valid amount';
+                    }
+                    return null;
+                  },
                 ),
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Please enter an amount';
-                  }
-                  final parsed = double.tryParse(val.trim());
-                  if (parsed == null || parsed <= 0) {
-                    return 'Please enter a valid amount';
-                  }
-                  return null;
-                },
               ),
             ],
           ),
@@ -118,28 +115,34 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancel',
-              style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+              style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w700),
             ),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.primaryDark,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          FlutterNeumorphism(
+            style: NeumorphicStyles.primaryButton(borderRadius: 14, depth: 5),
+            padding: EdgeInsets.zero,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                foregroundColor: AppColors.primaryDark,
+                shadowColor: Colors.transparent,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
+              onPressed: () {
+                if (formKey.currentState?.validate() ?? false) {
+                  final amount = double.parse(controller.text.trim());
+                  setState(() {
+                    _memberExpenses[friend.name] = amount;
+                  });
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Save Expense', style: TextStyle(fontWeight: FontWeight.w800)),
             ),
-            onPressed: () {
-              if (formKey.currentState?.validate() ?? false) {
-                final amount = double.parse(controller.text.trim());
-                setState(() {
-                  _memberExpenses[friend.name] = amount;
-                });
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Save Expense', style: TextStyle(fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -151,13 +154,25 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: AppColors.textPrimary,
-            size: 20,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Center(
+            child: InkWell(
+              onTap: () => Navigator.of(context).pop(),
+              borderRadius: BorderRadius.circular(20),
+              child: FlutterNeumorphism(
+                style: NeumorphicStyles.circle(depth: 4),
+                width: 38,
+                height: 38,
+                padding: EdgeInsets.zero,
+                child: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: AppColors.textPrimary,
+                  size: 16,
+                ),
+              ),
+            ),
           ),
-          onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Split with Members',
@@ -165,6 +180,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
             color: AppColors.textPrimary,
             fontSize: 20,
             fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
           ),
         ),
       ),
@@ -175,32 +191,24 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Group Summary Header Card
-              Container(
+              FlutterNeumorphism(
+                style: NeumorphicStyles.card(borderRadius: 24, depth: 6),
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppColors.border),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 14,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(14),
+                        FlutterNeumorphism(
+                          style: NeumorphicStyles.card(
+                            borderRadius: 14,
+                            depth: 4,
+                            color: AppColors.primaryLight,
                           ),
+                          width: 46,
+                          height: 46,
+                          padding: EdgeInsets.zero,
                           child: const Icon(
                             Icons.groups_rounded,
                             color: AppColors.primaryDeep,
@@ -240,7 +248,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                     const Divider(height: 1, color: AppColors.border),
                     const SizedBox(height: 14),
 
-                    // Avatars preview row with light lime green squircle avatars (matching user screenshot)
+                    // Avatars preview row with neumorphic squircle avatars
                     SizedBox(
                       height: 42,
                       child: ListView.separated(
@@ -250,25 +258,21 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                         itemBuilder: (context, idx) {
                           final m = widget.members[idx];
                           final initial = StringUtils.getSingleInitial(m.name);
-                          return Container(
+                          return FlutterNeumorphism(
+                            style: NeumorphicStyles.card(
+                              borderRadius: 14,
+                              depth: 3,
+                              color: AppColors.primaryLight,
+                            ),
                             width: 42,
                             height: 42,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE8F8D8),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: const Color(0xFFD6F0BE),
-                                width: 1,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                initial,
-                                style: const TextStyle(
-                                  color: Color(0xFF284821),
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 17,
-                                ),
+                            padding: EdgeInsets.zero,
+                            child: Text(
+                              initial,
+                              style: const TextStyle(
+                                color: Color(0xFF284821),
+                                fontWeight: FontWeight.w900,
+                                fontSize: 17,
                               ),
                             ),
                           );
@@ -333,51 +337,56 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
           top: false,
           child: SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.primaryDark,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-              ),
-              onPressed: () {
-                final total = ExpenseCalculator.calculateTotal(_memberExpenses);
-                final share = ExpenseCalculator.calculateSharePerPerson(total, widget.members.length);
-                final settlements = ExpenseCalculator.calculateSettlements(
-                  members: widget.members,
-                  paidAmounts: _memberExpenses,
-                );
-
-                final activity = SplitActivity(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  groupName: widget.groupName,
-                  totalAmount: total,
-                  sharePerPerson: share,
-                  members: List.unmodifiable(widget.members),
-                  memberExpenses: Map.unmodifiable(_memberExpenses),
-                  settlements: settlements,
-                  timestamp: DateTime.now(),
-                );
-                ActivityRepository.instance.recordActivity(activity);
-
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => SplitSummaryScreen(
-                      groupName: widget.groupName,
-                      members: widget.members,
-                      memberExpenses: _memberExpenses,
-                    ),
+            child: FlutterNeumorphism(
+              style: NeumorphicStyles.primaryButton(borderRadius: 18, depth: 6),
+              padding: EdgeInsets.zero,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: AppColors.primaryDark,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
                   ),
-                );
-              },
-              child: const Text(
-                'Confirm Split',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 17,
+                ),
+                onPressed: () {
+                  final total = ExpenseCalculator.calculateTotal(_memberExpenses);
+                  final share = ExpenseCalculator.calculateSharePerPerson(total, widget.members.length);
+                  final settlements = ExpenseCalculator.calculateSettlements(
+                    members: widget.members,
+                    paidAmounts: _memberExpenses,
+                  );
+
+                  final activity = SplitActivity(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    groupName: widget.groupName,
+                    totalAmount: total,
+                    sharePerPerson: share,
+                    members: List.unmodifiable(widget.members),
+                    memberExpenses: Map.unmodifiable(_memberExpenses),
+                    settlements: settlements,
+                    timestamp: DateTime.now(),
+                  );
+                  ActivityRepository.instance.recordActivity(activity);
+
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => SplitSummaryScreen(
+                        groupName: widget.groupName,
+                        members: widget.members,
+                        memberExpenses: _memberExpenses,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Confirm Split',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 17,
+                  ),
                 ),
               ),
             ),

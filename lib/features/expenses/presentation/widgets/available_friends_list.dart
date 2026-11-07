@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 
-/// List of available friends with tap selection support and empty states.
+/// Neumorphic list of available friends with tap selection support and empty states.
 class AvailableFriendsList extends StatelessWidget {
   final List<Friend> allFriends;
   final List<Friend> filteredFriends;
@@ -31,9 +33,10 @@ class AvailableFriendsList extends StatelessWidget {
             const Text(
               'Friends',
               style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
+                letterSpacing: -0.2,
               ),
             ),
             Text(
@@ -41,28 +44,28 @@ class AvailableFriendsList extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
         if (filteredFriends.isEmpty)
-          Container(
+          FlutterNeumorphism(
+            style: NeumorphicStyles.inset(borderRadius: 18, depth: 3),
             width: double.infinity,
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: AppColors.border),
-            ),
             child: Center(
               child: Text(
                 allFriends.isEmpty
                     ? 'No friends available in your list.\nAdd friends in the Friends tab.'
                     : 'No friends matching "$searchQuery"',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           )
@@ -81,30 +84,21 @@ class AvailableFriendsList extends StatelessWidget {
               return InkWell(
                 onTap: () => onFriendToggled(originalIndex),
                 borderRadius: BorderRadius.circular(16),
-                child: Container(
+                child: FlutterNeumorphism(
+                  style: isSelected
+                      ? NeumorphicStyles.inset(borderRadius: 16, depth: 3)
+                      : NeumorphicStyles.card(borderRadius: 16, depth: 4),
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected ? AppColors.primary : AppColors.border,
-                      width: isSelected ? 1.5 : 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.02),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: isSelected
-                            ? AppColors.primary
-                            : AppColors.primary.withOpacity(0.18),
+                      FlutterNeumorphism(
+                        style: NeumorphicStyles.circle(
+                          depth: 3,
+                          color: isSelected ? AppColors.primary : AppColors.primaryLight,
+                        ),
+                        width: 42,
+                        height: 42,
+                        padding: EdgeInsets.zero,
                         child: Text(
                           initials,
                           style: TextStyle(
@@ -114,7 +108,7 @@ class AvailableFriendsList extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,7 +117,7 @@ class AvailableFriendsList extends StatelessWidget {
                               friend.name,
                               style: const TextStyle(
                                 fontSize: 15,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.textPrimary,
                               ),
                             ),
@@ -133,6 +127,7 @@ class AvailableFriendsList extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
@@ -140,7 +135,7 @@ class AvailableFriendsList extends StatelessWidget {
                       ),
                       Icon(
                         isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                        color: isSelected ? AppColors.primary : const Color(0xFFC4CDC3),
+                        color: isSelected ? AppColors.primaryDeep : Colors.grey.shade400,
                         size: 22,
                       ),
                     ],

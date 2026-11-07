@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'app/app.dart';
 
 export 'app/app.dart';
+export 'core/theme/neumorphic_styles.dart';
 export 'features/friends/domain/models/friend.dart';
 export 'features/friends/domain/models/group.dart';
 export 'features/navigation/presentation/screens/main_screen.dart';

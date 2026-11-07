@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/expenses/domain/models/settlement_transaction.dart';
 import 'package:flutter_bill_splitter/features/expenses/domain/services/expense_calculator.dart';
@@ -7,7 +9,7 @@ import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/set
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 
 /// Screen displayed after confirming split.
-/// Clearly shows total split details, individual balances, and who pays whom.
+/// Clearly shows total split details, individual balances, and who pays whom with Neumorphic UI styling.
 class SplitSummaryScreen extends StatelessWidget {
   final String groupName;
   final List<Friend> members;
@@ -39,12 +41,28 @@ class SplitSummaryScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20),
-          onPressed: () => Navigator.pop(context),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Center(
+            child: InkWell(
+              onTap: () => Navigator.pop(context),
+              borderRadius: BorderRadius.circular(20),
+              child: FlutterNeumorphism(
+                style: NeumorphicStyles.circle(depth: 4),
+                width: 38,
+                height: 38,
+                padding: EdgeInsets.zero,
+                child: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: AppColors.textPrimary,
+                  size: 16,
+                ),
+              ),
+            ),
+          ),
         ),
         title: const Text(
           'Split Summary',
@@ -84,36 +102,41 @@ class SplitSummaryScreen extends StatelessWidget {
           top: false,
           child: SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.primaryDark,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-              ),
-              onPressed: () {
-                Navigator.of(context).popUntil((route) => route.isFirst);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Split settled successfully for "$groupName"!',
-                    ),
-                    backgroundColor: const Color(0xFF111713),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+            child: FlutterNeumorphism(
+              style: NeumorphicStyles.primaryButton(borderRadius: 18, depth: 6),
+              padding: EdgeInsets.zero,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: AppColors.primaryDark,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
                   ),
-                );
-              },
-              child: const Text(
-                'Done',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 17,
+                ),
+                onPressed: () {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Split settled successfully for "$groupName"!',
+                      ),
+                      backgroundColor: const Color(0xFF111713),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Done',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 17,
+                  ),
                 ),
               ),
             ),
@@ -124,32 +147,18 @@ class SplitSummaryScreen extends StatelessWidget {
   }
 
   Widget _buildOverviewCard(double totalExpense, double sharePerPerson) {
-    return Container(
+    return FlutterNeumorphism(
+      style: NeumorphicStyles.card(borderRadius: 26, depth: 6),
       width: double.infinity,
       padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
+              FlutterNeumorphism(
+                style: NeumorphicStyles.card(borderRadius: 10, depth: 3, color: AppColors.primaryLight),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(8),
-                ),
                 child: Text(
                   groupName,
                   style: const TextStyle(
@@ -242,19 +251,18 @@ class SplitSummaryScreen extends StatelessWidget {
       children: [
         Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
+            FlutterNeumorphism(
+              style: NeumorphicStyles.circle(depth: 3, color: AppColors.primaryLight),
+              width: 32,
+              height: 32,
+              padding: EdgeInsets.zero,
               child: const Icon(
                 Icons.swap_horiz_rounded,
                 size: 18,
                 color: AppColors.primaryDeep,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             const Text(
               'Who Pays Whom',
               style: TextStyle(
@@ -278,14 +286,14 @@ class SplitSummaryScreen extends StatelessWidget {
         const SizedBox(height: 14),
 
         if (settlements.isEmpty)
-          Container(
+          FlutterNeumorphism(
+            style: NeumorphicStyles.card(
+              borderRadius: 20,
+              depth: 4,
+              color: const Color(0xFFF0FDF4),
+            ),
             width: double.infinity,
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFBBF7D0)),
-            ),
             child: Row(
               children: [
                 const Icon(
@@ -360,12 +368,9 @@ class SplitSummaryScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 14),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: AppColors.border),
-          ),
+        FlutterNeumorphism(
+          style: NeumorphicStyles.card(borderRadius: 22, depth: 5),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -380,25 +385,24 @@ class SplitSummaryScreen extends StatelessWidget {
               final initial = StringUtils.getSingleInitial(member.name);
 
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
-                    Container(
+                    FlutterNeumorphism(
+                      style: NeumorphicStyles.card(
+                        borderRadius: 14,
+                        depth: 3,
+                        color: AppColors.primaryLight,
+                      ),
                       width: 40,
                       height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE8F8D8),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFD6F0BE)),
-                      ),
-                      child: Center(
-                        child: Text(
-                          initial,
-                          style: const TextStyle(
-                            color: Color(0xFF284821),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 16,
-                          ),
+                      padding: EdgeInsets.zero,
+                      child: Text(
+                        initial,
+                        style: const TextStyle(
+                          color: Color(0xFF284821),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
                         ),
                       ),
                     ),
@@ -427,16 +431,17 @@ class SplitSummaryScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
+                    FlutterNeumorphism(
+                      style: NeumorphicStyles.inset(
+                        borderRadius: 10,
+                        depth: 2,
                         color: isPositive
                             ? const Color(0xFFE8F8D8)
                             : isNegative
                                 ? const Color(0xFFFFEAEA)
                                 : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(10),
                       ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       child: Text(
                         isPositive
                             ? 'Gets ${_formatAmount(net)}'

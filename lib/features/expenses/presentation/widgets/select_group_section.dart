@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/group.dart';
 import 'package:flutter_bill_splitter/shared/widgets/squircle_avatar.dart';
 
-/// Horizontally scrollable group selector section with member avatars.
+/// Horizontally scrollable neumorphic group selector section with member avatars.
 class SelectGroupSection extends StatelessWidget {
   final List<Group> groups;
   final int? selectedGroupIndex;
@@ -36,25 +38,17 @@ class SelectGroupSection extends StatelessWidget {
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
+                letterSpacing: -0.3,
               ),
             ),
             InkWell(
               onTap: onCreateGroupPressed,
               borderRadius: BorderRadius.circular(20),
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
+              child: FlutterNeumorphism(
+                style: NeumorphicStyles.circle(depth: 4),
+                width: 38,
+                height: 38,
+                padding: EdgeInsets.zero,
                 child: const Icon(
                   Icons.add,
                   color: AppColors.amber,
@@ -66,21 +60,21 @@ class SelectGroupSection extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         SizedBox(
-          height: 170,
+          height: 176,
           child: groups.isEmpty
-              ? Container(
+              ? FlutterNeumorphism(
+                  style: NeumorphicStyles.inset(borderRadius: 22, depth: 3),
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.border),
-                  ),
                   child: const Center(
                     child: Text(
                       'No groups created yet.\nTap + above to create a group.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 )
@@ -88,7 +82,7 @@ class SelectGroupSection extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   clipBehavior: Clip.none,
                   itemCount: groups.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 14),
+                  separatorBuilder: (_, __) => const SizedBox(width: 16),
                   itemBuilder: (context, index) {
                     final group = groups[index];
                     final isSelected = selectedGroupIndex == index ||
@@ -97,41 +91,39 @@ class SelectGroupSection extends StatelessWidget {
                     return InkWell(
                       onTap: () => onGroupSelected(index),
                       borderRadius: BorderRadius.circular(26),
-                      child: Container(
+                      child: FlutterNeumorphism(
+                        style: isSelected
+                            ? NeumorphicStyles.inset(borderRadius: 26, depth: 4)
+                            : NeumorphicStyles.card(borderRadius: 26, depth: 6),
                         width: 250,
                         padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(26),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.primary
-                                : const Color(0xFFF0F4F0),
-                            width: isSelected ? 2 : 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: isSelected
-                                  ? AppColors.primary.withOpacity(0.12)
-                                  : Colors.black.withOpacity(0.04),
-                              blurRadius: 14,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              group.name,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    group.name,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.textPrimary,
+                                      letterSpacing: -0.2,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (isSelected)
+                                  const Icon(
+                                    Icons.check_circle_rounded,
+                                    color: AppColors.primaryDeep,
+                                    size: 18,
+                                  ),
+                              ],
                             ),
                             SizedBox(
                               height: 38,
@@ -160,6 +152,7 @@ class SelectGroupSection extends StatelessWidget {
                                           avatarUrl: member.avatarUrl,
                                           size: 36,
                                           borderRadius: 14,
+                                          isNeumorphic: false,
                                         );
                                       },
                                     ),
@@ -170,20 +163,17 @@ class SelectGroupSection extends StatelessWidget {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Container(
+                                  FlutterNeumorphism(
+                                    style: NeumorphismStyle(
+                                      color: AppColors.amber,
+                                      borderRadius: 10,
+                                      depth: 4,
+                                      lightShadow: Colors.white.withOpacity(0.6),
+                                      darkShadow: const Color(0xFFC78F1A),
+                                    ),
                                     width: 32,
                                     height: 32,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.amber,
-                                      borderRadius: BorderRadius.circular(10),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: AppColors.amber.withOpacity(0.35),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
+                                    padding: EdgeInsets.zero,
                                     child: const Icon(
                                       Icons.add,
                                       color: AppColors.primaryDark,
@@ -195,7 +185,7 @@ class SelectGroupSection extends StatelessWidget {
                                     'Add member',
                                     style: TextStyle(
                                       fontSize: 13,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w700,
                                       color: AppColors.textSecondary,
                                     ),
                                   ),

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 
-/// Reusable squircle/rounded rectangle avatar with image loading & initials fallback.
+/// Reusable neumorphic squircle avatar with image loading & initials fallback.
 class SquircleAvatar extends StatelessWidget {
   final String name;
   final String? avatarUrl;
@@ -10,6 +12,7 @@ class SquircleAvatar extends StatelessWidget {
   final double borderRadius;
   final Color? backgroundColor;
   final Color? textColor;
+  final bool isNeumorphic;
 
   const SquircleAvatar({
     super.key,
@@ -19,15 +22,16 @@ class SquircleAvatar extends StatelessWidget {
     this.borderRadius = 14,
     this.backgroundColor,
     this.textColor,
+    this.isNeumorphic = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final initials = StringUtils.getInitials(name);
-    final bg = backgroundColor ?? AppColors.primary.withOpacity(0.18);
+    final bg = backgroundColor ?? AppColors.primaryLight;
     final fg = textColor ?? AppColors.primaryDeep;
 
-    return ClipRRect(
+    final avatarContent = ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
       child: Container(
         width: size,
@@ -44,6 +48,20 @@ class SquircleAvatar extends StatelessWidget {
             : _buildFallback(initials, fg),
       ),
     );
+
+    if (!isNeumorphic) return avatarContent;
+
+    return FlutterNeumorphism(
+      style: NeumorphicStyles.card(
+        borderRadius: borderRadius,
+        depth: 4,
+        color: bg,
+      ),
+      padding: EdgeInsets.zero,
+      width: size,
+      height: size,
+      child: avatarContent,
+    );
   }
 
   Widget _buildFallback(String initials, Color fg) {
@@ -53,7 +71,7 @@ class SquircleAvatar extends StatelessWidget {
         style: TextStyle(
           color: fg,
           fontWeight: FontWeight.w800,
-          fontSize: size * 0.36,
+          fontSize: size * 0.38,
         ),
       ),
     );

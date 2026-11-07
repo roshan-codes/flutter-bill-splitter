@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/settlement_card.dart';
 
-/// Bottom sheet displaying the full split breakdown for a recorded activity.
+/// Bottom sheet displaying the full split breakdown for a recorded activity with Neumorphic UI styling.
 class ActivityDetailSheet extends StatelessWidget {
   final SplitActivity activity;
 
@@ -38,8 +40,8 @@ class ActivityDetailSheet extends StatelessWidget {
       builder: (context, scrollController) {
         return Container(
           decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            color: AppColors.background,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
           ),
           child: Column(
             children: [
@@ -47,11 +49,12 @@ class ActivityDetailSheet extends StatelessWidget {
               Center(
                 child: Container(
                   margin: const EdgeInsets.only(top: 12, bottom: 8),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
+                  child: FlutterNeumorphism(
+                    style: NeumorphicStyles.inset(borderRadius: 4, depth: 2),
+                    width: 44,
+                    height: 5,
+                    padding: EdgeInsets.zero,
+                    child: const SizedBox.shrink(),
                   ),
                 ),
               ),
@@ -84,9 +87,16 @@ class ActivityDetailSheet extends StatelessWidget {
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, color: AppColors.textPrimary),
-                      onPressed: () => Navigator.pop(context),
+                    InkWell(
+                      onTap: () => Navigator.pop(context),
+                      borderRadius: BorderRadius.circular(20),
+                      child: FlutterNeumorphism(
+                        style: NeumorphicStyles.circle(depth: 3),
+                        width: 36,
+                        height: 36,
+                        padding: EdgeInsets.zero,
+                        child: const Icon(Icons.close_rounded, color: AppColors.textPrimary, size: 18),
+                      ),
                     ),
                   ],
                 ),
@@ -99,13 +109,9 @@ class ActivityDetailSheet extends StatelessWidget {
                   padding: const EdgeInsets.all(20),
                   children: [
                     // Overview stats
-                    Container(
+                    FlutterNeumorphism(
+                      style: NeumorphicStyles.card(borderRadius: 22, depth: 5),
                       padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: AppColors.background,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.border),
-                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -169,13 +175,13 @@ class ActivityDetailSheet extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     if (activity.settlements.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
+                      FlutterNeumorphism(
+                        style: NeumorphicStyles.card(
+                          borderRadius: 18,
+                          depth: 4,
                           color: const Color(0xFFF0FDF4),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFBBF7D0)),
                         ),
+                        padding: const EdgeInsets.all(16),
                         child: const Row(
                           children: [
                             Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 24),
@@ -215,12 +221,9 @@ class ActivityDetailSheet extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: AppColors.border),
-                      ),
+                    FlutterNeumorphism(
+                      style: NeumorphicStyles.card(borderRadius: 20, depth: 4),
+                      padding: const EdgeInsets.symmetric(vertical: 6),
                       child: ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
@@ -235,22 +238,21 @@ class ActivityDetailSheet extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                             child: Row(
                               children: [
-                                Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFE8F8D8),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: const Color(0xFFD6F0BE)),
+                                FlutterNeumorphism(
+                                  style: NeumorphicStyles.card(
+                                    borderRadius: 12,
+                                    depth: 2,
+                                    color: AppColors.primaryLight,
                                   ),
-                                  child: Center(
-                                    child: Text(
-                                      initial,
-                                      style: const TextStyle(
-                                        color: Color(0xFF284821),
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 15,
-                                      ),
+                                  width: 38,
+                                  height: 38,
+                                  padding: EdgeInsets.zero,
+                                  child: Text(
+                                    initial,
+                                    style: const TextStyle(
+                                      color: Color(0xFF284821),
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 15,
                                     ),
                                   ),
                                 ),

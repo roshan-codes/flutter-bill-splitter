@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/add_member_to_group_sheet.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/available_friends_list.dart';
@@ -147,13 +149,25 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: AppColors.textPrimary,
-            size: 20,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Center(
+            child: InkWell(
+              onTap: () => Navigator.of(context).pop(),
+              borderRadius: BorderRadius.circular(20),
+              child: FlutterNeumorphism(
+                style: NeumorphicStyles.circle(depth: 4),
+                width: 38,
+                height: 38,
+                padding: EdgeInsets.zero,
+                child: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: AppColors.textPrimary,
+                  size: 16,
+                ),
+              ),
+            ),
           ),
-          onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Add & Split Expense',
@@ -161,6 +175,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             color: AppColors.textPrimary,
             fontSize: 20,
             fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
           ),
         ),
       ),
@@ -176,38 +191,36 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 const Text(
                   'Group Name',
                   style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
+                    letterSpacing: -0.2,
                   ),
                 ),
                 const SizedBox(height: 8),
-                TextFormField(
-                  controller: _groupNameController,
-                  decoration: InputDecoration(
-                    hintText: 'e.g. Goa Trip, Dinner, Flat Rent',
-                    filled: true,
-                    fillColor: AppColors.surface,
-                    prefixIcon: const Icon(Icons.groups_outlined, color: AppColors.textSecondary),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: AppColors.border),
+                FlutterNeumorphism(
+                  style: NeumorphicStyles.inset(borderRadius: 18, depth: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: TextFormField(
+                    controller: _groupNameController,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: AppColors.border),
+                    decoration: const InputDecoration(
+                      hintText: 'e.g. Goa Trip, Dinner, Flat Rent',
+                      prefixIcon: Icon(Icons.groups_outlined, color: AppColors.primaryDeep),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter group name';
+                      }
+                      return null;
+                    },
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter group name';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 24),
 
@@ -280,22 +293,27 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           top: false,
           child: SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.primaryDark,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
+            child: FlutterNeumorphism(
+              style: NeumorphicStyles.primaryButton(borderRadius: 18, depth: 6),
+              padding: EdgeInsets.zero,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: AppColors.primaryDark,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                 ),
-              ),
-              onPressed: _onContinuePressed,
-              child: const Text(
-                'Continue',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 17,
+                onPressed: _onContinuePressed,
+                child: const Text(
+                  'Continue',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 17,
+                  ),
                 ),
               ),
             ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/group.dart';
 import 'package:flutter_bill_splitter/features/friends/presentation/widgets/add_friend_dialog.dart';
@@ -62,56 +64,98 @@ class _FriendsTabState extends State<FriendsTab> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 16, 12),
+            padding: const EdgeInsets.fromLTRB(20, 16, 16, 14),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => setState(() => _subTabIndex = 0),
-                      child: Text(
-                        'Friends',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          color: _subTabIndex == 0
-                              ? AppColors.textPrimary
-                              : Colors.grey.shade400,
+                FlutterNeumorphism(
+                  style: NeumorphicStyles.inset(borderRadius: 18, depth: 3),
+                  padding: const EdgeInsets.all(4),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => setState(() => _subTabIndex = 0),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _subTabIndex == 0 ? AppColors.surface : Colors.transparent,
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: _subTabIndex == 0
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.neumorphicDark.withOpacity(0.5),
+                                      offset: const Offset(1, 2),
+                                      blurRadius: 4,
+                                    ),
+                                    const BoxShadow(
+                                      color: AppColors.neumorphicLight,
+                                      offset: Offset(-1, -1),
+                                      blurRadius: 4,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Text(
+                            'Friends',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: _subTabIndex == 0
+                                  ? AppColors.textPrimary
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    GestureDetector(
-                      onTap: () => setState(() => _subTabIndex = 1),
-                      child: Text(
-                        'Groups',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          color: _subTabIndex == 1
-                              ? AppColors.textPrimary
-                              : Colors.grey.shade400,
+                      GestureDetector(
+                        onTap: () => setState(() => _subTabIndex = 1),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _subTabIndex == 1 ? AppColors.surface : Colors.transparent,
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: _subTabIndex == 1
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.neumorphicDark.withOpacity(0.5),
+                                      offset: const Offset(1, 2),
+                                      blurRadius: 4,
+                                    ),
+                                    const BoxShadow(
+                                      color: AppColors.neumorphicLight,
+                                      offset: Offset(-1, -1),
+                                      blurRadius: 4,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Text(
+                            'Groups',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: _subTabIndex == 1
+                                  ? AppColors.textPrimary
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 IconButton(
                   tooltip: 'Add',
-                  icon: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
+                  icon: FlutterNeumorphism(
+                    style: NeumorphicStyles.circle(
+                      depth: 5,
                       color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.35),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
                     ),
+                    width: 44,
+                    height: 44,
+                    padding: EdgeInsets.zero,
                     child: const Icon(
                       Icons.add,
                       color: AppColors.primaryDark,

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/expenses/domain/models/settlement_transaction.dart';
 
-/// Card showing clearly who should pay whom and the exact amount.
+/// Neumorphic Card showing clearly who should pay whom and the exact amount.
 class SettlementCard extends StatelessWidget {
   final SettlementTransaction transaction;
 
@@ -18,23 +20,9 @@ class SettlementCard extends StatelessWidget {
     final toInitial = StringUtils.getSingleInitial(transaction.to.name);
     final amountFormatted = '₹${transaction.amount.toStringAsFixed(transaction.amount.truncateToDouble() == transaction.amount ? 0 : 2)}';
 
-    return Container(
+    return FlutterNeumorphism(
+      style: NeumorphicStyles.card(borderRadius: 22, depth: 5),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: AppColors.border,
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
       child: Column(
         children: [
           // Visual payer -> arrow with amount -> receiver flow
@@ -45,22 +33,21 @@ class SettlementCard extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    Container(
+                    FlutterNeumorphism(
+                      style: NeumorphicStyles.card(
+                        borderRadius: 14,
+                        depth: 3,
+                        color: const Color(0xFFFFECEC),
+                      ),
                       width: 44,
                       height: 44,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFEAEA),
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: const Color(0xFFFFCDCD)),
-                      ),
-                      child: Center(
-                        child: Text(
-                          fromInitial,
-                          style: const TextStyle(
-                            color: Color(0xFFC92A2A),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 18,
-                          ),
+                      padding: EdgeInsets.zero,
+                      child: Text(
+                        fromInitial,
+                        style: const TextStyle(
+                          color: Color(0xFFC92A2A),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
                         ),
                       ),
                     ),
@@ -84,7 +71,7 @@ class SettlementCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 11,
                               color: Color(0xFFC92A2A),
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
@@ -99,19 +86,9 @@ class SettlementCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Column(
                   children: [
-                    Container(
+                    FlutterNeumorphism(
+                      style: NeumorphicStyles.primaryButton(borderRadius: 12, depth: 4),
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.35),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
                       child: Text(
                         amountFormatted,
                         style: const TextStyle(
@@ -157,29 +134,28 @@ class SettlementCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 11,
                               color: Color(0xFF284821),
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Container(
+                    FlutterNeumorphism(
+                      style: NeumorphicStyles.card(
+                        borderRadius: 14,
+                        depth: 3,
+                        color: AppColors.primaryLight,
+                      ),
                       width: 44,
                       height: 44,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE8F8D8),
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: const Color(0xFFD6F0BE)),
-                      ),
-                      child: Center(
-                        child: Text(
-                          toInitial,
-                          style: const TextStyle(
-                            color: Color(0xFF284821),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 18,
-                          ),
+                      padding: EdgeInsets.zero,
+                      child: Text(
+                        toInitial,
+                        style: const TextStyle(
+                          color: Color(0xFF284821),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
                         ),
                       ),
                     ),

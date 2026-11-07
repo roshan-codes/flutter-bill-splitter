@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:dark_glassmorphic_bottom_bar/dark_glassmorphic_bottom_bar.dart';
+import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/screens/activity_tab.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
@@ -58,26 +60,25 @@ class _MainScreenState extends State<MainScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-            ),
+          FlutterNeumorphism(
+            style: NeumorphicStyles.circle(depth: 8),
+            width: 90,
+            height: 90,
+            padding: EdgeInsets.zero,
             child: Icon(
               _tabActiveIcons[index],
-              size: 40,
-              color: Colors.white,
+              size: 44,
+              color: AppColors.primaryDeep,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Text(
             _tabTitles[index],
             style: const TextStyle(
               fontSize: 22,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
+              letterSpacing: -0.3,
             ),
           ),
         ],
