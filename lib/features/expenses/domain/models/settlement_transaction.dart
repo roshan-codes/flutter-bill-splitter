@@ -12,3 +12,4 @@ class SettlementTransaction {
     required this.amount,
   });
 }
+

@@ -11,6 +11,9 @@ export 'features/expenses/presentation/screens/split_detail_screen.dart';
 export 'features/expenses/presentation/screens/split_summary_screen.dart';
 export 'features/expenses/domain/models/settlement_transaction.dart';
 export 'features/expenses/domain/services/expense_calculator.dart';
+export 'features/activity/domain/models/split_activity.dart';
+export 'features/activity/data/repositories/activity_repository.dart';
+export 'features/activity/presentation/screens/activity_tab.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

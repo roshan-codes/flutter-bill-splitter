@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
+import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
+import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
+import 'package:flutter_bill_splitter/features/expenses/domain/services/expense_calculator.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_summary_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/split_member_card.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
@@ -341,6 +344,25 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                 ),
               ),
               onPressed: () {
+                final total = ExpenseCalculator.calculateTotal(_memberExpenses);
+                final share = ExpenseCalculator.calculateSharePerPerson(total, widget.members.length);
+                final settlements = ExpenseCalculator.calculateSettlements(
+                  members: widget.members,
+                  paidAmounts: _memberExpenses,
+                );
+
+                final activity = SplitActivity(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  groupName: widget.groupName,
+                  totalAmount: total,
+                  sharePerPerson: share,
+                  members: List.unmodifiable(widget.members),
+                  memberExpenses: Map.unmodifiable(_memberExpenses),
+                  settlements: settlements,
+                  timestamp: DateTime.now(),
+                );
+                ActivityRepository.instance.recordActivity(activity);
+
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => SplitSummaryScreen(

@@ -19,6 +19,10 @@ Future<void> _addFriendHelper(WidgetTester tester, String name, String phone) as
 }
 
 void main() {
+  setUp(() {
+    ActivityRepository.instance.clearActivities();
+  });
+
   testWidgets(
       'Friends tab + button shows options: Add New Friend and Create New Group',
       (WidgetTester tester) async {
@@ -259,5 +263,26 @@ void main() {
     // Verify screen popped back to MainScreen and success SnackBar is shown
     expect(find.text('Split Summary'), findsNothing);
     expect(find.textContaining('Split settled successfully for "Friday Dinner"!'), findsOneWidget);
+
+    // Switch to Activity Tab (index 2)
+    final activityTab = find.byIcon(Icons.access_time_rounded);
+    await tester.tap(activityTab);
+    await tester.pumpAndSettle();
+
+    // Verify Activity Tab displays the recorded split!
+    expect(find.text('Activity'), findsOneWidget);
+    expect(find.text('Friday Dinner'), findsOneWidget);
+    expect(find.text('₹600'), findsOneWidget);
+    expect(find.text('₹300 / person'), findsOneWidget);
+    expect(find.text('2 members'), findsOneWidget);
+    expect(find.text('Sophia Martinez pays ₹300 to Alex Johnson'), findsOneWidget);
+
+    // Tap on the activity card to open ActivityDetailSheet
+    await tester.tap(find.text('Friday Dinner'));
+    await tester.pumpAndSettle();
+
+    // Verify detail sheet shows recorded split details
+    expect(find.text('Recorded Split Details'), findsOneWidget);
+    expect(find.text('Who Pays Whom'), findsOneWidget);
   });
 }

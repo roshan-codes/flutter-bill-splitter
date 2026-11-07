@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dark_glassmorphic_bottom_bar/dark_glassmorphic_bottom_bar.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/features/activity/presentation/screens/activity_tab.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/group.dart';
@@ -84,13 +85,47 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  Widget _buildBody() {
+    switch (_currentIndex) {
+      case 1:
+        return FriendsTab(
+          friends: _friends,
+          groups: _groups,
+          onFriendAdded: (newFriend) {
+            setState(() {
+              _friends.add(newFriend);
+            });
+          },
+          onGroupCreated: (newGroup) {
+            setState(() {
+              _groups.add(newGroup);
+            });
+          },
+          onFriendDeleted: (index) {
+            setState(() {
+              _friends.removeAt(index);
+            });
+          },
+          onGroupDeleted: (index) {
+            setState(() {
+              _groups.removeAt(index);
+            });
+          },
+        );
+      case 2:
+        return const ActivityTab();
+      default:
+        return _buildDefaultTab(_currentIndex);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isFriendsTab = _currentIndex == 1;
+    final hasCustomHeader = _currentIndex == 1 || _currentIndex == 2;
 
     return Scaffold(
       extendBody: true,
-      appBar: isFriendsTab
+      appBar: hasCustomHeader
           ? null
           : AppBar(
               title: Text(
@@ -102,32 +137,7 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ),
             ),
-      body: isFriendsTab
-          ? FriendsTab(
-              friends: _friends,
-              groups: _groups,
-              onFriendAdded: (newFriend) {
-                setState(() {
-                  _friends.add(newFriend);
-                });
-              },
-              onGroupCreated: (newGroup) {
-                setState(() {
-                  _groups.add(newGroup);
-                });
-              },
-              onFriendDeleted: (index) {
-                setState(() {
-                  _friends.removeAt(index);
-                });
-              },
-              onGroupDeleted: (index) {
-                setState(() {
-                  _groups.removeAt(index);
-                });
-              },
-            )
-          : _buildDefaultTab(_currentIndex),
+      body: _buildBody(),
       bottomNavigationBar: DarkGlassmorphicBottomBar(
         selectedIndex: _currentIndex,
         onTabSelected: (index) {
