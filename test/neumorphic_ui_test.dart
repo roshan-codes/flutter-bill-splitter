@@ -6,7 +6,9 @@ import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/screens/activity_tab.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
+import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/search_name_group_bar.dart';
+import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/screens/home_tab.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/screens/profile_tab.dart';
 import 'package:flutter_bill_splitter/shared/widgets/empty_state_view.dart';
@@ -295,6 +297,51 @@ void main() {
 
       // Verify Continue button
       expect(find.widgetWithText(ElevatedButton, 'Continue'), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_forward_rounded), findsOneWidget);
+    });
+
+    testWidgets('SplitDetailScreen renders screenshot-matching neumorphic UI elements', (tester) async {
+      final members = [
+        const Friend(name: 'Vinit', phone: '+91 98765 11111'),
+        const Friend(name: 'Nishant', phone: '+91 98765 22222'),
+        const Friend(name: 'Saurabh', phone: '+91 98765 33333'),
+      ];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SplitDetailScreen(
+            groupName: 'Lunch',
+            members: members,
+          ),
+        ),
+      );
+
+      // Verify Header
+      expect(find.text('Split with Members'), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
+
+      // Verify Summary Card
+      expect(find.text('Lunch'), findsOneWidget);
+      expect(find.text('3 members included in split'), findsOneWidget);
+      expect(find.byIcon(Icons.groups_rounded), findsOneWidget);
+
+      // Verify Member Badges
+      expect(find.text('V'), findsNWidgets(2)); // Avatar badge + member card avatar
+      expect(find.text('N'), findsNWidgets(2));
+      expect(find.text('S'), findsNWidgets(2));
+
+      // Verify Section Header
+      expect(find.text('Selected Members'), findsOneWidget);
+      expect(find.text('3 total'), findsOneWidget);
+
+      // Verify Member Cards & "+ Add expense"
+      expect(find.text('Vinit'), findsOneWidget);
+      expect(find.text('Nishant'), findsOneWidget);
+      expect(find.text('Saurabh'), findsOneWidget);
+      expect(find.text('Add expense'), findsNWidgets(3));
+
+      // Verify Confirm Split button
+      expect(find.widgetWithText(ElevatedButton, 'Confirm Split'), findsOneWidget);
       expect(find.byIcon(Icons.arrow_forward_rounded), findsOneWidget);
     });
   });

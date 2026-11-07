@@ -10,7 +10,9 @@ import 'package:flutter_bill_splitter/features/expenses/presentation/screens/spl
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/split_member_card.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 
-/// Screen displaying the list of selected friends / members with options to add person expenses.
+/// Screen displaying the list of selected friends / members with options to add person expenses,
+/// matching the exact neumorphic screenshot layout:
+/// Top group summary card with member avatar badges, "Selected Members" section, and "Confirm Split ->" button.
 class SplitDetailScreen extends StatefulWidget {
   final String groupName;
   final List<Friend> members;
@@ -27,9 +29,6 @@ class SplitDetailScreen extends StatefulWidget {
 
 class _SplitDetailScreenState extends State<SplitDetailScreen> {
   final Map<String, double> _memberExpenses = {};
-
-  double get _totalExpense =>
-      _memberExpenses.values.fold(0.0, (sum, val) => sum + val);
 
   void _showAddExpenseDialog(Friend friend) {
     final currentAmount = _memberExpenses[friend.name];
@@ -151,9 +150,12 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final title = widget.groupName.trim().isNotEmpty ? widget.groupName : 'Lunch';
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        centerTitle: true,
         leading: Padding(
           padding: const EdgeInsets.only(left: 12),
           child: Center(
@@ -186,11 +188,12 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Group Summary Header Card
+              // 1. Group Summary Header Card (Lunch / members included in split + avatar badges)
               FlutterNeumorphism(
                 style: NeumorphicStyles.card(borderRadius: 24, depth: 6),
                 width: double.infinity,
@@ -203,16 +206,16 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                         FlutterNeumorphism(
                           style: NeumorphicStyles.card(
                             borderRadius: 14,
-                            depth: 4,
-                            color: AppColors.primaryLight,
+                            depth: 3,
+                            color: const Color(0xFFE8F8D8),
                           ),
-                          width: 46,
-                          height: 46,
+                          width: 44,
+                          height: 44,
                           padding: EdgeInsets.zero,
                           child: const Icon(
                             Icons.groups_rounded,
-                            color: AppColors.primaryDeep,
-                            size: 24,
+                            color: Color(0xFF284821),
+                            size: 22,
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -221,22 +224,21 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                widget.groupName,
+                                title,
                                 style: const TextStyle(
-                                  fontSize: 19,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.w800,
                                   color: AppColors.textPrimary,
+                                  letterSpacing: -0.2,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 3),
                               Text(
-                                _totalExpense > 0
-                                    ? 'Total expense: ₹${_totalExpense.toStringAsFixed(_totalExpense.truncateToDouble() == _totalExpense ? 0 : 2)}'
-                                    : '${widget.members.length} members included in split',
-                                style: TextStyle(
+                                '${widget.members.length} members included in split',
+                                style: const TextStyle(
                                   fontSize: 13,
-                                  color: _totalExpense > 0 ? AppColors.primaryDeep : AppColors.textSecondary,
-                                  fontWeight: _totalExpense > 0 ? FontWeight.w700 : FontWeight.w500,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
@@ -245,55 +247,49 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    const Divider(height: 1, color: AppColors.border),
-                    const SizedBox(height: 14),
 
-                    // Avatars preview row with neumorphic squircle avatars
-                    SizedBox(
-                      height: 42,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: widget.members.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 10),
-                        itemBuilder: (context, idx) {
-                          final m = widget.members[idx];
-                          final initial = StringUtils.getSingleInitial(m.name);
-                          return FlutterNeumorphism(
-                            style: NeumorphicStyles.card(
-                              borderRadius: 14,
-                              depth: 3,
-                              color: AppColors.primaryLight,
+                    // Avatars preview row: soft lime squircle badges with member initials
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 8,
+                      children: widget.members.map((m) {
+                        final initial = StringUtils.getSingleInitial(m.name);
+                        return FlutterNeumorphism(
+                          style: NeumorphicStyles.card(
+                            borderRadius: 12,
+                            depth: 3,
+                            color: const Color(0xFFE8F8D8),
+                          ),
+                          width: 38,
+                          height: 38,
+                          padding: EdgeInsets.zero,
+                          child: Text(
+                            initial,
+                            style: const TextStyle(
+                              color: Color(0xFF284821),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
                             ),
-                            width: 42,
-                            height: 42,
-                            padding: EdgeInsets.zero,
-                            child: Text(
-                              initial,
-                              style: const TextStyle(
-                                color: Color(0xFF284821),
-                                fontWeight: FontWeight.w900,
-                                fontSize: 17,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
 
-              // Section Title
+              // 2. Section Header: "Selected Members" & "X total"
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
                     'Selected Members',
                     style: TextStyle(
-                      fontSize: 17,
+                      fontSize: 16.5,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
+                      letterSpacing: -0.2,
                     ),
                   ),
                   Text(
@@ -308,7 +304,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
               ),
               const SizedBox(height: 14),
 
-              // List of Selected Members with Add Expense Option
+              // 3. List of Selected Members with Add Expense Option
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -329,7 +325,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
           ),
         ),
       ),
-      // Fixed bottom button
+
+      // 4. Fixed Bottom Confirm Split Button (Confirm Split ->)
       bottomNavigationBar: Container(
         color: AppColors.background,
         padding: const EdgeInsets.fromLTRB(24, 10, 24, 20),
@@ -337,18 +334,18 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
           top: false,
           child: SizedBox(
             width: double.infinity,
+            height: 54,
             child: FlutterNeumorphism(
-              style: NeumorphicStyles.primaryButton(borderRadius: 18, depth: 6),
+              style: NeumorphicStyles.primaryButton(borderRadius: 20, depth: 6),
               padding: EdgeInsets.zero,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   foregroundColor: AppColors.primaryDark,
                   shadowColor: Colors.transparent,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
                 onPressed: () {
@@ -361,7 +358,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
 
                   final activity = SplitActivity(
                     id: DateTime.now().millisecondsSinceEpoch.toString(),
-                    groupName: widget.groupName,
+                    groupName: title,
                     totalAmount: total,
                     sharePerPerson: share,
                     members: List.unmodifiable(widget.members),
@@ -374,19 +371,31 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => SplitSummaryScreen(
-                        groupName: widget.groupName,
+                        groupName: title,
                         members: widget.members,
                         memberExpenses: _memberExpenses,
                       ),
                     ),
                   );
                 },
-                child: const Text(
-                  'Confirm Split',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 17,
-                  ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Confirm Split',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: AppColors.primaryDark,
+                      size: 20,
+                    ),
+                  ],
                 ),
               ),
             ),

@@ -25,122 +25,109 @@ class SplitMemberCard extends StatelessWidget {
     final singleInitial = StringUtils.getSingleInitial(friend.name);
     final hasExpense = expenseAmount != null && expenseAmount! > 0;
 
-    return FlutterNeumorphism(
-      style: NeumorphicStyles.card(borderRadius: 22, depth: 5),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          // Light lime-green neumorphic squircle avatar
-          FlutterNeumorphism(
-            style: NeumorphicStyles.card(
-              borderRadius: 16,
-              depth: 3,
-              color: AppColors.primaryLight,
-            ),
-            width: 48,
-            height: 48,
-            padding: EdgeInsets.zero,
-            child: friend.avatarUrl != null && friend.avatarUrl!.isNotEmpty
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: Image.network(
-                      friend.avatarUrl!,
-                      width: 48,
-                      height: 48,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildInitial(singleInitial),
-                    ),
-                  )
-                : _buildInitial(singleInitial),
-          ),
-          const SizedBox(width: 14),
-
-          // Name and "Add expense" action row (no mobile number)
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  friend.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
+    return InkWell(
+      onTap: onAddExpense,
+      borderRadius: BorderRadius.circular(20),
+      child: FlutterNeumorphism(
+        style: NeumorphicStyles.card(borderRadius: 20, depth: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            // Soft lime-green neumorphic squircle avatar
+            FlutterNeumorphism(
+              style: NeumorphicStyles.card(
+                borderRadius: 14,
+                depth: 3,
+                color: const Color(0xFFE8F8D8),
+              ),
+              width: 44,
+              height: 44,
+              padding: EdgeInsets.zero,
+              child: Text(
+                singleInitial,
+                style: const TextStyle(
+                  color: Color(0xFF284821),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
                 ),
-                const SizedBox(height: 8),
+              ),
+            ),
+            const SizedBox(width: 14),
 
-                // Add / Edit expense button row
-                InkWell(
-                  onTap: onAddExpense,
-                  borderRadius: BorderRadius.circular(10),
-                  child: Row(
+            // Friend Name and "+ Add expense" row
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    friend.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+
+                  // "+ Add expense" / "Edit expense" row matching screenshot
+                  Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      FlutterNeumorphism(
-                        style: NeumorphismStyle(
-                          color: AppColors.amber,
-                          borderRadius: 10,
-                          depth: 4,
-                          lightShadow: Colors.white.withOpacity(0.6),
-                          darkShadow: const Color(0xFFC78F1A),
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF86E829),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF86E829).withOpacity(0.4),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                        width: 32,
-                        height: 32,
-                        padding: EdgeInsets.zero,
                         child: Icon(
                           hasExpense ? Icons.edit_rounded : Icons.add,
-                          color: AppColors.primaryDark,
-                          size: 18,
+                          color: const Color(0xFF10210A),
+                          size: 14,
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       Text(
                         hasExpense ? 'Edit expense' : 'Add expense',
                         style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
                           color: hasExpense ? AppColors.primaryDeep : AppColors.textSecondary,
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          // Expense amount badge
-          if (hasExpense)
-            FlutterNeumorphism(
-              style: NeumorphicStyles.inset(
-                borderRadius: 14,
-                depth: 3,
-                color: AppColors.primaryLight,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              child: Text(
-                '₹${expenseAmount!.toStringAsFixed(expenseAmount!.truncateToDouble() == expenseAmount! ? 0 : 2)}',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primaryDeep,
-                ),
+                ],
               ),
             ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildInitial(String initial) {
-    return Center(
-      child: Text(
-        initial,
-        style: const TextStyle(
-          color: Color(0xFF284821),
-          fontWeight: FontWeight.w900,
-          fontSize: 20,
+            // Expense amount badge when present
+            if (hasExpense)
+              FlutterNeumorphism(
+                style: NeumorphicStyles.inset(
+                  borderRadius: 14,
+                  depth: 3,
+                  color: AppColors.primaryLight,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Text(
+                  '₹${expenseAmount!.toStringAsFixed(expenseAmount!.truncateToDouble() == expenseAmount! ? 0 : 2)}',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.primaryDeep,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
