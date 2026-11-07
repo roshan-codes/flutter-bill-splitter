@@ -199,7 +199,7 @@ void main() {
       expect(find.text('Are you sure you want to log out of BillSplit?'), findsOneWidget);
     });
 
-    testWidgets('ActivityTab renders screenshot-matching neumorphic UI elements and filters', (tester) async {
+    testWidgets('ActivityTab renders screenshot-matching neumorphic UI elements with filter bar removed', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: ActivityTab(),
@@ -209,10 +209,10 @@ void main() {
       // Verify Header
       expect(find.text('Activity'), findsOneWidget);
 
-      // Verify Segmented Filter Pills
-      expect(find.text('All'), findsOneWidget);
-      expect(find.text('Expenses'), findsOneWidget);
-      expect(find.text('Settlements'), findsOneWidget);
+      // Verify Segmented Filter Pills are removed
+      expect(find.text('All'), findsNothing);
+      expect(find.text('Expenses'), findsNothing);
+      expect(find.text('Settlements'), findsNothing);
 
       // Verify Section Headers
       expect(find.text('This Week'), findsOneWidget);
@@ -234,33 +234,6 @@ void main() {
       // Verify Last Week items
       expect(find.text('Movie Night'), findsOneWidget);
       expect(find.text('₹480'), findsOneWidget);
-
-      // Tap Settlements filter
-      await tester.tap(find.text('Settlements'));
-      await tester.pumpAndSettle();
-
-      // In Settlements filter: Groceries & Movie Night visible, Dinner at Sakali and Goa Trip Fuel hidden
-      expect(find.text('Groceries'), findsOneWidget);
-      expect(find.text('Movie Night'), findsOneWidget);
-      expect(find.text('Dinner at Sakali'), findsNothing);
-      expect(find.text('Goa Trip Fuel'), findsNothing);
-
-      // Tap Expenses filter
-      await tester.tap(find.text('Expenses'));
-      await tester.pumpAndSettle();
-
-      // In Expenses filter: Dinner at Sakali & Goa Trip Fuel visible, Groceries & Movie Night hidden
-      expect(find.text('Dinner at Sakali'), findsOneWidget);
-      expect(find.text('Goa Trip Fuel'), findsOneWidget);
-      expect(find.text('Groceries'), findsNothing);
-      expect(find.text('Movie Night'), findsNothing);
-
-      // Tap All filter
-      await tester.tap(find.text('All'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Dinner at Sakali'), findsOneWidget);
-      expect(find.text('Groceries'), findsOneWidget);
     });
 
     testWidgets('AddExpenseScreen renders screenshot-matching neumorphic UI elements', (tester) async {

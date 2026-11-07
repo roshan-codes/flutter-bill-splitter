@@ -2,25 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/activity_display_item.dart';
-import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_filter_bar.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_section_card.dart';
 
-/// Activity Tab displaying screenshot-matching neumorphic layout:
-/// Header, All/Expenses/Settlements segmented filter bar, This Week & Last Week sections.
-class ActivityTab extends StatefulWidget {
+/// Activity Tab displaying neumorphic activity feed with This Week and Last Week sections.
+class ActivityTab extends StatelessWidget {
   final ActivityRepository? repository;
 
   const ActivityTab({
     super.key,
     this.repository,
   });
-
-  @override
-  State<ActivityTab> createState() => _ActivityTabState();
-}
-
-class _ActivityTabState extends State<ActivityTab> {
-  int _selectedFilter = 0; // 0: All, 1: Expenses, 2: Settlements
 
   static const List<ActivityDisplayItem> _defaultThisWeek = [
     ActivityDisplayItem(
@@ -80,18 +71,9 @@ class _ActivityTabState extends State<ActivityTab> {
     ),
   ];
 
-  List<ActivityDisplayItem> _filterItems(List<ActivityDisplayItem> items) {
-    if (_selectedFilter == 1) {
-      return items.where((it) => !it.isSettlement).toList();
-    } else if (_selectedFilter == 2) {
-      return items.where((it) => it.isSettlement).toList();
-    }
-    return items;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final repo = widget.repository ?? ActivityRepository.instance;
+    final repo = repository ?? ActivityRepository.instance;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -113,18 +95,7 @@ class _ActivityTabState extends State<ActivityTab> {
                   letterSpacing: -0.5,
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Segmented Filter Bar: All | Expenses | Settlements
-              ActivityFilterBar(
-                selectedIndex: _selectedFilter,
-                onFilterChanged: (index) {
-                  setState(() {
-                    _selectedFilter = index;
-                  });
-                },
-              ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Sections: This Week & Last Week with dynamic repository listener
               AnimatedBuilder(
@@ -149,9 +120,7 @@ class _ActivityTabState extends State<ActivityTab> {
                     );
                   }).toList();
 
-                  final allThisWeek = [...dynamicThisWeek, ..._defaultThisWeek];
-                  final filteredThisWeek = _filterItems(allThisWeek);
-                  final filteredLastWeek = _filterItems(_defaultLastWeek);
+                  final thisWeekItems = [...dynamicThisWeek, ..._defaultThisWeek];
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,15 +128,14 @@ class _ActivityTabState extends State<ActivityTab> {
                       // Section 1: This Week
                       ActivitySectionCard(
                         title: 'This Week',
-                        items: filteredThisWeek,
+                        items: thisWeekItems,
                       ),
-                      if (filteredThisWeek.isNotEmpty && filteredLastWeek.isNotEmpty)
-                        const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
                       // Section 2: Last Week
-                      ActivitySectionCard(
+                      const ActivitySectionCard(
                         title: 'Last Week',
-                        items: filteredLastWeek,
+                        items: _defaultLastWeek,
                       ),
                     ],
                   );

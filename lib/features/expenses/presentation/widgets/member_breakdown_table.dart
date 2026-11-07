@@ -234,3 +234,4 @@ class MemberBreakdownTable extends StatelessWidget {
     );
   }
 }
+
