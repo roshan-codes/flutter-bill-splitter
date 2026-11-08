@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/expense_title_input.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/friend_selection_tile.dart';
@@ -10,9 +8,10 @@ import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/fri
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/group_selection_tile.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/group.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Full-screen view for Adding an Expense & Splitting between friends or groups,
-/// matching the exact neumorphic design:
+/// matching platform design (Material for Android, Cupertino for iOS):
 /// Expense Title input, Friends/Groups toggle, Search bar, individual selection tiles, and fixed Continue button.
 class AddExpenseScreen extends StatefulWidget {
   final List<Friend> friends;
@@ -24,13 +23,12 @@ class AddExpenseScreen extends StatefulWidget {
     required this.groups,
   });
 
-  /// Sample friends available for tests or preview.
+  /// Sample friends list for preview or fallback.
   static const List<Friend> sampleFriends = [
     Friend(name: 'Vinit', phone: '+91 98765 11111'),
     Friend(name: 'Nishant', phone: '+91 98765 22222'),
     Friend(name: 'Saurabh', phone: '+91 98765 33333'),
-    Friend(name: 'Akash', phone: '+91 98765 44444'),
-    Friend(name: 'Pratik', phone: '+91 98765 55555'),
+    Friend(name: 'Harshal', phone: '+91 98765 44444'),
   ];
 
   @override
@@ -46,14 +44,27 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final Set<int> _selectedFriendIndices = {};
   int? _selectedGroupIndex;
   String _searchQuery = '';
-  late List<Friend> _effectiveFriends;
-  late List<Group> _availableGroups;
 
-  @override
-  void initState() {
-    super.initState();
-    _effectiveFriends = List.from(widget.friends);
-    _availableGroups = List.from(widget.groups);
+  List<Friend> get _effectiveFriends {
+    return widget.friends.isNotEmpty
+        ? widget.friends
+        : (widget.groups.isEmpty ? AddExpenseScreen.sampleFriends : <Friend>[]);
+  }
+
+  List<Friend> get filteredFriends {
+    if (_searchQuery.isEmpty) return _effectiveFriends;
+    return _effectiveFriends
+        .where((f) =>
+            f.name.toLowerCase().contains(_searchQuery) ||
+            f.phone.toLowerCase().contains(_searchQuery))
+        .toList();
+  }
+
+  List<Group> get filteredGroups {
+    if (_searchQuery.isEmpty) return widget.groups;
+    return widget.groups
+        .where((g) => g.name.toLowerCase().contains(_searchQuery))
+        .toList();
   }
 
   @override
@@ -64,22 +75,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   void _onGroupSelected(int index) {
+    HapticFeedback.selectionClick();
     setState(() {
-      if (_selectedGroupIndex == index) {
-        _selectedGroupIndex = null;
-      } else {
-        _selectedGroupIndex = index;
-        final group = _availableGroups[index];
-        if (_expenseTitleController.text.trim().isEmpty) {
-          _expenseTitleController.text = group.name;
-        }
-        for (final member in group.members) {
-          final found = _effectiveFriends.indexWhere(
-            (f) => f.name == member.name || f.phone == member.phone,
-          );
-          if (found != -1) {
-            _selectedFriendIndices.add(found);
-          }
+      _selectedGroupIndex = index;
+      final selectedGroup = filteredGroups[index];
+      if (_expenseTitleController.text.trim().isEmpty) {
+        _expenseTitleController.text = selectedGroup.name;
+      }
+      _selectedFriendIndices.clear();
+      for (final m in selectedGroup.members) {
+        final existingIdx = _effectiveFriends.indexWhere(
+            (f) => f.name.toLowerCase() == m.name.toLowerCase());
+        if (existingIdx != -1) {
+          _selectedFriendIndices.add(existingIdx);
         }
       }
     });
@@ -91,21 +99,26 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       if (_selectedFriendIndices.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Please select at least 1 friend or group member to continue'),
+            content: Text('Please select at least one friend or group member to split with'),
             behavior: SnackBarBehavior.floating,
           ),
         );
         return;
       }
 
-      final title = _expenseTitleController.text.trim();
-      final selectedFriends = _selectedFriendIndices.map((i) => _effectiveFriends[i]).toList();
+      final chosenFriends = _selectedFriendIndices
+          .map((i) => _effectiveFriends[i])
+          .toList();
+
+      final title = _expenseTitleController.text.trim().isNotEmpty
+          ? _expenseTitleController.text.trim()
+          : 'Shared Expense';
 
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => SplitDetailScreen(
             groupName: title,
-            members: selectedFriends,
+            members: chosenFriends,
           ),
         ),
       );
@@ -114,47 +127,23 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredFriends = _effectiveFriends.where((f) {
-      if (_searchQuery.isEmpty) return true;
-      return f.name.toLowerCase().contains(_searchQuery);
-    }).toList();
-
-    final filteredGroups = _availableGroups.where((g) {
-      if (_searchQuery.isEmpty) return true;
-      return g.name.toLowerCase().contains(_searchQuery);
-    }).toList();
+    final isIOS = isIOSPlatform(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: isIOS ? AppColors.iosBackground : AppColors.background,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         centerTitle: true,
+        leadingWidth: 64,
         leading: Padding(
-          padding: const EdgeInsets.only(left: 10),
+          padding: const EdgeInsets.only(left: 16),
           child: Center(
-            child: Semantics(
-              label: 'Back',
-              button: true,
-              child: Tooltip(
-                message: 'Back',
-                child: InkWell(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    Navigator.of(context).pop();
-                  },
-                  borderRadius: BorderRadius.circular(22),
-                  child: FlutterNeumorphism(
-                    style: NeumorphicStyles.circle(depth: 4),
-                    width: 44,
-                    height: 44,
-                    padding: EdgeInsets.zero,
-                    child: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: AppColors.textPrimary,
-                      size: 16,
-                    ),
-                  ),
-                ),
-              ),
+            child: PlatformBackButton(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.of(context).pop();
+              },
             ),
           ),
         ),
@@ -170,7 +159,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: isIOS ? const BouncingScrollPhysics() : const ClampingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Form(
             key: _formKey,
@@ -197,8 +186,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 const SizedBox(height: 16),
 
                 // 3. Search Bar
-                FlutterNeumorphism(
-                  style: NeumorphicStyles.inset(borderRadius: 18, depth: 3),
+                PlatformInsetContainer(
+                  borderRadius: 16,
                   height: 48,
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   child: Row(
@@ -257,11 +246,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 // 4. Selection Tiles (Friends or Groups)
                 if (_selectedTab == 0) ...[
                   if (_effectiveFriends.isEmpty)
-                    FlutterNeumorphism(
-                      style: NeumorphicStyles.inset(borderRadius: 18, depth: 3),
+                    const PlatformInsetContainer(
+                      borderRadius: 18,
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
-                      child: const Center(
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+                      child: Center(
                         child: Column(
                           children: [
                             Icon(
@@ -293,8 +282,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       ),
                     )
                   else if (filteredFriends.isEmpty)
-                    FlutterNeumorphism(
-                      style: NeumorphicStyles.inset(borderRadius: 18, depth: 3),
+                    PlatformInsetContainer(
+                      borderRadius: 18,
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
                       child: Center(
@@ -333,11 +322,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     ],
                 ] else ...[
                   if (filteredGroups.isEmpty)
-                    FlutterNeumorphism(
-                      style: NeumorphicStyles.inset(borderRadius: 18, depth: 3),
+                    const PlatformInsetContainer(
+                      borderRadius: 18,
                       width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      child: const Center(
+                      padding: EdgeInsets.all(24),
+                      child: Center(
                         child: Text(
                           'No groups available.\nCreate a group in the Friends tab to split by group.',
                           textAlign: TextAlign.center,
@@ -370,46 +359,41 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
       // 5. Fixed Bottom Continue Button with Arrow (Continue ->)
       bottomNavigationBar: Container(
-        color: AppColors.background,
+        color: isIOS ? AppColors.iosBackground : AppColors.background,
         padding: const EdgeInsets.fromLTRB(24, 10, 24, 20),
         child: SafeArea(
           top: false,
           child: SizedBox(
             width: double.infinity,
             height: 54,
-            child: FlutterNeumorphism(
-              style: NeumorphicStyles.primaryButton(borderRadius: 20, depth: 6),
-              padding: EdgeInsets.zero,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: AppColors.primaryDark,
-                  shadowColor: Colors.transparent,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.primaryDark,
+                elevation: 1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                onPressed: _onContinuePressed,
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Continue',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 17,
-                        color: AppColors.primaryDark,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Icon(
-                      Icons.arrow_forward_rounded,
+              ),
+              onPressed: _onContinuePressed,
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Continue',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 17,
                       color: AppColors.primaryDark,
-                      size: 20,
                     ),
-                  ],
-                ),
+                  ),
+                  SizedBox(width: 8),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    color: AppColors.primaryDark,
+                    size: 20,
+                  ),
+                ],
               ),
             ),
           ),

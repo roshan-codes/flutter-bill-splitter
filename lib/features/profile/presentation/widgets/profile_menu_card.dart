@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_menu_item.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Raised Neumorphic container grouping profile navigation menu items.
+/// Platform-adaptive Card container grouping profile navigation menu items.
 class ProfileMenuCard extends StatelessWidget {
   final VoidCallback? onEditProfileTap;
   final VoidCallback? onPaymentSettlementTap;
@@ -23,8 +22,9 @@ class ProfileMenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FlutterNeumorphism(
-      style: NeumorphicStyles.card(borderRadius: 24, depth: 6),
+    return PlatformCard(
+      borderRadius: 20,
+      elevation: 1.5,
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
       child: Column(
@@ -63,4 +63,3 @@ class ProfileMenuCard extends StatelessWidget {
     );
   }
 }
-

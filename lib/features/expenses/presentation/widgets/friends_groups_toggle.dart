@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Inset Neumorphic segmented pill toggle for switching between Friends and Groups.
+/// Platform-adaptive segmented pill toggle for switching between Friends and Groups.
 class FriendsGroupsToggle extends StatelessWidget {
   final int selectedIndex; // 0: Friends, 1: Groups
   final ValueChanged<int> onToggle;
@@ -16,8 +15,8 @@ class FriendsGroupsToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FlutterNeumorphism(
-      style: NeumorphicStyles.inset(borderRadius: 22, depth: 3),
+    return PlatformInsetContainer(
+      borderRadius: 18,
       width: double.infinity,
       height: 52,
       padding: const EdgeInsets.all(4),
@@ -55,13 +54,18 @@ class FriendsGroupsToggle extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     if (isSelected) {
-      return FlutterNeumorphism(
-        style: NeumorphicStyles.card(
-          borderRadius: 18,
-          depth: 3,
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
           color: AppColors.primary,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
-        padding: EdgeInsets.zero,
         child: Center(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -88,7 +92,7 @@ class FriendsGroupsToggle extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(14),
       child: Center(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -103,7 +107,7 @@ class FriendsGroupsToggle extends StatelessWidget {
               title,
               style: const TextStyle(
                 fontSize: 15,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
             ),
@@ -113,4 +117,3 @@ class FriendsGroupsToggle extends StatelessWidget {
     );
   }
 }
-

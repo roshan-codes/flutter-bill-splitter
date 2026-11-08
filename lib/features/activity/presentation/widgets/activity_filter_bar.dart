@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Inset Neumorphic segmented filter bar for Activity tab: All, Expenses, Settlements.
+/// Segmented filter bar for Activity tab: All, Expenses, Settlements.
 class ActivityFilterBar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onFilterChanged;
@@ -18,8 +17,8 @@ class ActivityFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FlutterNeumorphism(
-      style: NeumorphicStyles.inset(borderRadius: 24, depth: 3),
+    return PlatformInsetContainer(
+      borderRadius: 24,
       width: double.infinity,
       height: 48,
       padding: const EdgeInsets.all(4),
@@ -44,13 +43,18 @@ class ActivityFilterBar extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     if (isSelected) {
-      return FlutterNeumorphism(
-        style: NeumorphicStyles.card(
-          borderRadius: 20,
-          depth: 3,
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
           color: AppColors.primary,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
-        padding: EdgeInsets.zero,
         child: Center(
           child: Text(
             title,
@@ -80,4 +84,3 @@ class ActivityFilterBar extends StatelessWidget {
     );
   }
 }
-

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 
 /// Modal bottom sheet allowing users to select and import contacts into BillSplit.
 class ImportContactsSheet extends StatefulWidget {
@@ -222,12 +220,13 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
-                child: FlutterNeumorphism(
-                  style: NeumorphicStyles.inset(borderRadius: 4, depth: 2),
+                child: Container(
                   width: 44,
                   height: 5,
-                  padding: EdgeInsets.zero,
-                  child: const SizedBox.shrink(),
+                  decoration: BoxDecoration(
+                    color: AppColors.borderMedium,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
               ),
               const SizedBox(height: 18),
@@ -235,14 +234,13 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
               // Header
               Row(
                 children: [
-                  FlutterNeumorphism(
-                    style: NeumorphicStyles.circle(
-                      depth: 4,
-                      color: const Color(0xFFE0F2FE),
-                    ),
+                  Container(
                     width: 44,
                     height: 44,
-                    padding: EdgeInsets.zero,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFFE0F2FE),
+                    ),
                     child: const Icon(
                       Icons.contacts_rounded,
                       color: Color(0xFF0284C7),
@@ -288,8 +286,12 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
               const SizedBox(height: 16),
 
               // Search field
-              FlutterNeumorphism(
-                style: NeumorphicStyles.inset(borderRadius: 16, depth: 3),
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF2F5),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border, width: 0.8),
+                ),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 child: Row(
                   children: [
@@ -335,11 +337,11 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
               if (_permissionDenied)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: FlutterNeumorphism(
-                    style: NeumorphicStyles.card(
-                      borderRadius: 14,
-                      depth: 2,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
                       color: const Color(0xFFFEF3C7),
+                      border: Border.all(color: const Color(0xFFFDE68A)),
                     ),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 8),
@@ -438,130 +440,135 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
 
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 10),
-                            child: FlutterNeumorphism(
-                              style: isSelected
-                                  ? NeumorphicStyles.card(
-                                      borderRadius: 16,
-                                      depth: 4,
-                                      color: const Color(0xFFF0FDF4),
-                                    )
-                                  : NeumorphicStyles.card(
-                                      borderRadius: 16,
-                                      depth: isAdded ? 1 : 4,
-                                      color: isAdded
-                                          ? const Color(0xFFF3F4F6)
-                                          : AppColors.surface,
-                                    ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                color: isSelected
+                                    ? const Color(0xFFF0FDF4)
+                                    : (isAdded
+                                        ? const Color(0xFFF3F4F6)
+                                        : Colors.white),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? const Color(0xFF16A34A)
+                                      : AppColors.border,
+                                  width: isSelected ? 1.5 : 0.8,
+                                ),
+                              ),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,
                                 vertical: 10,
                               ),
-                              onTap: isAdded ? null : () => _toggleSelection(contact),
-                              child: Row(
-                                children: [
-                                  // Contact avatar
-                                  FlutterNeumorphism(
-                                    style: NeumorphicStyles.circle(
-                                      depth: 3,
-                                      color: isAdded
-                                          ? const Color(0xFFE5E7EB)
-                                          : const Color(0xFFE0F2FE),
-                                    ),
-                                    width: 40,
-                                    height: 40,
-                                    padding: EdgeInsets.zero,
-                                    child: Center(
-                                      child: Text(
-                                        StringUtils.getInitials(contact.name),
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 14,
-                                          color: isAdded
-                                              ? AppColors.textSecondary
-                                              : const Color(0xFF0369A1),
+                              child: InkWell(
+                                onTap: isAdded ? null : () => _toggleSelection(contact),
+                                borderRadius: BorderRadius.circular(16),
+                                child: Row(
+                                  children: [
+                                    // Contact avatar
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: isAdded
+                                            ? const Color(0xFFE5E7EB)
+                                            : const Color(0xFFE0F2FE),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          StringUtils.getInitials(contact.name),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 14,
+                                            color: isAdded
+                                                ? AppColors.textSecondary
+                                                : const Color(0xFF0369A1),
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 12),
+                                    const SizedBox(width: 12),
 
-                                  // Name and phone
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          contact.name,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 15,
-                                            color: isAdded
-                                                ? AppColors.textSecondary
-                                                : AppColors.textPrimary,
+                                    // Name and phone
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            contact.name,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 15,
+                                              color: isAdded
+                                                  ? AppColors.textSecondary
+                                                  : AppColors.textPrimary,
+                                            ),
                                           ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            contact.phone,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    // Checkbox or Added badge
+                                    if (isAdded)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
                                         ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          contact.phone,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFE5E7EB),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: const Text(
+                                          'Added',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
                                             color: AppColors.textSecondary,
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                  ),
-
-                                  // Checkbox or Added badge
-                                  if (isAdded)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFE5E7EB),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Text(
-                                        'Added',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.textSecondary,
+                                      )
+                                    else
+                                      Semantics(
+                                        label:
+                                            '${isSelected ? "Deselect" : "Select"} ${contact.name}',
+                                        checked: isSelected,
+                                        child: Container(
+                                          width: 28,
+                                          height: 28,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: isSelected
+                                                ? AppColors.primary
+                                                : Colors.transparent,
+                                            border: Border.all(
+                                              color: isSelected
+                                                  ? AppColors.primary
+                                                  : Colors.grey.shade400,
+                                              width: 1.5,
+                                            ),
+                                          ),
+                                          child: isSelected
+                                              ? const Icon(
+                                                  Icons.check_rounded,
+                                                  size: 16,
+                                                  color: AppColors.primaryDark,
+                                                )
+                                              : null,
                                         ),
                                       ),
-                                    )
-                                  else
-                                    Semantics(
-                                      label:
-                                          '${isSelected ? "Deselect" : "Select"} ${contact.name}',
-                                      checked: isSelected,
-                                      child: FlutterNeumorphism(
-                                        style: isSelected
-                                            ? NeumorphicStyles.circle(
-                                                depth: 3,
-                                                color: AppColors.primary,
-                                              )
-                                            : NeumorphicStyles.circle(
-                                                depth: 2,
-                                                color: AppColors.surface,
-                                              ),
-                                        width: 28,
-                                        height: 28,
-                                        padding: EdgeInsets.zero,
-                                        child: isSelected
-                                            ? const Icon(
-                                                Icons.check_rounded,
-                                                size: 16,
-                                                color: AppColors.primaryDeep,
-                                              )
-                                            : const SizedBox.shrink(),
-                                      ),
-                                    ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           );

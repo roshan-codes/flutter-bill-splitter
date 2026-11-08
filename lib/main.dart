@@ -7,7 +7,7 @@ import 'app/app.dart';
 
 export 'app/app.dart';
 export 'core/services/storage_service.dart';
-export 'core/theme/neumorphic_styles.dart';
+export 'shared/widgets/platform_adaptive.dart';
 export 'features/friends/domain/models/friend.dart';
 export 'features/friends/domain/models/group.dart';
 export 'features/friends/data/repositories/friends_repository.dart';

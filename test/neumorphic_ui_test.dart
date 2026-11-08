@@ -1,43 +1,82 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
-import 'package:neumorphic_glass_navbar/neumorphic_glass_navbar.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/screens/activity_tab.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_summary_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/search_name_group_bar.dart';
+import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/screens/home_tab.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/recent_expenses_card.dart';
+import 'package:flutter_bill_splitter/features/navigation/presentation/screens/main_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/splash_screen.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/screens/profile_tab.dart';
+import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_logout_button.dart';
 import 'package:flutter_bill_splitter/shared/widgets/empty_state_view.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 void main() {
-  group('Neumorphic UI Tests', () {
-    test('NeumorphicStyles generates correct card style', () {
-      final style = NeumorphicStyles.card(borderRadius: 20, depth: 6);
-      expect(style.borderRadius, 20.0);
-      expect(style.depth, 6.0);
-      expect(style.type, NeumorphismType.flat);
-      expect(style.color, AppColors.surface);
-      expect(style.lightShadow, AppColors.neumorphicLight);
-      expect(style.darkShadow, AppColors.neumorphicDark);
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    FriendsRepository.instance.clearAll();
+  });
+
+  group('Platform Adaptive UI Tests (Material for Android, Cupertino for iOS)', () {
+    testWidgets('PlatformCard renders Material Card on Android', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(platform: TargetPlatform.android),
+          home: const Scaffold(
+            body: PlatformCard(
+              borderRadius: 20,
+              elevation: 2,
+              child: Text('Card Content'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(Card), findsOneWidget);
+      expect(find.text('Card Content'), findsOneWidget);
     });
 
-    test('NeumorphicStyles generates correct inset style', () {
-      final style = NeumorphicStyles.inset(borderRadius: 16, depth: 4);
-      expect(style.borderRadius, 16.0);
-      expect(style.depth, 4.0);
-      expect(style.type, NeumorphismType.pressed);
-      expect(style.color, AppColors.neumorphicPressed);
+    testWidgets('PlatformCard renders iOS styled container on iOS', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(platform: TargetPlatform.iOS),
+          home: const Scaffold(
+            body: PlatformCard(
+              borderRadius: 20,
+              child: Text('iOS Card Content'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(Card), findsNothing);
+      expect(find.text('iOS Card Content'), findsOneWidget);
     });
 
-    testWidgets('EmptyStateView renders with circular FlutterNeumorphism icon container', (tester) async {
+    testWidgets('PlatformInsetContainer renders container on both platforms', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: PlatformInsetContainer(
+              borderRadius: 16,
+              child: Text('Inset Content'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Inset Content'), findsOneWidget);
+    });
+
+    testWidgets('EmptyStateView renders with clean icon container without neumorphism', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -51,66 +90,59 @@ void main() {
       );
 
       expect(find.text('No Activity Yet'), findsOneWidget);
-      expect(find.byType(FlutterNeumorphism), findsOneWidget);
+      expect(find.text('Confirmed splits will appear here.'), findsOneWidget);
+      expect(find.byIcon(Icons.receipt_long_rounded), findsOneWidget);
     });
 
-    testWidgets('SearchNameGroupBar renders with inset field and raised action button', (tester) async {
+    testWidgets('SearchNameGroupBar renders with text field and action button', (tester) async {
       final controller = TextEditingController();
+      bool searchPressed = false;
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: SearchNameGroupBar(
               controller: controller,
               onChanged: (_) {},
-              onSearchPressed: () {},
+              onSearchPressed: () => searchPressed = true,
             ),
           ),
         ),
       );
 
-      expect(find.byType(FlutterNeumorphism), findsNWidgets(2));
       expect(find.byType(TextField), findsOneWidget);
+      expect(find.byType(IconButton), findsOneWidget);
+
+      await tester.tap(find.byType(IconButton));
+      await tester.pumpAndSettle();
+      expect(searchPressed, isTrue);
     });
 
-    testWidgets('NeumorphicGlassNavbar renders with glass settings and items', (tester) async {
-      int tappedIndex = -1;
+    testWidgets('MainScreen renders NavigationBar on Android', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            bottomNavigationBar: NeumorphicGlassNavbar(
-              currentIndex: 0,
-              onTap: (idx) => tappedIndex = idx,
-              height: 68,
-              settings: const NeumorphicGlassNavbarSettings(
-                tintColor: AppColors.background,
-                opacity: 0.65,
-                borderRadius: 28.0,
-              ),
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home_outlined),
-                  label: 'Home',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.people_outline_rounded),
-                  label: 'Friends',
-                ),
-              ],
-            ),
-          ),
+          theme: ThemeData(platform: TargetPlatform.android),
+          home: const MainScreen(),
         ),
       );
 
-      expect(find.byType(NeumorphicGlassNavbar), findsOneWidget);
-      expect(find.text('Home'), findsOneWidget);
-      expect(find.text('Friends'), findsOneWidget);
-
-      await tester.tap(find.text('Friends'));
-      await tester.pumpAndSettle();
-      expect(tappedIndex, 1);
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(CupertinoTabBar), findsNothing);
     });
 
-    testWidgets('HomeTab renders screenshot-matching neumorphic UI elements', (tester) async {
+    testWidgets('MainScreen renders CupertinoTabBar on iOS', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(platform: TargetPlatform.iOS),
+          home: const MainScreen(),
+        ),
+      );
+
+      expect(find.byType(CupertinoTabBar), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
+    });
+
+    testWidgets('HomeTab renders screenshot-matching UI elements', (tester) async {
       bool addExpenseTapped = false;
       await tester.pumpWidget(
         MaterialApp(
@@ -162,10 +194,11 @@ void main() {
       expect(addExpenseTapped, isTrue);
     });
 
-    testWidgets('ProfileTab renders screenshot-matching neumorphic UI elements', (tester) async {
+    testWidgets('ProfileTab renders adaptive UI elements and Material dialog on Android', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: ProfileTab(),
+        MaterialApp(
+          theme: ThemeData(platform: TargetPlatform.android),
+          home: const ProfileTab(),
         ),
       );
 
@@ -178,7 +211,7 @@ void main() {
       expect(find.text('Roshan Badwaik'), findsOneWidget);
       expect(find.text('+91 9876543210'), findsOneWidget);
 
-      // Verify Neumorphic Menu Items
+      // Verify Menu Items
       expect(find.text('Edit Profile'), findsOneWidget);
       expect(find.byIcon(Icons.person_outline_rounded), findsOneWidget);
 
@@ -198,14 +231,30 @@ void main() {
       expect(find.text('Logout'), findsOneWidget);
       expect(find.byIcon(Icons.logout_rounded), findsOneWidget);
 
-      // Tap Logout button and verify confirmation dialog opens
-      await tester.tap(find.text('Logout'));
+      // Tap Logout button and verify Material AlertDialog opens on Android
+      await tester.ensureVisible(find.byType(ProfileLogoutButton));
+      await tester.tap(find.byType(ProfileLogoutButton));
       await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
       expect(find.text('Confirm Logout'), findsOneWidget);
       expect(find.text('Are you sure you want to log out of BillSplit?'), findsOneWidget);
     });
 
-    testWidgets('ActivityTab renders screenshot-matching neumorphic UI elements with filter bar removed', (tester) async {
+    testWidgets('ProfileTab renders Cupertino dialog on iOS', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(platform: TargetPlatform.iOS),
+          home: const ProfileTab(),
+        ),
+      );
+
+      await tester.ensureVisible(find.byType(ProfileLogoutButton));
+      await tester.tap(find.byType(ProfileLogoutButton));
+      await tester.pumpAndSettle();
+      expect(find.byType(CupertinoAlertDialog), findsOneWidget);
+    });
+
+    testWidgets('ActivityTab renders UI elements without filter bar', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: ActivityTab(
@@ -247,7 +296,7 @@ void main() {
       expect(find.text('₹480'), findsOneWidget);
     });
 
-    testWidgets('AddExpenseScreen renders screenshot-matching neumorphic UI elements', (tester) async {
+    testWidgets('AddExpenseScreen renders adaptive UI elements', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: AddExpenseScreen(
@@ -259,7 +308,7 @@ void main() {
 
       // Verify Header
       expect(find.text('Add & Split Expense'), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
+      expect(find.byTooltip('Back'), findsOneWidget);
 
       // Verify Expense Title Section
       expect(find.text('Expense Title'), findsOneWidget);
@@ -277,15 +326,14 @@ void main() {
       expect(find.text('Vinit'), findsOneWidget);
       expect(find.text('Nishant'), findsOneWidget);
       expect(find.text('Saurabh'), findsOneWidget);
-      expect(find.text('Akash'), findsOneWidget);
-      expect(find.text('Pratik'), findsOneWidget);
+      expect(find.text('Harshal'), findsOneWidget);
 
       // Verify Continue button
       expect(find.widgetWithText(ElevatedButton, 'Continue'), findsOneWidget);
       expect(find.byIcon(Icons.arrow_forward_rounded), findsOneWidget);
     });
 
-    testWidgets('SplitDetailScreen renders screenshot-matching neumorphic UI elements', (tester) async {
+    testWidgets('SplitDetailScreen renders adaptive UI elements', (tester) async {
       final members = [
         const Friend(name: 'Vinit', phone: '+91 98765 11111'),
         const Friend(name: 'Nishant', phone: '+91 98765 22222'),
@@ -303,7 +351,7 @@ void main() {
 
       // Verify Header
       expect(find.text('Split with Members'), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
+      expect(find.byTooltip('Back'), findsOneWidget);
 
       // Verify Summary Card
       expect(find.text('Lunch'), findsOneWidget);
@@ -330,7 +378,7 @@ void main() {
       expect(find.byIcon(Icons.arrow_forward_rounded), findsOneWidget);
     });
 
-    testWidgets('SplitSummaryScreen renders screenshot-matching neumorphic UI elements', (tester) async {
+    testWidgets('SplitSummaryScreen renders adaptive UI elements', (tester) async {
       final members = [
         const Friend(name: 'Vinit', phone: '+91 98765 11111'),
         const Friend(name: 'Nishant', phone: '+91 98765 22222'),
@@ -354,7 +402,7 @@ void main() {
 
       // Verify Header
       expect(find.text('Split Summary'), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
+      expect(find.byTooltip('Back'), findsOneWidget);
 
       // Verify Title & Members Card
       expect(find.text('Dinner at Sakali'), findsOneWidget);
@@ -369,7 +417,7 @@ void main() {
 
       // Verify Who Pays Whom Section
       expect(find.text('Who Pays Whom'), findsOneWidget);
-      expect(find.text('2 payments to settle this expense'), findsOneWidget);
+      expect(find.text('2 payments'), findsOneWidget);
       expect(find.text('Saurabh'), findsWidgets);
       expect(find.text('Pay ₹183'), findsOneWidget);
       expect(find.text('Nishant'), findsWidgets);
@@ -409,7 +457,7 @@ void main() {
       expect(find.textContaining('and settle easily'), findsOneWidget);
     });
 
-    testWidgets('OnboardingScreen renders screenshot-matching receipt visual, copy, and actions', (tester) async {
+    testWidgets('OnboardingScreen renders receipt visual, copy, and actions', (tester) async {
       bool getStartedTapped = false;
       await tester.pumpWidget(
         MaterialApp(
@@ -421,7 +469,7 @@ void main() {
         ),
       );
 
-      // Verify 3D Receipt visual with Rupee symbol
+      // Verify Receipt visual with Rupee symbol
       expect(find.text('₹'), findsOneWidget);
 
       // Verify Headline & Body
@@ -441,4 +489,3 @@ void main() {
     });
   });
 }
-

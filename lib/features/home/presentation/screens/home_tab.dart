@@ -5,8 +5,9 @@ import 'package:flutter_bill_splitter/features/home/presentation/widgets/balance
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/home_header.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/home_quick_actions.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/recent_expenses_card.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// The Home Tab screen matching the user-provided neumorphic design.
+/// The Home Tab screen with platform-adaptive UI (Material for Android, Cupertino for iOS).
 class HomeTab extends StatelessWidget {
   final VoidCallback onAddExpense;
   final VoidCallback? onScanBill;
@@ -29,12 +30,14 @@ class HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isIOS = isIOSPlatform(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: isIOS ? AppColors.iosBackground : AppColors.background,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: isIOS ? const BouncingScrollPhysics() : const ClampingScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,7 +54,7 @@ class HomeTab extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 24),
 
               // 3 Quick Action Tiles: Add Expense, Scan Bill, Settle Up
               HomeQuickActions(
@@ -81,7 +84,7 @@ class HomeTab extends StatelessWidget {
                   }
                 },
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 24),
 
               // Balance Card: You get vs You owe
               BalanceCard(
@@ -89,7 +92,7 @@ class HomeTab extends StatelessWidget {
                 youGetAmount: youGetAmount,
                 youOweAmount: youOweAmount,
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 24),
 
               // Recent Expenses Card
               RecentExpensesCard(

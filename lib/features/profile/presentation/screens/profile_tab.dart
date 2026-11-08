@@ -1,11 +1,13 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_avatar.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_header.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_logout_button.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_menu_card.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Profile Tab screen matching the user-provided neumorphic design.
+/// Profile Tab screen matching platform design (Material on Android, Cupertino on iOS).
 class ProfileTab extends StatelessWidget {
   final VoidCallback? onLogout;
 
@@ -24,58 +26,88 @@ class ProfileTab extends StatelessWidget {
   }
 
   void _showLogoutConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Confirm Logout',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        content: const Text(
-          'Are you sure you want to log out of BillSplit?',
-          style: TextStyle(color: AppColors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE53935),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+    if (isIOSPlatform(context)) {
+      showCupertinoDialog(
+        context: context,
+        builder: (ctx) => CupertinoAlertDialog(
+          title: const Text('Confirm Logout'),
+          content: const Text('Are you sure you want to log out of BillSplit?'),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
             ),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              if (onLogout != null) {
-                onLogout!();
-              } else {
-                _showNotice(context, 'Logged out successfully');
-              }
-            },
-            child: const Text('Logout'),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                if (onLogout != null) {
+                  onLogout!();
+                } else {
+                  _showNotice(context, 'Logged out successfully');
+                }
+              },
+              child: const Text('Logout'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            'Confirm Logout',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
           ),
-        ],
-      ),
-    );
+          content: const Text(
+            'Are you sure you want to log out of BillSplit?',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE53935),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                if (onLogout != null) {
+                  onLogout!();
+                } else {
+                  _showNotice(context, 'Logged out successfully');
+                }
+              },
+              child: const Text('Logout'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isIOS = isIOSPlatform(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: isIOS ? AppColors.iosBackground : AppColors.background,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: isIOS ? const BouncingScrollPhysics() : const ClampingScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
           child: Column(
             children: [
@@ -85,7 +117,7 @@ class ProfileTab extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // Avatar with glowing lime circle, name, and phone
+              // Avatar with primary circle, name, and phone
               ProfileAvatar(
                 name: 'Roshan Badwaik',
                 phone: '+91 9876543210',
@@ -102,7 +134,7 @@ class ProfileTab extends StatelessWidget {
                 onHelpSupportTap: () => _showNotice(context, 'Help & Support opened'),
                 onAboutBillSplitTap: () => _showNotice(context, 'About BillSplit opened'),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 24),
 
               // Logout Button
               ProfileLogoutButton(
@@ -115,4 +147,3 @@ class ProfileTab extends StatelessWidget {
     );
   }
 }
-

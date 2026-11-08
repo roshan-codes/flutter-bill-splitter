@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Row of 3 Neumorphic Quick Action Cards: Add Expense, Scan Bill, and Settle Up.
+/// Row of 3 Platform-adaptive Quick Action Cards: Add Expense, Scan Bill, and Settle Up.
 class HomeQuickActions extends StatelessWidget {
   final VoidCallback onAddExpense;
   final VoidCallback onScanBill;
@@ -24,20 +23,19 @@ class HomeQuickActions extends StatelessWidget {
         // Tile 1: Add Expense (Highlighted)
         Expanded(
           child: _buildActionTile(
+            context: context,
             onTap: onAddExpense,
-            iconWidget: FlutterNeumorphism(
-              style: NeumorphicStyles.card(
-                borderRadius: 16,
-                depth: 4,
+            iconWidget: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
                 color: AppColors.primary,
+                borderRadius: BorderRadius.circular(16),
               ),
-              width: 52,
-              height: 52,
-              padding: EdgeInsets.zero,
               child: const Icon(
                 Icons.add,
-                color: AppColors.primaryDark,
-                size: 26,
+                color: Colors.black,
+                size: 28,
               ),
             ),
             label: 'Add\nExpense',
@@ -48,20 +46,19 @@ class HomeQuickActions extends StatelessWidget {
         // Tile 2: Scan Bill
         Expanded(
           child: _buildActionTile(
+            context: context,
             onTap: onScanBill,
-            iconWidget: FlutterNeumorphism(
-              style: NeumorphicStyles.inset(
-                borderRadius: 16,
-                depth: 2,
-                color: AppColors.surface,
+            iconWidget: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8EDF2),
+                borderRadius: BorderRadius.circular(16),
               ),
-              width: 52,
-              height: 52,
-              padding: EdgeInsets.zero,
               child: const Icon(
                 Icons.qr_code_scanner_rounded,
-                color: AppColors.textPrimary,
-                size: 26,
+                color: Colors.black,
+                size: 24,
               ),
             ),
             label: 'Scan Bill',
@@ -72,20 +69,19 @@ class HomeQuickActions extends StatelessWidget {
         // Tile 3: Settle Up
         Expanded(
           child: _buildActionTile(
+            context: context,
             onTap: onSettleUp,
-            iconWidget: FlutterNeumorphism(
-              style: NeumorphicStyles.inset(
-                borderRadius: 16,
-                depth: 2,
-                color: AppColors.surface,
+            iconWidget: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8EDF2),
+                borderRadius: BorderRadius.circular(16),
               ),
-              width: 52,
-              height: 52,
-              padding: EdgeInsets.zero,
               child: const Icon(
-                Icons.account_balance_wallet_outlined,
-                color: AppColors.textPrimary,
-                size: 26,
+                Icons.credit_card_rounded,
+                color: Colors.black,
+                size: 24,
               ),
             ),
             label: 'Settle Up',
@@ -96,6 +92,7 @@ class HomeQuickActions extends StatelessWidget {
   }
 
   Widget _buildActionTile({
+    required BuildContext context,
     required VoidCallback onTap,
     required Widget iconWidget,
     required String label,
@@ -103,36 +100,35 @@ class HomeQuickActions extends StatelessWidget {
     return Semantics(
       label: label.replaceAll('\n', ' '),
       button: true,
-      child: InkWell(
+      child: PlatformCard(
+        borderRadius: 20,
+        elevation: 1,
+        color: Colors.white,
+        height: 128,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
         onTap: () {
           HapticFeedback.lightImpact();
           onTap();
         },
-        borderRadius: BorderRadius.circular(22),
-        child: FlutterNeumorphism(
-        style: NeumorphicStyles.card(borderRadius: 22, depth: 5),
-        height: 124,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             iconWidget,
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Text(
               label,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 13.5,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: Color(0xFF1B241E),
                 height: 1.15,
+                letterSpacing: -0.2,
               ),
             ),
           ],
         ),
       ),
-    ),
-  );
+    );
+  }
 }
-}
-

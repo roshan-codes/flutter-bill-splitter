@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
+import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/navigation/presentation/screens/main_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/onboarding_page_indicator.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/onboarding_receipt_card.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Onboarding Screen matching the neumorphic design:
-/// Stylized 3D receipt visual, swipeable headline & body with 3-dot indicator, "Get Started" button, and "I already have an account".
+/// Onboarding Screen matching platform design:
+/// Stylized receipt visual, swipeable headline & body with 3-dot indicator, "Get Started" button, and "I already have an account".
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback? onGetStarted;
 
@@ -48,6 +48,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _navigateToMain(BuildContext context) {
     HapticFeedback.lightImpact();
+    StorageService.instance.setBool('has_completed_onboarding', true);
     if (widget.onGetStarted != null) {
       widget.onGetStarted!();
       return;
@@ -64,8 +65,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isIOS = isIOSPlatform(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: isIOS ? AppColors.iosBackground : AppColors.background,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
@@ -85,7 +88,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       children: [
                         const Spacer(flex: 2),
 
-                        // Visual 3D Receipt with Rupee symbol and lime accents
+                        // Visual Receipt with Rupee symbol and lime accents
                         const OnboardingReceiptCard(),
                         const Spacer(flex: 2),
 
@@ -128,32 +131,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Primary "Get Started" Neumorphic Button
+              // Primary "Get Started" Button
               SizedBox(
                 width: double.infinity,
                 height: 54,
-                child: FlutterNeumorphism(
-                  style:
-                      NeumorphicStyles.primaryButton(borderRadius: 20, depth: 6),
-                  padding: EdgeInsets.zero,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      foregroundColor: AppColors.primaryDark,
-                      shadowColor: Colors.transparent,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.primaryDark,
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
                     ),
-                    onPressed: () => _navigateToMain(context),
-                    child: const Text(
-                      'Get Started',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primaryDark,
-                      ),
+                  ),
+                  onPressed: () => _navigateToMain(context),
+                  child: const Text(
+                    'Get Started',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primaryDark,
                     ),
                   ),
                 ),

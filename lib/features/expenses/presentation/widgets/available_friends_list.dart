@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Neumorphic list of available friends with tap selection support and empty states.
+/// Platform-adaptive list of available friends with tap selection support and empty states.
 class AvailableFriendsList extends StatelessWidget {
   final List<Friend> allFriends;
   final List<Friend> filteredFriends;
@@ -51,8 +50,8 @@ class AvailableFriendsList extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         if (filteredFriends.isEmpty)
-          FlutterNeumorphism(
-            style: NeumorphicStyles.inset(borderRadius: 18, depth: 3),
+          PlatformInsetContainer(
+            borderRadius: 18,
             width: double.infinity,
             padding: const EdgeInsets.all(24),
             child: Center(
@@ -84,21 +83,28 @@ class AvailableFriendsList extends StatelessWidget {
               return InkWell(
                 onTap: () => onFriendToggled(originalIndex),
                 borderRadius: BorderRadius.circular(16),
-                child: FlutterNeumorphism(
-                  style: isSelected
-                      ? NeumorphicStyles.inset(borderRadius: 16, depth: 3)
-                      : NeumorphicStyles.card(borderRadius: 16, depth: 4),
+                child: Container(
                   padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primaryLight.withOpacity(0.4) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected ? AppColors.primary : AppColors.border,
+                      width: isSelected ? 1.5 : 0.8,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
                   child: Row(
                     children: [
-                      FlutterNeumorphism(
-                        style: NeumorphicStyles.circle(
-                          depth: 3,
-                          color: isSelected ? AppColors.primary : AppColors.primaryLight,
-                        ),
-                        width: 42,
-                        height: 42,
-                        padding: EdgeInsets.zero,
+                      CircleAvatar(
+                        radius: 21,
+                        backgroundColor: isSelected ? AppColors.primary : AppColors.primaryLight,
                         child: Text(
                           initials,
                           style: TextStyle(

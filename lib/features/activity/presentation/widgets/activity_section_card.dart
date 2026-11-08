@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/activity_display_item.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_item_row.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Card container rendering a section of activities (e.g., "This Week", "Last Week").
+/// Platform-adaptive Card container rendering a section of activities (e.g., "This Week", "Last Week").
 class ActivitySectionCard extends StatelessWidget {
   final String title;
   final List<ActivityDisplayItem> items;
@@ -37,8 +36,9 @@ class ActivitySectionCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        FlutterNeumorphism(
-          style: NeumorphicStyles.card(borderRadius: 24, depth: 6),
+        PlatformCard(
+          borderRadius: 20,
+          elevation: 1.5,
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           child: Column(

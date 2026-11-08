@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// User profile avatar featuring a glowing lime neumorphic circle and user identity.
+/// User profile avatar featuring a primary accented circle and user identity.
 class ProfileAvatar extends StatelessWidget {
   final String name;
   final String phone;
@@ -22,27 +21,17 @@ class ProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Lime-green glowing Neumorphic circular avatar
-        InkWell(
+        PlatformCircleButton(
+          size: 88,
+          color: AppColors.primary,
+          elevation: 2,
           onTap: onTap,
-          borderRadius: BorderRadius.circular(44),
-          child: FlutterNeumorphism(
-            style: NeumorphicStyles.circle(
-              depth: 6,
-              color: AppColors.primary,
-            ),
-            width: 88,
-            height: 88,
-            padding: EdgeInsets.zero,
-            child: Center(
-              child: Text(
-                initial,
-                style: const TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primaryDark,
-                ),
-              ),
+          child: Text(
+            initial,
+            style: const TextStyle(
+              fontSize: 34,
+              fontWeight: FontWeight.w900,
+              color: AppColors.primaryDark,
             ),
           ),
         ),
@@ -75,4 +64,3 @@ class ProfileAvatar extends StatelessWidget {
     );
   }
 }
-

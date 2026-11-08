@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/group.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Modal bottom sheet to create a new group with neumorphic UI styling.
+/// Modal bottom sheet to create a new group with platform-adaptive UI styling.
 class CreateGroupBottomSheet extends StatefulWidget {
   final List<Friend> availableFriends;
   final ValueChanged<Group> onGroupCreated;
@@ -22,10 +21,12 @@ class CreateGroupBottomSheet extends StatefulWidget {
     required List<Friend> availableFriends,
     required ValueChanged<Group> onGroupCreated,
   }) {
+    final isIOS = isIOSPlatform(context);
+
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: isIOS ? AppColors.iosBackground : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -88,12 +89,13 @@ class _CreateGroupBottomSheetState extends State<CreateGroupBottomSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
-                child: FlutterNeumorphism(
-                  style: NeumorphicStyles.inset(borderRadius: 4, depth: 2),
+                child: Container(
                   width: 44,
                   height: 5,
-                  padding: EdgeInsets.zero,
-                  child: const SizedBox.shrink(),
+                  decoration: BoxDecoration(
+                    color: AppColors.borderMedium,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
               ),
               const SizedBox(height: 18),
@@ -109,26 +111,27 @@ class _CreateGroupBottomSheetState extends State<CreateGroupBottomSheet> {
               const SizedBox(height: 16),
               Form(
                 key: _formKey,
-                child: FlutterNeumorphism(
-                  style: NeumorphicStyles.inset(borderRadius: 16, depth: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  child: TextFormField(
-                    controller: _groupNameController,
-                    autofocus: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Group Name',
-                      hintText: 'e.g. Goa Trip, Flatmates',
-                      prefixIcon: Icon(Icons.groups_outlined, color: AppColors.primaryDeep),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: TextFormField(
+                  controller: _groupNameController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: 'Group Name',
+                    hintText: 'e.g. Goa Trip, Flatmates',
+                    prefixIcon: const Icon(Icons.groups_outlined, color: AppColors.primaryDeep),
+                    filled: true,
+                    fillColor: const Color(0xFFEFF2F5),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter group name';
-                      }
-                      return null;
-                    },
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter group name';
+                    }
+                    return null;
+                  },
                 ),
               ),
               const SizedBox(height: 18),
@@ -157,10 +160,13 @@ class _CreateGroupBottomSheetState extends State<CreateGroupBottomSheet> {
               ),
               const SizedBox(height: 10),
               if (widget.availableFriends.isEmpty)
-                FlutterNeumorphism(
-                  style: NeumorphicStyles.inset(borderRadius: 16, depth: 3),
+                Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF2F5),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: const Center(
                     child: Text(
                       'No friends added yet to add to group.',
@@ -191,11 +197,16 @@ class _CreateGroupBottomSheetState extends State<CreateGroupBottomSheet> {
                           });
                         },
                         borderRadius: BorderRadius.circular(16),
-                        child: FlutterNeumorphism(
-                          style: isSelected
-                              ? NeumorphicStyles.inset(borderRadius: 16, depth: 3)
-                              : NeumorphicStyles.card(borderRadius: 16, depth: 4),
+                        child: Container(
                           padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.primaryLight.withOpacity(0.5) : Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isSelected ? AppColors.primary : AppColors.border,
+                              width: isSelected ? 1.5 : 0.8,
+                            ),
+                          ),
                           child: Row(
                             children: [
                               CircleAvatar(
@@ -265,23 +276,18 @@ class _CreateGroupBottomSheetState extends State<CreateGroupBottomSheet> {
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 2,
-                    child: FlutterNeumorphism(
-                      style: NeumorphicStyles.primaryButton(borderRadius: 16, depth: 5),
-                      padding: EdgeInsets.zero,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          foregroundColor: AppColors.primaryDark,
-                          shadowColor: Colors.transparent,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.primaryDark,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        elevation: 1,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        onPressed: _submit,
-                        child: const Text('Create Group', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
                       ),
+                      onPressed: _submit,
+                      child: const Text('Create Group', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
                     ),
                   ),
                 ],

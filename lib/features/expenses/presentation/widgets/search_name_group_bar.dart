@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Neumorphic Search input bar with debossed search well and raised action button.
+/// Platform-adaptive Search input bar with search field and action button.
 class SearchNameGroupBar extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
@@ -21,10 +20,10 @@ class SearchNameGroupBar extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: FlutterNeumorphism(
-            style: NeumorphicStyles.inset(borderRadius: 28, depth: 4),
+          child: PlatformInsetContainer(
+            borderRadius: 24,
+            height: 52,
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            height: 54,
             child: TextField(
               controller: controller,
               onChanged: onChanged,
@@ -46,23 +45,26 @@ class SearchNameGroupBar extends StatelessWidget {
                   size: 22,
                 ),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 16),
+                contentPadding: EdgeInsets.symmetric(vertical: 14),
               ),
             ),
           ),
         ),
         const SizedBox(width: 12),
-        FlutterNeumorphism(
-          style: NeumorphismStyle(
+        Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
             color: AppColors.amber,
-            borderRadius: 18,
-            depth: 5,
-            lightShadow: Colors.white.withOpacity(0.6),
-            darkShadow: const Color(0xFFC78F1A),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.amber.withOpacity(0.35),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          width: 54,
-          height: 54,
-          padding: EdgeInsets.zero,
           child: IconButton(
             icon: const Icon(
               Icons.search_rounded,

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 
-/// 3D Neumorphic Receipt illustration with currency symbol, placeholder bars, and lime accents.
+/// Clean Receipt illustration with currency symbol, placeholder bars, and lime accents.
 class OnboardingReceiptCard extends StatelessWidget {
   const OnboardingReceiptCard({super.key});
 
@@ -52,7 +50,7 @@ class OnboardingReceiptCard extends StatelessWidget {
             ),
           ),
 
-          // Main Neumorphic Raised Receipt with jagged bottom edge
+          // Main Raised Receipt with jagged bottom edge
           Transform.rotate(
             angle: -0.06,
             child: SizedBox(
@@ -78,15 +76,20 @@ class OnboardingReceiptCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // Rupee Symbol inside squircle container
-                        FlutterNeumorphism(
-                          style: NeumorphicStyles.card(
-                            borderRadius: 14,
-                            depth: 3,
-                            color: Colors.white,
-                          ),
+                        Container(
                           width: 52,
                           height: 52,
-                          padding: EdgeInsets.zero,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.06),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
                           child: const Center(
                             child: Text(
                               '₹',
@@ -179,7 +182,7 @@ class _ReceiptShadowPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final path = const _ReceiptClipper().getClip(size);
     final paint = Paint()
-      ..color = const Color(0xFFC7D3DC).withOpacity(0.4)
+      ..color = const Color(0xFFCBD5E1).withOpacity(0.4)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
     canvas.drawPath(path.shift(const Offset(4, 6)), paint);
   }
@@ -187,4 +190,3 @@ class _ReceiptShadowPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-

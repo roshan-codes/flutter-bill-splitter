@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 
-/// Neumorphic Dialog to input a new friend's name and mobile number.
+/// Platform-adaptive Dialog to input a new friend's name and mobile number.
 class AddFriendDialog extends StatefulWidget {
   final ValueChanged<Friend> onFriendAdded;
 
@@ -53,20 +51,19 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
       ),
       title: Row(
         children: [
-          FlutterNeumorphism(
-            style: NeumorphicStyles.circle(
-              depth: 4,
-              color: AppColors.primaryLight,
-            ),
+          Container(
             width: 40,
             height: 40,
-            padding: EdgeInsets.zero,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.primaryLight,
+            ),
             child: const Icon(
               Icons.person_add_alt_1_rounded,
               color: AppColors.primaryDeep,
@@ -90,48 +87,50 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FlutterNeumorphism(
-              style: NeumorphicStyles.inset(borderRadius: 16, depth: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              child: TextFormField(
-                controller: _nameController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Friend Name',
-                  hintText: 'Enter name',
-                  prefixIcon: Icon(Icons.person_outline, color: AppColors.primaryDeep),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            TextFormField(
+              controller: _nameController,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: 'Friend Name',
+                hintText: 'Enter name',
+                prefixIcon: const Icon(Icons.person_outline, color: AppColors.primaryDeep),
+                filled: true,
+                fillColor: const Color(0xFFEFF2F5),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a name';
-                  }
-                  return null;
-                },
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter a name';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 16),
-            FlutterNeumorphism(
-              style: NeumorphicStyles.inset(borderRadius: 16, depth: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              child: TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Mobile Number',
-                  hintText: 'Enter mobile no',
-                  prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primaryDeep),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            TextFormField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: 'Mobile Number',
+                hintText: 'Enter mobile no',
+                prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primaryDeep),
+                filled: true,
+                fillColor: const Color(0xFFEFF2F5),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter mobile number';
-                  }
-                  return null;
-                },
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter mobile number';
+                }
+                return null;
+              },
             ),
           ],
         ),
@@ -144,23 +143,18 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
             style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w700),
           ),
         ),
-        FlutterNeumorphism(
-          style: NeumorphicStyles.primaryButton(borderRadius: 14, depth: 5),
-          padding: EdgeInsets.zero,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              foregroundColor: AppColors.primaryDark,
-              shadowColor: Colors.transparent,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.primaryDark,
+            elevation: 1,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
             ),
-            onPressed: _submit,
-            child: const Text('Add', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
           ),
+          onPressed: _submit,
+          child: const Text('Add', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
         ),
       ],
     );

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/group.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Single neumorphic item tile for displaying a group in the Groups tab.
+/// Single platform-adaptive item tile for displaying a group in the Groups tab.
 class GroupListItem extends StatelessWidget {
   final Group group;
   final VoidCallback? onDelete;
@@ -17,20 +16,19 @@ class GroupListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FlutterNeumorphism(
-      style: NeumorphicStyles.card(borderRadius: 18, depth: 5),
+    return PlatformCard(
+      borderRadius: 18,
+      elevation: 1.5,
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
-          FlutterNeumorphism(
-            style: NeumorphicStyles.card(
-              borderRadius: 14,
-              depth: 4,
-              color: AppColors.primaryLight,
-            ),
+          Container(
             width: 48,
             height: 48,
-            padding: EdgeInsets.zero,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              color: AppColors.primaryLight,
+            ),
             child: const Icon(
               Icons.groups_rounded,
               color: AppColors.primaryDeep,

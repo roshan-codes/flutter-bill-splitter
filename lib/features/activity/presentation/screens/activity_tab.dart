@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/activity_display_item.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_section_card.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Activity Tab displaying neumorphic activity feed with real activity records or a clean empty state.
+/// Activity Tab displaying platform-adaptive activity feed with real activity records or a clean empty state.
 class ActivityTab extends StatelessWidget {
   final ActivityRepository? repository;
   final List<ActivityDisplayItem>? customItems;
@@ -79,13 +78,14 @@ class ActivityTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repo = repository ?? ActivityRepository.instance;
+    final isIOS = isIOSPlatform(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: isIOS ? AppColors.iosBackground : AppColors.background,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: isIOS ? const BouncingScrollPhysics() : const ClampingScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,11 +129,9 @@ class ActivityTab extends StatelessWidget {
                   if (recordedActivities.isEmpty) {
                     return Padding(
                       padding: const EdgeInsets.only(top: 40),
-                      child: FlutterNeumorphism(
-                        style: NeumorphicStyles.card(
-                          borderRadius: 24,
-                          depth: 4,
-                        ),
+                      child: PlatformCard(
+                        borderRadius: 20,
+                        elevation: 1,
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,

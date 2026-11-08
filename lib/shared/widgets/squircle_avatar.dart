@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Reusable neumorphic squircle avatar with image loading & initials fallback.
+/// Reusable platform-adaptive squircle avatar with image loading & initials fallback.
 class SquircleAvatar extends StatelessWidget {
   final String name;
   final String? avatarUrl;
@@ -12,7 +11,6 @@ class SquircleAvatar extends StatelessWidget {
   final double borderRadius;
   final Color? backgroundColor;
   final Color? textColor;
-  final bool isNeumorphic;
 
   const SquircleAvatar({
     super.key,
@@ -22,7 +20,6 @@ class SquircleAvatar extends StatelessWidget {
     this.borderRadius = 14,
     this.backgroundColor,
     this.textColor,
-    this.isNeumorphic = true,
   });
 
   @override
@@ -30,13 +27,30 @@ class SquircleAvatar extends StatelessWidget {
     final initials = StringUtils.getInitials(name);
     final bg = backgroundColor ?? AppColors.primaryLight;
     final fg = textColor ?? AppColors.primaryDeep;
+    final isIOS = isIOSPlatform(context);
 
-    final avatarContent = ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: Container(
-        width: size,
-        height: size,
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
         color: bg,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: isIOS
+              ? AppColors.primary.withOpacity(0.2)
+              : AppColors.border,
+          width: 0.8,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
         child: avatarUrl != null && avatarUrl!.isNotEmpty
             ? Image.network(
                 avatarUrl!,
@@ -47,20 +61,6 @@ class SquircleAvatar extends StatelessWidget {
               )
             : _buildFallback(initials, fg),
       ),
-    );
-
-    if (!isNeumorphic) return avatarContent;
-
-    return FlutterNeumorphism(
-      style: NeumorphicStyles.card(
-        borderRadius: borderRadius,
-        depth: 4,
-        color: bg,
-      ),
-      padding: EdgeInsets.zero,
-      width: size,
-      height: size,
-      child: avatarContent,
     );
   }
 

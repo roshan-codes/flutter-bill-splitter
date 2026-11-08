@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Single friend selection card with custom squircle checkbox, pastel avatar, and name.
 class FriendSelectionTile extends StatelessWidget {
@@ -77,14 +76,13 @@ class FriendSelectionTile extends StatelessWidget {
         onToggle();
       },
       excludeSemantics: true,
-      child: InkWell(
+      child: PlatformCard(
+        borderRadius: 16,
+        elevation: 1,
         onTap: () {
           HapticFeedback.selectionClick();
           onToggle();
         },
-        borderRadius: BorderRadius.circular(18),
-        child: FlutterNeumorphism(
-        style: NeumorphicStyles.card(borderRadius: 18, depth: 4),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
@@ -145,8 +143,6 @@ class FriendSelectionTile extends StatelessWidget {
           ],
         ),
       ),
-    ),
-  );
+    );
+  }
 }
-}
-

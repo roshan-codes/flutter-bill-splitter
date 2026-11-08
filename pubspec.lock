@@ -142,14 +142,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
-  flutter_neumorphism_ui:
-    dependency: "direct main"
-    description:
-      name: flutter_neumorphism_ui
-      sha256: "075ae16c41eb032bfe32d24d5285a6b2e137c5533f9b5490bb3f19d594396556"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.2"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -256,14 +248,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.15.0"
-  neumorphic_glass_navbar:
-    dependency: "direct main"
-    description:
-      name: neumorphic_glass_navbar
-      sha256: da37864a1abe4041cc60492f8d34806661bf5ceb47340602d661fa8847aa9a11
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.1"
   path:
     dependency: transitive
     description:

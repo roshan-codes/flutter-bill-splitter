@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_detail_sheet.dart';
 import 'package:flutter_bill_splitter/features/home/domain/models/recent_expense.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/recent_expense_item.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Neumorphic Card container displaying "Recent Expenses".
+/// Platform-adaptive Card container displaying "Recent Expenses".
 /// Displays real activities from [ActivityRepository], custom expenses, or a clean empty state.
 class RecentExpensesCard extends StatelessWidget {
   final List<RecentExpense>? customExpenses;
@@ -66,13 +65,13 @@ class RecentExpensesCard extends StatelessWidget {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+            color: Color(0xFF1B241E),
             letterSpacing: -0.3,
           ),
         ),
         const SizedBox(height: 14),
 
-        // Neumorphic Container
+        // Platform Adaptive Container
         AnimatedBuilder(
           animation: ActivityRepository.instance,
           builder: (context, _) {
@@ -86,41 +85,41 @@ class RecentExpensesCard extends StatelessWidget {
                 amount: a.totalAmount,
                 icon: Icons.receipt_long_rounded,
                 iconBgColor: const Color(0xFFE8F8D8),
-                iconColor: const Color(0xFF284821),
+                iconColor: const Color(0xFF166534),
               );
             }).toList();
 
             final displayExpenses = customExpenses ?? dynamicExpenses;
 
             if (displayExpenses.isEmpty) {
-              return FlutterNeumorphism(
-                style: NeumorphicStyles.card(borderRadius: 24, depth: 4),
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+              return PlatformCard(
+                borderRadius: 22,
+                elevation: 1,
+                color: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 34),
                 child: Center(
                   child: Column(
                     children: [
                       Container(
-                        width: 48,
-                        height: 48,
+                        width: 52,
+                        height: 52,
                         decoration: BoxDecoration(
                           color: const Color(0xFFE8F8D8),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: const Icon(
-                          Icons.receipt_long_outlined,
-                          color: Color(0xFF284821),
-                          size: 24,
+                          Icons.receipt_long_rounded,
+                          color: Color(0xFF166534),
+                          size: 26,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
                       const Text(
                         'No Recent Expenses',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 16.5,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
+                          color: Color(0xFF1B241E),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -129,7 +128,7 @@ class RecentExpensesCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textSecondary,
+                          color: Color(0xFF6B7280),
                         ),
                       ),
                     ],
@@ -138,9 +137,10 @@ class RecentExpensesCard extends StatelessWidget {
               );
             }
 
-            return FlutterNeumorphism(
-              style: NeumorphicStyles.card(borderRadius: 24, depth: 6),
-              width: double.infinity,
+            return PlatformCard(
+              borderRadius: 22,
+              elevation: 1,
+              color: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
               child: Column(
                 children: [

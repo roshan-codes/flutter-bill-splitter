@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Neumorphic input field for entering the Expense Title / Group Name.
+/// Platform-adaptive input field for entering the Expense Title / Group Name.
 class ExpenseTitleInput extends StatelessWidget {
   final TextEditingController controller;
   final String? Function(String?)? validator;
@@ -29,8 +28,9 @@ class ExpenseTitleInput extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        FlutterNeumorphism(
-          style: NeumorphicStyles.card(borderRadius: 20, depth: 4),
+        PlatformCard(
+          borderRadius: 16,
+          elevation: 1,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: TextFormField(
             controller: controller,
@@ -67,4 +67,3 @@ class ExpenseTitleInput extends StatelessWidget {
     );
   }
 }
-

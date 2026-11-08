@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Single neumorphic item tile for displaying a friend in the Friends list.
+/// Single platform-adaptive item tile for displaying a friend in the Friends list.
 class FriendListItem extends StatelessWidget {
   final Friend friend;
   final VoidCallback? onDelete;
@@ -20,25 +19,27 @@ class FriendListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final initials = StringUtils.getInitials(friend.name);
 
-    return FlutterNeumorphism(
-      style: NeumorphicStyles.card(borderRadius: 18, depth: 5),
+    return PlatformCard(
+      borderRadius: 18,
+      elevation: 1.5,
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
-          FlutterNeumorphism(
-            style: NeumorphicStyles.circle(
-              depth: 4,
-              color: AppColors.primaryLight,
-            ),
+          Container(
             width: 44,
             height: 44,
-            padding: EdgeInsets.zero,
-            child: Text(
-              initials,
-              style: const TextStyle(
-                color: AppColors.primaryDeep,
-                fontWeight: FontWeight.w800,
-                fontSize: 15,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.primaryLight,
+            ),
+            child: Center(
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  color: AppColors.primaryDeep,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                ),
               ),
             ),
           ),

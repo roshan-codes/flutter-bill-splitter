@@ -4,7 +4,7 @@ import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/activity_display_item.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_detail_sheet.dart';
 
-/// Single row item representing an activity entry inside a neumorphic section card.
+/// Single row item representing an activity entry inside an activity section card.
 class ActivityItemRow extends StatelessWidget {
   final ActivityDisplayItem item;
   final VoidCallback? onTap;

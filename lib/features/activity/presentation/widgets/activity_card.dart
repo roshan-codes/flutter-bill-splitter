@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_detail_sheet.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Neumorphic Card widget presenting a single recorded split activity in the Activity tab.
+/// Platform-adaptive Card widget presenting a single recorded split activity in the Activity tab.
 class ActivityCard extends StatelessWidget {
   final SplitActivity activity;
 
@@ -45,8 +44,9 @@ class ActivityCard extends StatelessWidget {
     final shareFormatted = _formatAmount(activity.sharePerPerson);
     final timeStr = _formatTimestamp(activity.timestamp);
 
-    return FlutterNeumorphism(
-      style: NeumorphicStyles.card(borderRadius: 22, depth: 5),
+    return PlatformCard(
+      borderRadius: 18,
+      elevation: 1.5,
       onTap: () => ActivityDetailSheet.show(context, activity),
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -56,15 +56,13 @@ class ActivityCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              FlutterNeumorphism(
-                style: NeumorphicStyles.card(
-                  borderRadius: 14,
-                  depth: 3,
-                  color: AppColors.primaryLight,
-                ),
+              Container(
                 width: 46,
                 height: 46,
-                padding: EdgeInsets.zero,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  color: AppColors.primaryLight,
+                ),
                 child: const Icon(
                   Icons.receipt_long_rounded,
                   color: AppColors.primaryDeep,
@@ -127,8 +125,8 @@ class ActivityCard extends StatelessWidget {
           // Middle chip info
           Row(
             children: [
-              FlutterNeumorphism(
-                style: NeumorphicStyles.inset(borderRadius: 10, depth: 2),
+              PlatformInsetContainer(
+                borderRadius: 10,
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

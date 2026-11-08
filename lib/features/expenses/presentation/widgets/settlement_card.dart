@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/expenses/domain/models/settlement_transaction.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Neumorphic Card displaying an individual settlement transaction:
+/// Platform-adaptive Card displaying an individual settlement transaction:
 /// Debtor (Avatar, Name, Pay ₹Amount) -> Arrow -> Creditor (Avatar, Name).
 class SettlementCard extends StatelessWidget {
   final SettlementTransaction transaction;
@@ -34,8 +33,9 @@ class SettlementCard extends StatelessWidget {
 
     return Semantics(
       label: '${transaction.from.name} should pay $amountFormatted to ${transaction.to.name}',
-      child: FlutterNeumorphism(
-        style: NeumorphicStyles.card(borderRadius: 20, depth: 4),
+      child: PlatformCard(
+        borderRadius: 18,
+        elevation: 1.5,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [

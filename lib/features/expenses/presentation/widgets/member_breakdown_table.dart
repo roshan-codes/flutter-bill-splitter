@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Table card widget showing the breakdown for each member: Member, Paid, Share, Net.
 class MemberBreakdownTable extends StatelessWidget {
@@ -31,8 +30,9 @@ class MemberBreakdownTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FlutterNeumorphism(
-      style: NeumorphicStyles.card(borderRadius: 22, depth: 5),
+    return PlatformCard(
+      borderRadius: 20,
+      elevation: 1.5,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Column(
         children: [
@@ -203,7 +203,7 @@ class MemberBreakdownTable extends StatelessWidget {
                                   ? const Color(0xFFE8F8D8)
                                   : isNegative
                                       ? const Color(0xFFFFECE0)
-                                      : const Color(0xFFE8EEF2),
+                                      : const Color(0xFFEFF2F5),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
@@ -234,4 +234,3 @@ class MemberBreakdownTable extends StatelessWidget {
     );
   }
 }
-

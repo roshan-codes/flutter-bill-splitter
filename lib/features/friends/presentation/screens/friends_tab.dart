@@ -1,8 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/group.dart';
 import 'package:flutter_bill_splitter/features/friends/presentation/widgets/add_friend_dialog.dart';
@@ -11,8 +10,9 @@ import 'package:flutter_bill_splitter/features/friends/presentation/widgets/crea
 import 'package:flutter_bill_splitter/features/friends/presentation/widgets/friend_list_item.dart';
 import 'package:flutter_bill_splitter/features/friends/presentation/widgets/group_list_item.dart';
 import 'package:flutter_bill_splitter/features/friends/presentation/widgets/import_contacts_sheet.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Friends & Groups view tab.
+/// Friends & Groups Tab with platform-adaptive UI (Material for Android, Cupertino for iOS).
 class FriendsTab extends StatefulWidget {
   final List<Friend> friends;
   final List<Group> groups;
@@ -36,12 +36,13 @@ class FriendsTab extends StatefulWidget {
 }
 
 class _FriendsTabState extends State<FriendsTab> {
-  int _subTabIndex = 0; // 0: Friends, 1: Groups
+  int _subTabIndex = 0; // 0 = Friends, 1 = Groups
 
   void _showAddOptionsMenu() {
+    HapticFeedback.lightImpact();
     AddOptionsBottomSheet.show(
       context,
-      onAddFriend: () => AddFriendDialog.show(
+      onAddNewFriend: () => AddFriendDialog.show(
         context,
         onFriendAdded: widget.onFriendAdded,
       ),
@@ -69,219 +70,312 @@ class _FriendsTabState extends State<FriendsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 16, 14),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                FlutterNeumorphism(
-                  style: NeumorphicStyles.inset(borderRadius: 18, depth: 3),
-                  padding: const EdgeInsets.all(4),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => setState(() => _subTabIndex = 0),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: _subTabIndex == 0 ? AppColors.surface : Colors.transparent,
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: _subTabIndex == 0
-                                ? [
-                                    BoxShadow(
-                                      color: AppColors.neumorphicDark.withOpacity(0.5),
-                                      offset: const Offset(1, 2),
-                                      blurRadius: 4,
-                                    ),
-                                    const BoxShadow(
-                                      color: AppColors.neumorphicLight,
-                                      offset: Offset(-1, -1),
-                                      blurRadius: 4,
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Text(
-                            'Friends',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: _subTabIndex == 0
-                                  ? AppColors.textPrimary
-                                  : AppColors.textSecondary,
+    final isIOS = isIOSPlatform(context);
+
+    return Scaffold(
+      backgroundColor: isIOS ? AppColors.iosBackground : AppColors.background,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 16, 14),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  isIOS
+                      ? CupertinoSlidingSegmentedControl<int>(
+                          groupValue: _subTabIndex,
+                          backgroundColor: CupertinoColors.tertiarySystemFill.resolveFrom(context),
+                          thumbColor: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(context),
+                          children: const {
+                            0: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              child: Text(
+                                'Friends',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
                             ),
+                            1: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              child: Text(
+                                'Groups',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          },
+                          onValueChanged: (val) {
+                            if (val != null) setState(() => _subTabIndex = val);
+                          },
+                        )
+                      : Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF2F5),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.border, width: 0.8),
+                          ),
+                          padding: const EdgeInsets.all(4),
+                          child: Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () => setState(() => _subTabIndex = 0),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: _subTabIndex == 0 ? Colors.white : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: _subTabIndex == 0
+                                        ? [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.06),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 1),
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  child: Text(
+                                    'Friends',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      color: _subTabIndex == 0
+                                          ? AppColors.textPrimary
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => setState(() => _subTabIndex = 1),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: _subTabIndex == 1 ? Colors.white : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: _subTabIndex == 1
+                                        ? [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.06),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 1),
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  child: Text(
+                                    'Groups',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      color: _subTabIndex == 1
+                                          ? AppColors.textPrimary
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                  IconButton(
+                    tooltip: 'Add',
+                    icon: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primary,
                       ),
-                      GestureDetector(
-                        onTap: () => setState(() => _subTabIndex = 1),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: _subTabIndex == 1 ? AppColors.surface : Colors.transparent,
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: _subTabIndex == 1
-                                ? [
-                                    BoxShadow(
-                                      color: AppColors.neumorphicDark.withOpacity(0.5),
-                                      offset: const Offset(1, 2),
-                                      blurRadius: 4,
-                                    ),
-                                    const BoxShadow(
-                                      color: AppColors.neumorphicLight,
-                                      offset: Offset(-1, -1),
-                                      blurRadius: 4,
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Text(
-                            'Groups',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: _subTabIndex == 1
-                                  ? AppColors.textPrimary
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.add,
+                          color: AppColors.primaryDark,
+                          size: 22,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'Add',
-                  icon: FlutterNeumorphism(
-                    style: NeumorphicStyles.circle(
-                      depth: 5,
-                      color: AppColors.primary,
                     ),
-                    width: 44,
-                    height: 44,
-                    padding: EdgeInsets.zero,
-                    child: const Icon(
-                      Icons.add,
-                      color: AppColors.primaryDark,
-                      size: 22,
-                    ),
+                    onPressed: _showAddOptionsMenu,
                   ),
-                  onPressed: _showAddOptionsMenu,
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: _subTabIndex == 0 ? _buildFriendsList() : _buildGroupsList(),
-          ),
-        ],
+            Expanded(
+              child: _subTabIndex == 0 ? _buildFriendsList() : _buildGroupsList(),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   void _confirmDeleteFriend(int index, Friend friend) {
     HapticFeedback.lightImpact();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Delete ${friend.name}?',
-          style: const TextStyle(
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        content: const Text(
-          'This will remove this friend from your saved list.',
-          style: TextStyle(color: AppColors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFDC2626),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+    if (isIOSPlatform(context)) {
+      showCupertinoDialog(
+        context: context,
+        builder: (ctx) => CupertinoAlertDialog(
+          title: Text('Delete ${friend.name}?'),
+          content: const Text('This will remove this friend from your saved list.'),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
             ),
-            onPressed: () {
-              HapticFeedback.mediumImpact();
-              Navigator.of(ctx).pop();
-              widget.onFriendDeleted(index);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${friend.name} removed'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            child: const Text('Delete'),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                Navigator.of(ctx).pop();
+                widget.onFriendDeleted(index);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${friend.name} removed'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            'Delete ${friend.name}?',
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
           ),
-        ],
-      ),
-    );
+          content: const Text(
+            'This will remove this friend from your saved list.',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                Navigator.of(ctx).pop();
+                widget.onFriendDeleted(index);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${friend.name} removed'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   void _confirmDeleteGroup(int index, Group group) {
     HapticFeedback.lightImpact();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Delete ${group.name}?',
-          style: const TextStyle(
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        content: const Text(
-          'This will remove this group from your saved list.',
-          style: TextStyle(color: AppColors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFDC2626),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+    if (isIOSPlatform(context)) {
+      showCupertinoDialog(
+        context: context,
+        builder: (ctx) => CupertinoAlertDialog(
+          title: Text('Delete ${group.name}?'),
+          content: const Text('This will remove this group from your saved list.'),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
             ),
-            onPressed: () {
-              HapticFeedback.mediumImpact();
-              Navigator.of(ctx).pop();
-              widget.onGroupDeleted(index);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${group.name} removed'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            child: const Text('Delete'),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                Navigator.of(ctx).pop();
+                widget.onGroupDeleted(index);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${group.name} removed'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            'Delete ${group.name}?',
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
           ),
-        ],
-      ),
-    );
+          content: const Text(
+            'This will remove this group from your saved list.',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                Navigator.of(ctx).pop();
+                widget.onGroupDeleted(index);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${group.name} removed'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Widget _buildFriendsList() {

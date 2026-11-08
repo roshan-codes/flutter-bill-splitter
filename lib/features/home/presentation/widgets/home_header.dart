@@ -1,8 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Top header for Home Tab: lightning badge, notification bell, and greeting.
 class HomeHeader extends StatelessWidget {
@@ -28,6 +28,8 @@ class HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isIOS = isIOSPlatform(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -35,41 +37,60 @@ class HomeHeader extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            FlutterNeumorphism(
-              style: NeumorphicStyles.card(
-                borderRadius: 16,
-                depth: 5,
-                color: AppColors.primary,
-              ),
+            Container(
               width: 48,
               height: 48,
-              padding: EdgeInsets.zero,
-              child: const Icon(
-                Icons.bolt_rounded,
-                color: AppColors.primaryDark,
-                size: 26,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.bolt_rounded,
+                  color: Colors.black,
+                  size: 26,
+                ),
               ),
             ),
-            Semantics(
-              label: 'Notifications',
-              button: true,
-              child: Tooltip(
-                message: 'Notifications',
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                border: Border.all(
+                  color: const Color(0xFFE5E7EB),
+                  width: 1.0,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
                 child: InkWell(
+                  customBorder: const CircleBorder(),
                   onTap: () {
                     HapticFeedback.lightImpact();
                     onNotificationPressed?.call();
                   },
-                  borderRadius: BorderRadius.circular(23),
-                  child: FlutterNeumorphism(
-                    style: NeumorphicStyles.circle(depth: 4),
-                    width: 46,
-                    height: 46,
-                    padding: EdgeInsets.zero,
-                    child: const Icon(
-                      Icons.notifications_none_rounded,
-                      color: AppColors.textPrimary,
-                      size: 24,
+                  child: Center(
+                    child: Icon(
+                      isIOS ? CupertinoIcons.bell : Icons.notifications_none_rounded,
+                      color: Colors.black,
+                      size: 22,
                     ),
                   ),
                 ),
@@ -77,7 +98,7 @@ class HomeHeader extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
 
         // Greeting
         Text(
@@ -85,11 +106,11 @@ class HomeHeader extends StatelessWidget {
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+            color: Color(0xFF1B241E),
             letterSpacing: -0.4,
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 4),
         Row(
           children: [
             Text(
@@ -97,7 +118,7 @@ class HomeHeader extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w900,
-                color: AppColors.textPrimary,
+                color: Color(0xFF1B241E),
                 letterSpacing: -0.5,
               ),
             ),
@@ -112,4 +133,3 @@ class HomeHeader extends StatelessWidget {
     );
   }
 }
-

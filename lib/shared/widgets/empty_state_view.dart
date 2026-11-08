@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Clean neumorphic empty state placeholder widget.
+/// Clean platform-adaptive empty state placeholder widget.
 class EmptyStateView extends StatelessWidget {
   final IconData? icon;
   final String title;
@@ -26,11 +25,12 @@ class EmptyStateView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              FlutterNeumorphism(
-                style: NeumorphicStyles.circle(depth: 6),
-                width: 76,
-                height: 76,
-                padding: EdgeInsets.zero,
+              PlatformCircleButton(
+                size: 76,
+                elevation: 0.5,
+                color: isIOSPlatform(context)
+                    ? AppColors.iosTertiaryFill.withOpacity(0.5)
+                    : const Color(0xFFEFF2F5),
                 child: Icon(
                   icon,
                   size: 34,

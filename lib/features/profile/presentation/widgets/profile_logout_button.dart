@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_neumorphism_ui/flutter_neumorphism_ui.dart';
-import 'package:flutter_bill_splitter/core/theme/neumorphic_styles.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Neumorphic pill button for user logout.
+/// Platform-adaptive button for user logout.
 class ProfileLogoutButton extends StatelessWidget {
   final VoidCallback? onLogout;
 
@@ -19,41 +18,36 @@ class ProfileLogoutButton extends StatelessWidget {
     return Semantics(
       label: 'Logout',
       button: true,
-      child: InkWell(
+      child: PlatformCard(
+        borderRadius: 18,
+        elevation: 1,
+        height: 54,
+        width: double.infinity,
+        padding: EdgeInsets.zero,
         onTap: () {
           HapticFeedback.lightImpact();
           onLogout?.call();
         },
-        borderRadius: BorderRadius.circular(22),
-        child: FlutterNeumorphism(
-          style: NeumorphicStyles.card(
-            borderRadius: 22,
-            depth: 4,
-          ),
-          height: 54,
-          width: double.infinity,
-          padding: EdgeInsets.zero,
-          child: const Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.logout_rounded,
+        child: const Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.logout_rounded,
+                color: dangerColor,
+                size: 22,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Logout',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
                   color: dangerColor,
-                  size: 22,
+                  letterSpacing: -0.2,
                 ),
-                SizedBox(width: 8),
-                Text(
-                  'Logout',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: dangerColor,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
