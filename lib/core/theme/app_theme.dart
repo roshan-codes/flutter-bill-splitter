@@ -2,45 +2,49 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
+import 'app_radius.dart';
 
-/// Centralized application theme supporting Material Design 3 and Cupertino.
+/// Centralized application theme following design.md (Manrope typography & CRED-inspired minimal fintech).
 class AppTheme {
   AppTheme._();
 
   static ThemeData get lightTheme {
-    final poppinsFamily = GoogleFonts.poppins().fontFamily;
+    final manropeFamily = GoogleFonts.manrope().fontFamily;
 
     return ThemeData(
       useMaterial3: true,
-      fontFamily: poppinsFamily,
+      fontFamily: manropeFamily,
       scaffoldBackgroundColor: AppColors.background,
-      dialogBackgroundColor: Colors.white,
+      dialogBackgroundColor: AppColors.surface,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         brightness: Brightness.light,
         surface: AppColors.surface,
         primary: AppColors.primary,
-        onPrimary: AppColors.primaryDark,
+        onPrimary: Colors.white,
+        secondary: AppColors.surfaceSubtle,
+        onSecondary: AppColors.textPrimary,
+        outline: AppColors.border,
       ),
-      textTheme: GoogleFonts.poppinsTextTheme(),
+      textTheme: GoogleFonts.manropeTextTheme(),
       cardTheme: CardTheme(
-        color: Colors.white,
-        elevation: 1,
-        shadowColor: Colors.black.withOpacity(0.08),
+        color: AppColors.surface,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.border, width: 0.8),
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          side: const BorderSide(color: AppColors.border, width: 1.0),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.primaryDark,
-          elevation: 1,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 56),
+          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadius.button),
           ),
-          textStyle: GoogleFonts.poppins(
+          textStyle: GoogleFonts.manrope(
             fontWeight: FontWeight.w700,
             fontSize: 16,
           ),
@@ -48,36 +52,41 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFFEFF2F5),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        fillColor: AppColors.surface,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(AppRadius.input),
+          borderSide: const BorderSide(color: AppColors.border, width: 1.0),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.border, width: 0.8),
+          borderRadius: BorderRadius.circular(AppRadius.input),
+          borderSide: const BorderSide(color: AppColors.border, width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primaryDeep, width: 1.5),
+          borderRadius: BorderRadius.circular(AppRadius.input),
+          borderSide: const BorderSide(color: AppColors.textPrimary, width: 1.5),
         ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: Colors.transparent,
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        iconTheme: IconThemeData(color: AppColors.textPrimary),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        titleTextStyle: GoogleFonts.manrope(
+          color: AppColors.textPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
       ),
       cupertinoOverrideTheme: CupertinoThemeData(
-        primaryColor: AppColors.primaryDeep,
+        primaryColor: AppColors.primary,
         scaffoldBackgroundColor: AppColors.iosBackground,
-        barBackgroundColor: const Color(0xCCF2F2F7),
+        barBackgroundColor: const Color(0xCCF7F7F5),
         textTheme: CupertinoTextThemeData(
-          textStyle: GoogleFonts.poppins(color: AppColors.textPrimary),
+          textStyle: GoogleFonts.manrope(color: AppColors.textPrimary),
         ),
       ),
     );

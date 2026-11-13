@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Clean platform-adaptive empty state placeholder widget.
+/// Adheres to design.md Section 8 & 10.
 class EmptyStateView extends StatelessWidget {
   final IconData? icon;
   final String title;
@@ -27,14 +29,12 @@ class EmptyStateView extends StatelessWidget {
             if (icon != null) ...[
               PlatformCircleButton(
                 size: 76,
-                elevation: 0.5,
-                color: isIOSPlatform(context)
-                    ? AppColors.iosTertiaryFill.withOpacity(0.5)
-                    : const Color(0xFFEFF2F5),
+                elevation: 0,
+                color: AppColors.surfaceSubtle,
                 child: Icon(
                   icon,
                   size: 34,
-                  color: AppColors.textSecondary.withOpacity(0.7),
+                  color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 18),
@@ -42,9 +42,9 @@ class EmptyStateView extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: GoogleFonts.manrope(
                 fontSize: 17,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
                 letterSpacing: -0.2,
               ),
@@ -54,10 +54,10 @@ class EmptyStateView extends StatelessWidget {
               Text(
                 subtitle!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: GoogleFonts.manrope(
                   fontSize: 13,
                   color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ],

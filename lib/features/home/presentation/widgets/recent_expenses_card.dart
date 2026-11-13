@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_detail_sheet.dart';
@@ -10,6 +12,7 @@ import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Platform-adaptive Card container displaying "Recent Expenses".
 /// Displays real activities from [ActivityRepository], custom expenses, or a clean empty state.
+/// Adheres to design.md Section 5, 8 & 10.
 class RecentExpensesCard extends StatelessWidget {
   final List<RecentExpense>? customExpenses;
   final void Function(RecentExpense expense)? onExpenseTap;
@@ -29,8 +32,8 @@ class RecentExpensesCard extends StatelessWidget {
       memberCount: 3,
       amount: 549.0,
       icon: Icons.restaurant_rounded,
-      iconBgColor: Color(0xFFE8F8D8),
-      iconColor: Color(0xFF284821),
+      iconBgColor: AppColors.surfaceSubtle,
+      iconColor: AppColors.textPrimary,
     ),
     RecentExpense(
       id: 'sample_2',
@@ -39,8 +42,8 @@ class RecentExpensesCard extends StatelessWidget {
       memberCount: 4,
       amount: 2800.0,
       icon: Icons.local_gas_station_rounded,
-      iconBgColor: Color(0xFFFFECE0),
-      iconColor: Color(0xFFC85A17),
+      iconBgColor: AppColors.warningSoft,
+      iconColor: AppColors.warning,
     ),
     RecentExpense(
       id: 'sample_3',
@@ -49,8 +52,8 @@ class RecentExpensesCard extends StatelessWidget {
       memberCount: 2,
       amount: 620.0,
       icon: Icons.shopping_bag_outlined,
-      iconBgColor: Color(0xFFE0F2FE),
-      iconColor: Color(0xFF0284C7),
+      iconBgColor: AppColors.surfaceSubtle,
+      iconColor: AppColors.textPrimary,
     ),
   ];
 
@@ -60,12 +63,12 @@ class RecentExpensesCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Section Header
-        const Text(
+        Text(
           'Recent Expenses',
-          style: TextStyle(
+          style: GoogleFonts.manrope(
             fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: Color(0xFF1B241E),
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
             letterSpacing: -0.3,
           ),
         ),
@@ -84,8 +87,8 @@ class RecentExpensesCard extends StatelessWidget {
                 memberCount: a.members.length,
                 amount: a.totalAmount,
                 icon: Icons.receipt_long_rounded,
-                iconBgColor: const Color(0xFFE8F8D8),
-                iconColor: const Color(0xFF166534),
+                iconBgColor: AppColors.successSoft,
+                iconColor: AppColors.success,
               );
             }).toList();
 
@@ -93,9 +96,9 @@ class RecentExpensesCard extends StatelessWidget {
 
             if (displayExpenses.isEmpty) {
               return PlatformCard(
-                borderRadius: 22,
-                elevation: 1,
-                color: Colors.white,
+                borderRadius: AppRadius.cardLarge,
+                elevation: 0,
+                color: AppColors.surface,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 34),
                 child: Center(
                   child: Column(
@@ -104,31 +107,31 @@ class RecentExpensesCard extends StatelessWidget {
                         width: 52,
                         height: 52,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE8F8D8),
-                          borderRadius: BorderRadius.circular(16),
+                          color: AppColors.successSoft,
+                          borderRadius: BorderRadius.circular(AppRadius.iconContainer + 2),
                         ),
                         child: const Icon(
                           Icons.receipt_long_rounded,
-                          color: Color(0xFF166534),
+                          color: AppColors.success,
                           size: 26,
                         ),
                       ),
                       const SizedBox(height: 14),
-                      const Text(
+                      Text(
                         'No Recent Expenses',
-                        style: TextStyle(
+                        style: GoogleFonts.manrope(
                           fontSize: 16.5,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1B241E),
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
+                      Text(
                         'Splits you create will appear here.',
-                        style: TextStyle(
+                        style: GoogleFonts.manrope(
                           fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF6B7280),
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -138,9 +141,9 @@ class RecentExpensesCard extends StatelessWidget {
             }
 
             return PlatformCard(
-              borderRadius: 22,
-              elevation: 1,
-              color: Colors.white,
+              borderRadius: AppRadius.cardLarge,
+              elevation: 0,
+              color: AppColors.surface,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
               child: Column(
                 children: [
@@ -175,7 +178,7 @@ class RecentExpensesCard extends StatelessWidget {
                       const Divider(
                         color: AppColors.border,
                         height: 12,
-                        thickness: 0.8,
+                        thickness: 1.0,
                       ),
                   ],
                 ],

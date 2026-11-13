@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/navigation/presentation/screens/main_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/onboarding_page_indicator.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/onboarding_receipt_card.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Onboarding Screen matching platform design:
-/// Stylized receipt visual, swipeable headline & body with 3-dot indicator, "Get Started" button, and "I already have an account".
+/// Stylized receipt visual, swipeable headline & body with indicator, "Get Started" button, and "I already have an account".
+/// Adheres to design.md Section 2, 3, 6 & 10.
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback? onGetStarted;
 
@@ -88,7 +91,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       children: [
                         const Spacer(flex: 2),
 
-                        // Visual Receipt with Rupee symbol and lime accents
+                        // Visual Receipt with Rupee symbol
                         const OnboardingReceiptCard(),
                         const Spacer(flex: 2),
 
@@ -96,9 +99,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Text(
                           page['title']!,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: GoogleFonts.manrope(
                             fontSize: 28,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w800,
                             color: AppColors.textPrimary,
                             letterSpacing: -0.5,
                             height: 1.25,
@@ -110,9 +113,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Text(
                           page['subtitle']!,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: GoogleFonts.manrope(
                             fontSize: 15,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w400,
                             color: AppColors.textSecondary,
                             height: 1.4,
                           ),
@@ -124,7 +127,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
 
-              // 3-dot indicator matching active page
+              // Dot indicator matching active page
               OnboardingPageIndicator(
                 totalPages: _pages.length,
                 currentPage: _currentPage,
@@ -134,23 +137,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               // Primary "Get Started" Button
               SizedBox(
                 width: double.infinity,
-                height: 54,
+                height: 56,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.primaryDark,
-                    elevation: 1,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(AppRadius.button),
                     ),
                   ),
                   onPressed: () => _navigateToMain(context),
-                  child: const Text(
+                  child: Text(
                     'Get Started',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primaryDark,
+                    style: GoogleFonts.manrope(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -160,11 +163,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               // Secondary "I already have an account" button
               TextButton(
                 onPressed: () => _navigateToMain(context),
-                child: const Text(
+                child: Text(
                   'I already have an account',
-                  style: TextStyle(
+                  style: GoogleFonts.manrope(
                     fontSize: 14,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
                   ),
                 ),

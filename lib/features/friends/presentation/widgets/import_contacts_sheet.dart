@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
+import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 
 /// Modal bottom sheet allowing users to select and import contacts into BillSplit.
@@ -40,9 +42,9 @@ class ImportContactsSheet extends StatefulWidget {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: isIOSPlatform(context) ? AppColors.iosBackground : AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
       ),
       builder: (_) => ImportContactsSheet(
         existingFriends: existingFriends,
@@ -562,7 +564,7 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
                                               ? const Icon(
                                                   Icons.check_rounded,
                                                   size: 16,
-                                                  color: AppColors.primaryDark,
+                                                  color: Colors.white,
                                                 )
                                               : null,
                                         ),
@@ -580,19 +582,18 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
               // Import Action Button
               SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: 56,
                 child: ElevatedButton(
                   onPressed:
                       _selectedPhones.isEmpty ? null : _importSelected,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    disabledBackgroundColor:
-                        AppColors.primary.withOpacity(0.35),
-                    foregroundColor: AppColors.primaryDeep,
-                    elevation: _selectedPhones.isEmpty ? 0 : 4,
-                    shadowColor: AppColors.primary.withOpacity(0.4),
+                    disabledBackgroundColor: AppColors.surfaceSubtle,
+                    foregroundColor: Colors.white,
+                    disabledForegroundColor: AppColors.textTertiary,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(AppRadius.button),
                     ),
                   ),
                   child: Text(
@@ -603,7 +604,7 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
                             : 'Import ${_selectedPhones.length} Contacts',
                     style: const TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),

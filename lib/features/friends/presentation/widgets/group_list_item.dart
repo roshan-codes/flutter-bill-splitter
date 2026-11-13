@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/group.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Single platform-adaptive item tile for displaying a group in the Groups tab.
+/// Adheres to design.md Section 5, 8 & 10.
 class GroupListItem extends StatelessWidget {
   final Group group;
   final VoidCallback? onDelete;
@@ -17,8 +20,8 @@ class GroupListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PlatformCard(
-      borderRadius: 18,
-      elevation: 1.5,
+      borderRadius: AppRadius.card,
+      elevation: 0,
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
@@ -26,12 +29,12 @@ class GroupListItem extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              color: AppColors.primaryLight,
+              borderRadius: BorderRadius.circular(AppRadius.iconContainer),
+              color: AppColors.surfaceSubtle,
             ),
             child: const Icon(
               Icons.groups_rounded,
-              color: AppColors.primaryDeep,
+              color: AppColors.textPrimary,
               size: 26,
             ),
           ),
@@ -42,19 +45,19 @@ class GroupListItem extends StatelessWidget {
               children: [
                 Text(
                   group.name,
-                  style: const TextStyle(
+                  style: GoogleFonts.manrope(
                     fontSize: 16,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   '${group.members.length} members',
-                  style: const TextStyle(
+                  style: GoogleFonts.manrope(
                     fontSize: 13,
                     color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
@@ -63,9 +66,9 @@ class GroupListItem extends StatelessWidget {
           if (onDelete != null)
             IconButton(
               tooltip: 'Delete group',
-              icon: Icon(
+              icon: const Icon(
                 Icons.delete_outline_rounded,
-                color: Colors.red.shade400,
+                color: AppColors.danger,
                 size: 20,
               ),
               onPressed: onDelete,

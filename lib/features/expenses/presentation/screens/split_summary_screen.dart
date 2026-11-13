@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/expenses/domain/services/expense_calculator.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/member_breakdown_table.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/settlement_card.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
+import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
+import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Screen displaying the final settlement summary: total expenses, who owes whom, and full member breakdown table.
+/// Adheres to design.md Section 2, 3, 5, 6 & 10.3/10.7.
 class SplitSummaryScreen extends StatelessWidget {
   final String groupName;
   final List<Friend> members;
@@ -62,11 +67,11 @@ class SplitSummaryScreen extends StatelessWidget {
             ),
           ),
         ),
-        title: const Text(
+        title: Text(
           'Split Summary',
-          style: TextStyle(
+          style: GoogleFonts.manrope(
             fontSize: 20,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
             letterSpacing: -0.3,
           ),
@@ -81,8 +86,9 @@ class SplitSummaryScreen extends StatelessWidget {
             children: [
               // 1. Top Card: Title & Member Count
               PlatformCard(
-                borderRadius: 20,
-                elevation: 1.5,
+                borderRadius: AppRadius.card,
+                elevation: 0,
+                color: AppColors.surface,
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                 child: Row(
@@ -91,12 +97,12 @@ class SplitSummaryScreen extends StatelessWidget {
                       width: 46,
                       height: 46,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        color: const Color(0xFFE8F8D8),
+                        borderRadius: BorderRadius.circular(AppRadius.iconContainer),
+                        color: AppColors.surfaceSubtle,
                       ),
                       child: const Icon(
                         Icons.restaurant_rounded,
-                        color: Color(0xFF284821),
+                        color: AppColors.textPrimary,
                         size: 24,
                       ),
                     ),
@@ -107,9 +113,9 @@ class SplitSummaryScreen extends StatelessWidget {
                         children: [
                           Text(
                             title,
-                            style: const TextStyle(
+                            style: GoogleFonts.manrope(
                               fontSize: 18,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: AppColors.textPrimary,
                               letterSpacing: -0.2,
                             ),
@@ -119,10 +125,10 @@ class SplitSummaryScreen extends StatelessWidget {
                           const SizedBox(height: 3),
                           Text(
                             '${members.length} members',
-                            style: const TextStyle(
+                            style: GoogleFonts.manrope(
                               fontSize: 13,
                               color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ],
@@ -135,8 +141,9 @@ class SplitSummaryScreen extends StatelessWidget {
 
               // 2. Overview Card: Total Expense vs Each Pays
               PlatformCard(
-                borderRadius: 20,
-                elevation: 1.5,
+                borderRadius: AppRadius.card,
+                elevation: 0,
+                color: AppColors.surface,
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                 child: Row(
@@ -149,12 +156,12 @@ class SplitSummaryScreen extends StatelessWidget {
                             width: 38,
                             height: 38,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE8F8D8),
+                              color: AppColors.surfaceSubtle,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
                               Icons.receipt_long_rounded,
-                              color: Color(0xFF284821),
+                              color: AppColors.textPrimary,
                               size: 20,
                             ),
                           ),
@@ -163,9 +170,9 @@ class SplitSummaryScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Total Expense',
-                                  style: TextStyle(
+                                  style: GoogleFonts.manrope(
                                     fontSize: 12,
                                     color: AppColors.textSecondary,
                                     fontWeight: FontWeight.w500,
@@ -174,9 +181,9 @@ class SplitSummaryScreen extends StatelessWidget {
                                 const SizedBox(height: 2),
                                 Text(
                                   _formatAmount(totalExpense),
-                                  style: const TextStyle(
+                                  style: GoogleFonts.manrope(
                                     fontSize: 18,
-                                    fontWeight: FontWeight.w900,
+                                    fontWeight: FontWeight.w800,
                                     color: AppColors.textPrimary,
                                     letterSpacing: -0.3,
                                   ),
@@ -204,12 +211,12 @@ class SplitSummaryScreen extends StatelessWidget {
                             width: 38,
                             height: 38,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFD6F3BF),
+                              color: AppColors.surfaceSubtle,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
                               Icons.pie_chart_outline_rounded,
-                              color: Color(0xFF284821),
+                              color: AppColors.textPrimary,
                               size: 20,
                             ),
                           ),
@@ -218,9 +225,9 @@ class SplitSummaryScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Each Pays',
-                                  style: TextStyle(
+                                  style: GoogleFonts.manrope(
                                     fontSize: 12,
                                     color: AppColors.textSecondary,
                                     fontWeight: FontWeight.w500,
@@ -229,10 +236,10 @@ class SplitSummaryScreen extends StatelessWidget {
                                 const SizedBox(height: 2),
                                 Text(
                                   _formatAmount(sharePerPerson),
-                                  style: const TextStyle(
+                                  style: GoogleFonts.manrope(
                                     fontSize: 18,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF284821),
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.textPrimary,
                                     letterSpacing: -0.3,
                                   ),
                                 ),
@@ -257,7 +264,7 @@ class SplitSummaryScreen extends StatelessWidget {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE8EEF2),
+                          color: AppColors.surfaceSubtle,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
@@ -267,11 +274,11 @@ class SplitSummaryScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Text(
+                      Text(
                         'Who Pays Whom',
-                        style: TextStyle(
+                        style: GoogleFonts.manrope(
                           fontSize: 17,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
                           letterSpacing: -0.3,
                         ),
@@ -280,9 +287,9 @@ class SplitSummaryScreen extends StatelessWidget {
                   ),
                   Text(
                     '${settlements.length} payment${settlements.length == 1 ? '' : 's'}',
-                    style: const TextStyle(
+                    style: GoogleFonts.manrope(
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -291,25 +298,26 @@ class SplitSummaryScreen extends StatelessWidget {
               const SizedBox(height: 14),
 
               if (settlements.isEmpty)
-                const PlatformCard(
-                  borderRadius: 18,
-                  color: Color(0xFFF0FDF4),
+                PlatformCard(
+                  borderRadius: AppRadius.card,
+                  color: AppColors.successSoft,
+                  border: Border.all(color: AppColors.success.withOpacity(0.2), width: 1.0),
                   width: double.infinity,
-                  padding: EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(20),
                   child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.check_circle_rounded,
-                        color: Color(0xFF16A34A),
+                        color: AppColors.success,
                         size: 26,
                       ),
-                      SizedBox(width: 14),
+                      const SizedBox(width: 14),
                       Expanded(
                         child: Text(
                           'All settled up! Everyone paid their exact equal share. No payments needed!',
-                          style: TextStyle(
+                          style: GoogleFonts.manrope(
                             fontSize: 13,
-                            color: Color(0xFF166534),
+                            color: AppColors.success,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -333,7 +341,7 @@ class SplitSummaryScreen extends StatelessWidget {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE8EEF2),
+                      color: AppColors.surfaceSubtle,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
@@ -343,11 +351,11 @@ class SplitSummaryScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
+                  Text(
                     'Member Breakdown',
-                    style: TextStyle(
+                    style: GoogleFonts.manrope(
                       fontSize: 17,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                       letterSpacing: -0.3,
                     ),
@@ -376,14 +384,14 @@ class SplitSummaryScreen extends StatelessWidget {
           top: false,
           child: SizedBox(
             width: double.infinity,
-            height: 54,
+            height: 56,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.primaryDark,
-                elevation: 1,
+                foregroundColor: Colors.white,
+                elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(AppRadius.button),
                 ),
               ),
               onPressed: () {
@@ -400,35 +408,93 @@ class SplitSummaryScreen extends StatelessWidget {
                 );
                 ActivityRepository.instance.recordActivity(activity);
 
+                // Build and persist Story adhering to standard Story JSON schema
+                final storyMembers = members.map((m) {
+                  final safeId = 'user_${m.name.toLowerCase().replaceAll(RegExp(r'\s+'), '_')}';
+                  return StoryMember(
+                    userId: safeId,
+                    name: m.name,
+                    role: m == members.first ? 'admin' : 'member',
+                    joinedAt: DateTime.now().toIso8601String(),
+                  );
+                }).toList();
+
+                final memberIdByName = {
+                  for (var sm in storyMembers) sm.name: sm.userId,
+                };
+
+                final storyShares = members.map((m) {
+                  return ExpenseShare(
+                    userId: memberIdByName[m.name] ?? 'user_${m.name}',
+                    amount: sharePerPerson,
+                  );
+                }).toList();
+
+                final List<StoryExpense> storyExpenses = [];
+                int expCount = 1;
+                memberExpenses.forEach((payerName, paidAmount) {
+                  if (paidAmount > 0) {
+                    storyExpenses.add(
+                      StoryExpense(
+                        expenseId: 'exp_${expCount.toString().padLeft(3, '0')}',
+                        title: title,
+                        category: 'general',
+                        amount: paidAmount,
+                        paidBy: memberIdByName[payerName] ?? 'user_$payerName',
+                        splitType: 'equal',
+                        participants: storyMembers.map((m) => m.userId).toList(),
+                        shares: storyShares,
+                        date: DateTime.now().toIso8601String(),
+                      ),
+                    );
+                    expCount++;
+                  }
+                });
+
+                final story = Story.create(
+                  storyId: 'story_${DateTime.now().millisecondsSinceEpoch}',
+                  title: title,
+                  description: 'Shared expense story for $title',
+                  coverEmoji: '🌴',
+                  currency: 'INR',
+                  status: 'active',
+                  createdBy: storyMembers.isNotEmpty ? storyMembers.first.userId : 'user_001',
+                  createdAt: DateTime.now().toIso8601String(),
+                  members: storyMembers,
+                  expenses: storyExpenses,
+                );
+                StoryRepository.instance.addStory(story);
+
                 Navigator.of(context).popUntil((route) => route.isFirst);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
                       'Split settled successfully for "$title"!',
+                      style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
                     ),
-                    backgroundColor: const Color(0xFF111713),
+                    backgroundColor: AppColors.primary,
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadius.buttonSecondary),
                     ),
                   ),
                 );
               },
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.check_circle_outline_rounded,
-                    color: AppColors.primaryDark,
+                    color: Colors.white,
                     size: 22,
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
                     'Save & Track Settlement',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
+                    style: GoogleFonts.manrope(
+                      fontWeight: FontWeight.w700,
                       fontSize: 16.5,
-                      color: AppColors.primaryDark,
+                      color: Colors.white,
                     ),
                   ),
                 ],

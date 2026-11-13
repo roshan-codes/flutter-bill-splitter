@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/activity_display_item.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_section_card.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Activity Tab displaying platform-adaptive activity feed with real activity records or a clean empty state.
+/// Adheres to design.md Section 2, 3, 5, 8 & 9.
 class ActivityTab extends StatelessWidget {
   final ActivityRepository? repository;
   final List<ActivityDisplayItem>? customItems;
@@ -24,10 +27,10 @@ class ActivityTab extends StatelessWidget {
       memberCount: 3,
       totalAmount: 549.0,
       statusText: 'You get ₹317',
-      statusColor: Color(0xFF16A34A),
+      statusColor: AppColors.success,
       icon: Icons.restaurant_rounded,
-      iconBgColor: Color(0xFFE8F8D8),
-      iconColor: Color(0xFF284821),
+      iconBgColor: AppColors.surfaceSubtle,
+      iconColor: AppColors.textPrimary,
       section: 'This Week',
       isSettlement: false,
     ),
@@ -39,8 +42,8 @@ class ActivityTab extends StatelessWidget {
       statusText: 'Settled',
       statusColor: AppColors.textSecondary,
       icon: Icons.shopping_bag_outlined,
-      iconBgColor: Color(0xFFE0F2FE),
-      iconColor: Color(0xFF0284C7),
+      iconBgColor: AppColors.surfaceSubtle,
+      iconColor: AppColors.textPrimary,
       section: 'This Week',
       isSettlement: true,
     ),
@@ -50,10 +53,10 @@ class ActivityTab extends StatelessWidget {
       memberCount: 4,
       totalAmount: 2800.0,
       statusText: 'You owe ₹700',
-      statusColor: Color(0xFFDC2626),
+      statusColor: AppColors.danger,
       icon: Icons.local_gas_station_rounded,
-      iconBgColor: Color(0xFFFFECE0),
-      iconColor: Color(0xFFC85A17),
+      iconBgColor: AppColors.dangerSoft,
+      iconColor: AppColors.danger,
       section: 'This Week',
       isSettlement: false,
     ),
@@ -68,8 +71,8 @@ class ActivityTab extends StatelessWidget {
       statusText: 'Settled',
       statusColor: AppColors.textSecondary,
       icon: Icons.local_movies_rounded,
-      iconBgColor: Color(0xFFE0F2FE),
-      iconColor: Color(0xFF0284C7),
+      iconBgColor: AppColors.surfaceSubtle,
+      iconColor: AppColors.textPrimary,
       section: 'Last Week',
       isSettlement: true,
     ),
@@ -91,11 +94,11 @@ class ActivityTab extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Screen Header
-              const Text(
+              Text(
                 'Activity',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
+                style: GoogleFonts.manrope(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
                   letterSpacing: -0.5,
                 ),
@@ -130,8 +133,8 @@ class ActivityTab extends StatelessWidget {
                     return Padding(
                       padding: const EdgeInsets.only(top: 40),
                       child: PlatformCard(
-                        borderRadius: 20,
-                        elevation: 1,
+                        borderRadius: AppRadius.card,
+                        elevation: 0,
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
@@ -145,31 +148,31 @@ class ActivityTab extends StatelessWidget {
                                 width: 64,
                                 height: 64,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFE8F8D8),
-                                  borderRadius: BorderRadius.circular(20),
+                                  color: AppColors.surfaceSubtle,
+                                  borderRadius: BorderRadius.circular(AppRadius.card),
                                 ),
                                 child: const Icon(
                                   Icons.receipt_long_rounded,
                                   size: 32,
-                                  color: Color(0xFF284821),
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
                               const SizedBox(height: 18),
-                              const Text(
+                              Text(
                                 'No Activity Yet',
-                                style: TextStyle(
+                                style: GoogleFonts.manrope(
                                   fontSize: 18,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w700,
                                   color: AppColors.textPrimary,
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              const Text(
+                              Text(
                                 'When you create and settle splits with friends,\nyour activity will appear here.',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
+                                style: GoogleFonts.manrope(
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w400,
                                   color: AppColors.textSecondary,
                                   height: 1.35,
                                 ),
@@ -193,10 +196,10 @@ class ActivityTab extends StatelessWidget {
                           : 'You get ₹${act.sharePerPerson.toInt()}',
                       statusColor: isSettled
                           ? AppColors.textSecondary
-                          : const Color(0xFF16A34A),
+                          : AppColors.success,
                       icon: Icons.receipt_long_rounded,
-                      iconBgColor: const Color(0xFFE8F8D8),
-                      iconColor: const Color(0xFF284821),
+                      iconBgColor: isSettled ? AppColors.surfaceSubtle : AppColors.successSoft,
+                      iconColor: isSettled ? AppColors.textPrimary : AppColors.success,
                       section: 'Recent Activity',
                       isSettlement: isSettled,
                       splitActivity: act,

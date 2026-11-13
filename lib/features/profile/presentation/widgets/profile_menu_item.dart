@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 
 /// Single item row inside the profile menu container.
+/// Adheres to design.md Section 3 & 8.
 class ProfileMenuItem extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -25,32 +28,32 @@ class ProfileMenuItem extends StatelessWidget {
           HapticFeedback.lightImpact();
           onTap?.call();
         },
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
           child: Row(
             children: [
               Icon(
                 icon,
-                size: 22,
+                size: 21,
                 color: AppColors.textPrimary,
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: GoogleFonts.manrope(
                     fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
                     letterSpacing: -0.2,
                   ),
                 ),
               ),
-              Icon(
+              const Icon(
                 Icons.chevron_right_rounded,
-                size: 22,
-                color: Colors.grey.shade400,
+                size: 20,
+                color: AppColors.textTertiary,
               ),
             ],
           ),

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:floating_pill_navbar/floating_pill_navbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/screens/activity_tab.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
@@ -118,7 +119,7 @@ void main() {
       expect(searchPressed, isTrue);
     });
 
-    testWidgets('MainScreen renders NavigationBar on Android', (tester) async {
+    testWidgets('MainScreen renders FloatingPillNavBar on Android with Add Story hero pill', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(platform: TargetPlatform.android),
@@ -126,11 +127,20 @@ void main() {
         ),
       );
 
-      expect(find.byType(NavigationBar), findsOneWidget);
-      expect(find.byType(CupertinoTabBar), findsNothing);
+      expect(find.byType(FloatingPillNavBar), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Activity'), findsOneWidget);
+      expect(find.text('Profile'), findsOneWidget);
+
+      // Verify Add Story hero pill action button
+      expect(find.byTooltip('Add Story'), findsOneWidget);
+      await tester.tap(find.byTooltip('Add Story'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AddExpenseScreen), findsOneWidget);
     });
 
-    testWidgets('MainScreen renders CupertinoTabBar on iOS', (tester) async {
+    testWidgets('MainScreen renders FloatingPillNavBar on iOS with Add Story hero pill', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(platform: TargetPlatform.iOS),
@@ -138,18 +148,17 @@ void main() {
         ),
       );
 
-      expect(find.byType(CupertinoTabBar), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingPillNavBar), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Activity'), findsOneWidget);
+      expect(find.text('Profile'), findsOneWidget);
+      expect(find.byTooltip('Add Story'), findsOneWidget);
     });
 
     testWidgets('HomeTab renders screenshot-matching UI elements', (tester) async {
-      bool addExpenseTapped = false;
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: HomeTab(
-            onAddExpense: () {
-              addExpenseTapped = true;
-            },
             youGetAmount: 2340.0,
             youOweAmount: 860.0,
             customExpenses: RecentExpensesCard.sampleExpenses,
@@ -157,24 +166,23 @@ void main() {
         ),
       );
 
-      // Verify header greeting & user name
+      // Verify header greeting & user name (app logo bolt removed from home tab)
       expect(find.textContaining('Good'), findsOneWidget);
       expect(find.text('Roshan'), findsOneWidget);
       expect(find.text('👋'), findsOneWidget);
-      expect(find.byIcon(Icons.bolt_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.bolt_rounded), findsNothing);
       expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
 
-      // Verify 3 quick action tiles
-      expect(find.textContaining('Add\nExpense'), findsOneWidget);
-      expect(find.text('Scan Bill'), findsOneWidget);
-      expect(find.text('Settle Up'), findsOneWidget);
+      // Verify Scan Bill and Settle Up are removed from Home tab
+      expect(find.text('Scan Bill'), findsNothing);
+      expect(find.text('Settle Up'), findsNothing);
 
-      // Verify Your Balance card
-      expect(find.text('Your Balance'), findsOneWidget);
-      expect(find.text('You get'), findsOneWidget);
-      expect(find.text('₹2,340'), findsOneWidget);
-      expect(find.text('You owe'), findsOneWidget);
-      expect(find.text('₹860'), findsOneWidget);
+      // Verify Floating Action Button is removed from Home tab
+      expect(find.byType(FloatingActionButton), findsNothing);
+      expect(find.text('Create story'), findsNothing);
+
+      // Verify Your Balance card is removed from Home tab
+      expect(find.text('Your Balance'), findsNothing);
 
       // Verify Recent Expenses section & items
       expect(find.text('Recent Expenses'), findsOneWidget);
@@ -187,11 +195,6 @@ void main() {
       expect(find.text('Groceries'), findsOneWidget);
       expect(find.text('Home  •  2 members'), findsOneWidget);
       expect(find.text('₹620'), findsOneWidget);
-
-      // Verify tapping Add Expense tile triggers onAddExpense callback
-      await tester.tap(find.textContaining('Add\nExpense'));
-      await tester.pumpAndSettle();
-      expect(addExpenseTapped, isTrue);
     });
 
     testWidgets('ProfileTab renders adaptive UI elements and Material dialog on Android', (tester) async {
@@ -224,7 +227,7 @@ void main() {
       expect(find.text('Help & Support'), findsOneWidget);
       expect(find.byIcon(Icons.help_outline_rounded), findsOneWidget);
 
-      expect(find.text('About BillSplit'), findsOneWidget);
+      expect(find.text('About TTMM'), findsOneWidget);
       expect(find.byIcon(Icons.info_outline_rounded), findsOneWidget);
 
       // Verify Logout Button
@@ -237,7 +240,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(AlertDialog), findsOneWidget);
       expect(find.text('Confirm Logout'), findsOneWidget);
-      expect(find.text('Are you sure you want to log out of BillSplit?'), findsOneWidget);
+      expect(find.text('Are you sure you want to log out of TTMM?'), findsOneWidget);
     });
 
     testWidgets('ProfileTab renders Cupertino dialog on iOS', (tester) async {
@@ -448,11 +451,11 @@ void main() {
         ),
       );
 
-      // Verify Lightning squircle badge
-      expect(find.byIcon(Icons.bolt_rounded), findsOneWidget);
+      // Verify Official App Logo Image
+      expect(find.byType(Image), findsOneWidget);
 
       // Verify Title & Subtitle
-      expect(find.text('BillSplit'), findsOneWidget);
+      expect(find.text('TTMM'), findsOneWidget);
       expect(find.textContaining('Split expenses, track balances'), findsOneWidget);
       expect(find.textContaining('and settle easily'), findsOneWidget);
     });

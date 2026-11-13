@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Segmented filter bar for Activity tab: All, Expenses, Settlements.
+/// Follows design.md Section 4 & 6.
 class ActivityFilterBar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onFilterChanged;
@@ -18,7 +21,7 @@ class ActivityFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PlatformInsetContainer(
-      borderRadius: 24,
+      borderRadius: AppRadius.pill,
       width: double.infinity,
       height: 48,
       padding: const EdgeInsets.all(4),
@@ -45,7 +48,7 @@ class ActivityFilterBar extends StatelessWidget {
     if (isSelected) {
       return Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
           color: AppColors.primary,
           boxShadow: [
             BoxShadow(
@@ -58,10 +61,10 @@ class ActivityFilterBar extends StatelessWidget {
         child: Center(
           child: Text(
             title,
-            style: const TextStyle(
+            style: GoogleFonts.manrope(
               fontSize: 14,
-              fontWeight: FontWeight.w800,
-              color: AppColors.primaryDark,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
             ),
           ),
         ),
@@ -70,11 +73,11 @@ class ActivityFilterBar extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
       child: Center(
         child: Text(
           title,
-          style: const TextStyle(
+          style: GoogleFonts.manrope(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: AppColors.textSecondary,

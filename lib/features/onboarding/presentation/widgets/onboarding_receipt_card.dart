@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 
-/// Clean Receipt illustration with currency symbol, placeholder bars, and lime accents.
+/// Clean Receipt illustration with currency symbol, placeholder bars, and minimal surfaces.
+/// Adheres to design.md Section 2 & 8.
 class OnboardingReceiptCard extends StatelessWidget {
   const OnboardingReceiptCard({super.key});
 
@@ -20,13 +23,13 @@ class OnboardingReceiptCard extends StatelessWidget {
               width: 18,
               height: 18,
               decoration: const BoxDecoration(
-                color: Color(0xFF86E829),
+                color: AppColors.surfaceSubtle,
                 shape: BoxShape.circle,
               ),
             ),
           ),
 
-          // Background tilted lime pill (behind receipt)
+          // Background tilted subtle card (behind receipt)
           Positioned(
             right: 28,
             top: 52,
@@ -36,15 +39,9 @@ class OnboardingReceiptCard extends StatelessWidget {
                 width: 110,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF86E829),
+                  color: AppColors.surfaceSubtle,
                   borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF86E829).withOpacity(0.4),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  border: Border.all(color: AppColors.border, width: 1.0),
                 ),
               ),
             ),
@@ -62,14 +59,8 @@ class OnboardingReceiptCard extends StatelessWidget {
                   clipper: const _ReceiptClipper(),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF9FBFC),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 18,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
+                      color: AppColors.surface,
+                      border: Border.all(color: AppColors.border, width: 1.0),
                     ),
                     padding: const EdgeInsets.fromLTRB(16, 22, 16, 20),
                     child: Column(
@@ -81,22 +72,16 @@ class OnboardingReceiptCard extends StatelessWidget {
                           height: 52,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
-                            color: Colors.white,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.06),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                            color: AppColors.surfaceSubtle,
+                            border: Border.all(color: AppColors.border, width: 1.0),
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text(
                               '₹',
-                              style: TextStyle(
+                              style: GoogleFonts.manrope(
                                 fontSize: 30,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF1E293B),
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
                               ),
                             ),
                           ),
@@ -108,7 +93,7 @@ class OnboardingReceiptCard extends StatelessWidget {
                           width: 68,
                           height: 5,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFCBD5E1),
+                            color: AppColors.border,
                             borderRadius: BorderRadius.circular(3),
                           ),
                         ),
@@ -117,7 +102,7 @@ class OnboardingReceiptCard extends StatelessWidget {
                           width: 44,
                           height: 5,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE2E8F0),
+                            color: AppColors.surfaceSubtle,
                             borderRadius: BorderRadius.circular(3),
                           ),
                         ),
@@ -182,9 +167,9 @@ class _ReceiptShadowPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final path = const _ReceiptClipper().getClip(size);
     final paint = Paint()
-      ..color = const Color(0xFFCBD5E1).withOpacity(0.4)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-    canvas.drawPath(path.shift(const Offset(4, 6)), paint);
+      ..color = Colors.black.withOpacity(0.04)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+    canvas.drawPath(path.shift(const Offset(0, 4)), paint);
   }
 
   @override

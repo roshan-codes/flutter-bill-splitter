@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Custom Painter that renders the bottom and top decorative waves on the Splash screen.
+/// Adheres to design.md Section 2 (restrained neutral accents).
 class SplashWavePainter extends CustomPainter {
   const SplashWavePainter();
 
@@ -8,7 +9,7 @@ class SplashWavePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // Top-left subtle soft grey wave
     final topPaint = Paint()
-      ..color = const Color(0xFFE2E8F0).withOpacity(0.4)
+      ..color = const Color(0xFFEAEAE7).withOpacity(0.5)
       ..style = PaintingStyle.fill;
 
     final topPath = Path()
@@ -25,9 +26,9 @@ class SplashWavePainter extends CustomPainter {
       ..close();
     canvas.drawPath(topPath, topPaint);
 
-    // Bottom back wave (soft translucent grey/slate)
+    // Bottom back wave (soft translucent surface-subtle)
     final backWavePaint = Paint()
-      ..color = const Color(0xFFDCE4EC).withOpacity(0.6)
+      ..color = const Color(0xFFEAEAE7).withOpacity(0.6)
       ..style = PaintingStyle.fill;
 
     final backWavePath = Path()
@@ -53,16 +54,16 @@ class SplashWavePainter extends CustomPainter {
       ..close();
     canvas.drawPath(backWavePath, backWavePaint);
 
-    // Bottom front wave (vibrant lime green gradient wave)
+    // Bottom front wave (restrained subtle gradient wave)
     final rect = Rect.fromLTWH(0, size.height * 0.78, size.width, size.height * 0.22);
     final frontWavePaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          Color(0xFF90F02A),
-          Color(0xFFB8F85E),
-          Color(0xFFE6FFAD),
+          Color(0xFFF1F1EF),
+          Color(0xFFEAEAE7),
+          Color(0xFFF7F7F5),
         ],
       ).createShader(rect)
       ..style = PaintingStyle.fill;
@@ -94,4 +95,3 @@ class SplashWavePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-

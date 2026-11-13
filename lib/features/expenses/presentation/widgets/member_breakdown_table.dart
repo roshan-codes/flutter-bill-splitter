@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Table card widget showing the breakdown for each member: Member, Paid, Share, Net.
+/// Adheres to design.md Section 2, 3, 5 & 11.
 class MemberBreakdownTable extends StatelessWidget {
   final List<Friend> members;
   final Map<String, double> memberExpenses;
@@ -31,21 +34,22 @@ class MemberBreakdownTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PlatformCard(
-      borderRadius: 20,
-      elevation: 1.5,
+      borderRadius: AppRadius.card,
+      elevation: 0,
+      color: AppColors.surface,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Column(
         children: [
           // Table Column Headers: Member | Paid | Share | Net
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
             child: Row(
               children: [
                 Expanded(
                   flex: 3,
                   child: Text(
                     'Member',
-                    style: TextStyle(
+                    style: GoogleFonts.manrope(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textSecondary,
@@ -57,7 +61,7 @@ class MemberBreakdownTable extends StatelessWidget {
                   child: Text(
                     'Paid',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: GoogleFonts.manrope(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textSecondary,
@@ -69,7 +73,7 @@ class MemberBreakdownTable extends StatelessWidget {
                   child: Text(
                     'Share',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: GoogleFonts.manrope(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textSecondary,
@@ -81,7 +85,7 @@ class MemberBreakdownTable extends StatelessWidget {
                   child: Text(
                     'Net',
                     textAlign: TextAlign.right,
-                    style: TextStyle(
+                    style: GoogleFonts.manrope(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textSecondary,
@@ -123,19 +127,23 @@ class MemberBreakdownTable extends StatelessWidget {
                             height: 28,
                             decoration: BoxDecoration(
                               color: isPositive
-                                  ? const Color(0xFFE8F8D8)
-                                  : const Color(0xFFFFECE0),
+                                  ? AppColors.successSoft
+                                  : isNegative
+                                      ? AppColors.dangerSoft
+                                      : AppColors.surfaceSubtle,
                               shape: BoxShape.circle,
                             ),
                             child: Center(
                               child: Text(
                                 initial,
-                                style: TextStyle(
+                                style: GoogleFonts.manrope(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w700,
                                   color: isPositive
-                                      ? const Color(0xFF284821)
-                                      : const Color(0xFFDC2626),
+                                      ? AppColors.success
+                                      : isNegative
+                                          ? AppColors.danger
+                                          : AppColors.textPrimary,
                                 ),
                               ),
                             ),
@@ -144,9 +152,9 @@ class MemberBreakdownTable extends StatelessWidget {
                           Expanded(
                             child: Text(
                               member.name,
-                              style: const TextStyle(
+                              style: GoogleFonts.manrope(
                                 fontSize: 14,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w600,
                                 color: AppColors.textPrimary,
                               ),
                               maxLines: 1,
@@ -163,7 +171,7 @@ class MemberBreakdownTable extends StatelessWidget {
                       child: Text(
                         _formatAmount(paid),
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: GoogleFonts.manrope(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
@@ -177,7 +185,7 @@ class MemberBreakdownTable extends StatelessWidget {
                       child: Text(
                         _formatAmount(sharePerPerson),
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: GoogleFonts.manrope(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
@@ -200,21 +208,21 @@ class MemberBreakdownTable extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: isPositive
-                                  ? const Color(0xFFE8F8D8)
+                                  ? AppColors.successSoft
                                   : isNegative
-                                      ? const Color(0xFFFFECE0)
-                                      : const Color(0xFFEFF2F5),
-                              borderRadius: BorderRadius.circular(10),
+                                      ? AppColors.dangerSoft
+                                      : AppColors.surfaceSubtle,
+                              borderRadius: BorderRadius.circular(AppRadius.pill),
                             ),
                             child: Text(
                               netFormatted,
-                              style: TextStyle(
+                              style: GoogleFonts.manrope(
                                 fontSize: 12.5,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w700,
                                 color: isPositive
-                                    ? const Color(0xFF16A34A)
+                                    ? AppColors.success
                                     : isNegative
-                                        ? const Color(0xFFDC2626)
+                                        ? AppColors.danger
                                         : AppColors.textSecondary,
                               ),
                             ),

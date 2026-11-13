@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Single platform-adaptive item tile for displaying a friend in the Friends list.
+/// Adheres to design.md Section 5, 8 & 10.
 class FriendListItem extends StatelessWidget {
   final Friend friend;
   final VoidCallback? onDelete;
@@ -20,8 +23,8 @@ class FriendListItem extends StatelessWidget {
     final initials = StringUtils.getInitials(friend.name);
 
     return PlatformCard(
-      borderRadius: 18,
-      elevation: 1.5,
+      borderRadius: AppRadius.card,
+      elevation: 0,
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
@@ -30,14 +33,14 @@ class FriendListItem extends StatelessWidget {
             height: 44,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.primaryLight,
+              color: AppColors.surfaceSubtle,
             ),
             child: Center(
               child: Text(
                 initials,
-                style: const TextStyle(
-                  color: AppColors.primaryDeep,
-                  fontWeight: FontWeight.w800,
+                style: GoogleFonts.manrope(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
                   fontSize: 15,
                 ),
               ),
@@ -50,19 +53,19 @@ class FriendListItem extends StatelessWidget {
               children: [
                 Text(
                   friend.name,
-                  style: const TextStyle(
+                  style: GoogleFonts.manrope(
                     fontSize: 16,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   friend.phone,
-                  style: const TextStyle(
+                  style: GoogleFonts.manrope(
                     fontSize: 13,
                     color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
@@ -71,9 +74,9 @@ class FriendListItem extends StatelessWidget {
           if (onDelete != null)
             IconButton(
               tooltip: 'Delete friend',
-              icon: Icon(
+              icon: const Icon(
                 Icons.delete_outline_rounded,
-                color: Colors.red.shade400,
+                color: AppColors.danger,
                 size: 20,
               ),
               onPressed: onDelete,

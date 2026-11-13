@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Platform-adaptive input field for entering the Expense Title / Group Name.
+/// Adheres to design.md Section 7 & 10.
 class ExpenseTitleInput extends StatelessWidget {
   final TextEditingController controller;
   final String? Function(String?)? validator;
@@ -18,41 +21,42 @@ class ExpenseTitleInput extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Expense Title',
-          style: TextStyle(
+          style: GoogleFonts.manrope(
             fontSize: 15,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
             letterSpacing: -0.2,
           ),
         ),
         const SizedBox(height: 10),
         PlatformCard(
-          borderRadius: 16,
-          elevation: 1,
+          borderRadius: AppRadius.input,
+          elevation: 0,
+          color: AppColors.surface,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: TextFormField(
             controller: controller,
-            style: const TextStyle(
+            style: GoogleFonts.manrope(
               color: AppColors.textPrimary,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               fontSize: 15,
             ),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'e.g. Dinner, Groceries, Trip',
-              hintStyle: TextStyle(
+              hintStyle: GoogleFonts.manrope(
                 color: AppColors.textSecondary,
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w400,
               ),
-              prefixIcon: Icon(
+              prefixIcon: const Icon(
                 Icons.restaurant_rounded,
-                color: AppColors.textPrimary,
+                color: AppColors.textSecondary,
                 size: 22,
               ),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(vertical: 14),
             ),
             validator: validator ??
                 (value) {

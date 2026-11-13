@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/activity_display_item.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_item_row.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Platform-adaptive Card container rendering a section of activities (e.g., "This Week", "Last Week").
+/// Adheres to design.md Section 4 & 5.
 class ActivitySectionCard extends StatelessWidget {
   final String title;
   final List<ActivityDisplayItem> items;
@@ -28,17 +31,18 @@ class ActivitySectionCard extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: GoogleFonts.manrope(
             fontSize: 17,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
             letterSpacing: -0.3,
           ),
         ),
         const SizedBox(height: 12),
         PlatformCard(
-          borderRadius: 20,
-          elevation: 1.5,
+          borderRadius: AppRadius.card,
+          elevation: 0,
+          color: AppColors.surface,
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           child: Column(
@@ -52,7 +56,7 @@ class ActivitySectionCard extends StatelessWidget {
                   const Divider(
                     color: AppColors.border,
                     height: 12,
-                    thickness: 0.8,
+                    thickness: 1.0,
                   ),
               ],
             ],

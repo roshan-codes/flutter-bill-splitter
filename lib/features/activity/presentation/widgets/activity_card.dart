@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_detail_sheet.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Platform-adaptive Card widget presenting a single recorded split activity in the Activity tab.
+/// Adheres to design.md Section 2, 3, 5 & 10.
 class ActivityCard extends StatelessWidget {
   final SplitActivity activity;
 
@@ -45,8 +48,8 @@ class ActivityCard extends StatelessWidget {
     final timeStr = _formatTimestamp(activity.timestamp);
 
     return PlatformCard(
-      borderRadius: 18,
-      elevation: 1.5,
+      borderRadius: AppRadius.card,
+      elevation: 0,
       onTap: () => ActivityDetailSheet.show(context, activity),
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -60,12 +63,12 @@ class ActivityCard extends StatelessWidget {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(AppRadius.iconContainer),
+                  color: AppColors.surfaceSubtle,
                 ),
                 child: const Icon(
                   Icons.receipt_long_rounded,
-                  color: AppColors.primaryDeep,
+                  color: AppColors.textPrimary,
                   size: 22,
                 ),
               ),
@@ -76,9 +79,9 @@ class ActivityCard extends StatelessWidget {
                   children: [
                     Text(
                       activity.groupName,
-                      style: const TextStyle(
+                      style: GoogleFonts.manrope(
                         fontSize: 16,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
                       ),
                       maxLines: 1,
@@ -87,10 +90,10 @@ class ActivityCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       timeStr,
-                      style: const TextStyle(
+                      style: GoogleFonts.manrope(
                         fontSize: 12,
                         color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -101,19 +104,19 @@ class ActivityCard extends StatelessWidget {
                 children: [
                   Text(
                     totalFormatted,
-                    style: const TextStyle(
+                    style: GoogleFonts.manrope(
                       fontSize: 18,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '$shareFormatted / person',
-                    style: const TextStyle(
+                    style: GoogleFonts.manrope(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primaryDeep,
+                      color: AppColors.primary,
                     ),
                   ),
                 ],
@@ -126,7 +129,7 @@ class ActivityCard extends StatelessWidget {
           Row(
             children: [
               PlatformInsetContainer(
-                borderRadius: 10,
+                borderRadius: AppRadius.pill,
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -139,7 +142,7 @@ class ActivityCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       '$memberCount members',
-                      style: const TextStyle(
+                      style: GoogleFonts.manrope(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary,
@@ -152,7 +155,7 @@ class ActivityCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   activity.members.map((m) => m.name).join(', '),
-                  style: const TextStyle(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                     fontWeight: FontWeight.w500,
@@ -169,20 +172,20 @@ class ActivityCard extends StatelessWidget {
 
           // Bottom Settlement preview
           if (activity.settlements.isEmpty)
-            const Row(
+            Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.check_circle_rounded,
                   size: 16,
-                  color: Color(0xFF16A34A),
+                  color: AppColors.success,
                 ),
-                SizedBox(width: 6),
+                const SizedBox(width: 6),
                 Text(
                   'All settled up! Everyone paid equally.',
-                  style: TextStyle(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF166534),
+                    color: AppColors.success,
                   ),
                 ),
               ],
@@ -200,13 +203,13 @@ class ActivityCard extends StatelessWidget {
                         const Icon(
                           Icons.arrow_forward_rounded,
                           size: 14,
-                          color: AppColors.primaryDeep,
+                          color: AppColors.primary,
                         ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             '${st.from.name} pays $amountStr to ${st.to.name}',
-                            style: const TextStyle(
+                            style: GoogleFonts.manrope(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textPrimary,
@@ -224,10 +227,10 @@ class ActivityCard extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
                       '+ ${activity.settlements.length - 2} more settlement${activity.settlements.length - 2 > 1 ? 's' : ''}',
-                      style: const TextStyle(
+                      style: GoogleFonts.manrope(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.primaryDeep,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ),

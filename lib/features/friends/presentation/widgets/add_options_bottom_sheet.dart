@@ -1,10 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Modal bottom sheet giving the user the choice between adding a friend, importing from contacts, or creating a group.
+/// Adheres to design.md Section 5, 8 & 9.
 class AddOptionsBottomSheet extends StatelessWidget {
   final VoidCallback onAddNewFriend;
   final VoidCallback onImportContacts;
@@ -29,9 +32,9 @@ class AddOptionsBottomSheet extends StatelessWidget {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isIOS ? AppColors.iosBackground : Colors.white,
+      backgroundColor: isIOS ? AppColors.iosBackground : AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
       ),
       builder: (_) => AddOptionsBottomSheet(
         onAddNewFriend: onAddNewFriend,
@@ -56,17 +59,17 @@ class AddOptionsBottomSheet extends StatelessWidget {
                 width: 44,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: AppColors.borderMedium,
-                  borderRadius: BorderRadius.circular(4),
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'Choose an Option',
-              style: TextStyle(
+              style: GoogleFonts.manrope(
                 fontSize: 20,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
                 letterSpacing: -0.3,
               ),
@@ -75,8 +78,8 @@ class AddOptionsBottomSheet extends StatelessWidget {
 
             // Option 1: Add Friend
             PlatformCard(
-              borderRadius: 18,
-              elevation: 1,
+              borderRadius: AppRadius.card,
+              elevation: 0,
               onTap: () {
                 Navigator.pop(context);
                 onAddNewFriend();
@@ -89,20 +92,20 @@ class AddOptionsBottomSheet extends StatelessWidget {
                     height: 46,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.primaryLight,
+                      color: AppColors.surfaceSubtle,
                     ),
                     child: const Icon(
                       Icons.person_add_rounded,
-                      color: AppColors.primaryDeep,
+                      color: AppColors.textPrimary,
                       size: 22,
                     ),
                   ),
                   const SizedBox(width: 14),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Add New Friend',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
+                      style: GoogleFonts.manrope(
+                        fontWeight: FontWeight.w700,
                         fontSize: 16,
                         color: AppColors.textPrimary,
                       ),
@@ -119,8 +122,8 @@ class AddOptionsBottomSheet extends StatelessWidget {
 
             // Option 2: Import from Contacts
             PlatformCard(
-              borderRadius: 18,
-              elevation: 1,
+              borderRadius: AppRadius.card,
+              elevation: 0,
               onTap: () {
                 Navigator.pop(context);
                 onImportContacts();
@@ -133,20 +136,20 @@ class AddOptionsBottomSheet extends StatelessWidget {
                     height: 46,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Color(0xFFE0F2FE),
+                      color: AppColors.surfaceSubtle,
                     ),
                     child: const Icon(
                       Icons.contacts_rounded,
-                      color: Color(0xFF0284C7),
+                      color: AppColors.textPrimary,
                       size: 22,
                     ),
                   ),
                   const SizedBox(width: 14),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Import from Contacts',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
+                      style: GoogleFonts.manrope(
+                        fontWeight: FontWeight.w700,
                         fontSize: 16,
                         color: AppColors.textPrimary,
                       ),
@@ -163,8 +166,8 @@ class AddOptionsBottomSheet extends StatelessWidget {
 
             // Option 3: Create Group
             PlatformCard(
-              borderRadius: 18,
-              elevation: 1,
+              borderRadius: AppRadius.card,
+              elevation: 0,
               onTap: () {
                 Navigator.pop(context);
                 onCreateGroup();
@@ -177,20 +180,20 @@ class AddOptionsBottomSheet extends StatelessWidget {
                     height: 46,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Color(0xFFFDEAC8),
+                      color: AppColors.surfaceSubtle,
                     ),
                     child: const Icon(
                       Icons.group_add_rounded,
-                      color: Color(0xFF8B6400),
+                      color: AppColors.textPrimary,
                       size: 22,
                     ),
                   ),
                   const SizedBox(width: 14),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Create New Group',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
+                      style: GoogleFonts.manrope(
+                        fontWeight: FontWeight.w700,
                         fontSize: 16,
                         color: AppColors.textPrimary,
                       ),

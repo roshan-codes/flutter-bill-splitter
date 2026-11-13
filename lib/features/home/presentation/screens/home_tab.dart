@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/features/home/domain/models/recent_expense.dart';
-import 'package:flutter_bill_splitter/features/home/presentation/widgets/balance_card.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/home_header.dart';
-import 'package:flutter_bill_splitter/features/home/presentation/widgets/home_quick_actions.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/recent_expenses_card.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// The Home Tab screen with platform-adaptive UI (Material for Android, Cupertino for iOS).
+/// Adheres to design.md Section 6, 10.1 & user requirements (Floating Action Button "Create story").
 class HomeTab extends StatelessWidget {
-  final VoidCallback onAddExpense;
+  final VoidCallback? onAddExpense;
   final VoidCallback? onScanBill;
   final VoidCallback? onSettleUp;
   final VoidCallback? onBalanceTap;
@@ -19,7 +18,7 @@ class HomeTab extends StatelessWidget {
 
   const HomeTab({
     super.key,
-    required this.onAddExpense,
+    this.onAddExpense,
     this.onScanBill,
     this.onSettleUp,
     this.onBalanceTap,
@@ -53,44 +52,6 @@ class HomeTab extends StatelessWidget {
                     ),
                   );
                 },
-              ),
-              const SizedBox(height: 24),
-
-              // 3 Quick Action Tiles: Add Expense, Scan Bill, Settle Up
-              HomeQuickActions(
-                onAddExpense: onAddExpense,
-                onScanBill: () {
-                  if (onScanBill != null) {
-                    onScanBill!();
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Bill Scanner feature coming soon!'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  }
-                },
-                onSettleUp: () {
-                  if (onSettleUp != null) {
-                    onSettleUp!();
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Settle Up feature coming soon!'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  }
-                },
-              ),
-              const SizedBox(height: 24),
-
-              // Balance Card: You get vs You owe
-              BalanceCard(
-                onTap: onBalanceTap,
-                youGetAmount: youGetAmount,
-                youOweAmount: youOweAmount,
               ),
               const SizedBox(height: 24),
 

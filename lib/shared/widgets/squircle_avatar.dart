@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
-import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Reusable platform-adaptive squircle avatar with image loading & initials fallback.
+/// Adheres to design.md Section 8.
 class SquircleAvatar extends StatelessWidget {
   final String name;
   final String? avatarUrl;
@@ -17,7 +19,7 @@ class SquircleAvatar extends StatelessWidget {
     required this.name,
     this.avatarUrl,
     this.size = 40,
-    this.borderRadius = 14,
+    this.borderRadius = AppRadius.iconContainer,
     this.backgroundColor,
     this.textColor,
   });
@@ -25,9 +27,8 @@ class SquircleAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final initials = StringUtils.getInitials(name);
-    final bg = backgroundColor ?? AppColors.primaryLight;
-    final fg = textColor ?? AppColors.primaryDeep;
-    final isIOS = isIOSPlatform(context);
+    final bg = backgroundColor ?? AppColors.surfaceSubtle;
+    final fg = textColor ?? AppColors.textPrimary;
 
     return Container(
       width: size,
@@ -36,18 +37,9 @@ class SquircleAvatar extends StatelessWidget {
         color: bg,
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
-          color: isIOS
-              ? AppColors.primary.withOpacity(0.2)
-              : AppColors.border,
-          width: 0.8,
+          color: AppColors.border,
+          width: 1.0,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
@@ -68,9 +60,9 @@ class SquircleAvatar extends StatelessWidget {
     return Center(
       child: Text(
         initials,
-        style: TextStyle(
+        style: GoogleFonts.manrope(
           color: fg,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
           fontSize: size * 0.38,
         ),
       ),

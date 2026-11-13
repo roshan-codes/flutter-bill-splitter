@@ -58,6 +58,29 @@ class StorageService {
     return true;
   }
 
+  /// Retrieves an integer value.
+  Future<int?> getInt(String key) async {
+    try {
+      final prefs = await _safePrefs;
+      if (prefs != null) {
+        return prefs.getInt(key);
+      }
+    } catch (_) {}
+    return _memoryCache[key] as int?;
+  }
+
+  /// Sets an integer value.
+  Future<bool> setInt(String key, int value) async {
+    _memoryCache[key] = value;
+    try {
+      final prefs = await _safePrefs;
+      if (prefs != null) {
+        return await prefs.setInt(key, value);
+      }
+    } catch (_) {}
+    return true;
+  }
+
   /// Retrieves a list of strings (e.g. JSON strings).
   Future<List<String>?> getStringList(String key) async {
     try {

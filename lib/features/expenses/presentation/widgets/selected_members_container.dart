@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Platform-adaptive container displaying selected members with 'x' remove badges.
+/// Adheres to design.md Section 4, 5 & 8.
 class SelectedMembersContainer extends StatelessWidget {
   final List<Friend> allFriends;
   final Set<int> selectedIndices;
@@ -25,11 +28,11 @@ class SelectedMembersContainer extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Selected Members',
-              style: TextStyle(
+              style: GoogleFonts.manrope(
                 fontSize: 16,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
                 letterSpacing: -0.2,
               ),
@@ -37,19 +40,19 @@ class SelectedMembersContainer extends StatelessWidget {
             if (selectedIndices.isNotEmpty)
               Text(
                 '${selectedIndices.length} selected',
-                style: const TextStyle(
+                style: GoogleFonts.manrope(
                   fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primaryDeep,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
                 ),
               ),
           ],
         ),
         const SizedBox(height: 10),
         PlatformCard(
-          borderRadius: 20,
-          elevation: selectedIndices.isEmpty ? 0 : 1,
-          color: selectedIndices.isEmpty ? const Color(0xFFEFF2F5) : Colors.white,
+          borderRadius: AppRadius.card,
+          elevation: 0,
+          color: selectedIndices.isEmpty ? AppColors.surfaceSubtle : AppColors.surface,
           width: double.infinity,
           height: 110,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -58,18 +61,18 @@ class SelectedMembersContainer extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.touch_app_outlined,
-                        color: Colors.grey.shade400,
+                        color: AppColors.textTertiary,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'Select friends below to add them here',
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
+                        style: GoogleFonts.manrope(
+                          color: AppColors.textSecondary,
                           fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -91,18 +94,12 @@ class SelectedMembersContainer extends StatelessWidget {
                           width: 72,
                           height: 72,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            color: AppColors.primaryLight,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
+                            borderRadius: BorderRadius.circular(AppRadius.card),
+                            color: AppColors.surfaceSubtle,
+                            border: Border.all(color: AppColors.border, width: 1.0),
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(AppRadius.card),
                             child: friend.avatarUrl != null && friend.avatarUrl!.isNotEmpty
                                 ? Image.network(
                                     friend.avatarUrl!,
@@ -125,15 +122,8 @@ class SelectedMembersContainer extends StatelessWidget {
                               height: 26,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.white,
-                                border: Border.all(color: AppColors.border, width: 0.8),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.08),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
+                                color: AppColors.surface,
+                                border: Border.all(color: AppColors.border, width: 1.0),
                               ),
                               child: const Icon(
                                 Icons.close_rounded,
@@ -156,9 +146,9 @@ class SelectedMembersContainer extends StatelessWidget {
     return Center(
       child: Text(
         initials,
-        style: const TextStyle(
-          color: AppColors.primaryDeep,
-          fontWeight: FontWeight.w800,
+        style: GoogleFonts.manrope(
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.w700,
           fontSize: 20,
         ),
       ),

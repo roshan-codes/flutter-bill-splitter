@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_bill_splitter/features/friends/presentation/screens/friends_tab.dart';
 import 'package:flutter_bill_splitter/main.dart';
 
 Future<void> _addFriendHelper(WidgetTester tester, String name, String phone) async {
@@ -27,13 +28,16 @@ void main() {
   });
 
   testWidgets(
-      'Friends tab + button shows options: Add New Friend and Create New Group',
+      'Friends screen + button shows options: Add New Friend and Create New Group',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp(home: MainScreen()));
 
-    // Switch to friends tab
-    final friendsTab = find.byIcon(Icons.people_outline_rounded);
-    await tester.tap(friendsTab);
+    // Switch to profile tab and tap Friends
+    final profileTab = find.byIcon(Icons.person_outline_rounded);
+    await tester.tap(profileTab);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Friends'));
     await tester.pumpAndSettle();
 
     expect(find.text('Friends'), findsWidgets);
@@ -76,13 +80,16 @@ void main() {
   });
 
   testWidgets(
-      'Friends tab + button -> Import from Contacts opens bottom sheet and imports contact',
+      'Friends screen + button -> Import from Contacts opens bottom sheet and imports contact',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp(home: MainScreen()));
 
-    // Switch to friends tab
-    final friendsTab = find.byIcon(Icons.people_outline_rounded);
-    await tester.tap(friendsTab);
+    // Switch to profile tab and tap Friends
+    final profileTab = find.byIcon(Icons.person_outline_rounded);
+    await tester.tap(profileTab);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Friends'));
     await tester.pumpAndSettle();
 
     // Tap + button
@@ -109,18 +116,21 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'Import 1 Contact'));
     await tester.pumpAndSettle();
 
-    // Verify contact imported into Friends tab
+    // Verify contact imported into Friends screen
     expect(find.text('Rahul Sharma'), findsOneWidget);
   });
 
   testWidgets(
-      'Friends tab allows creating a new group after adding friends',
+      'Friends screen allows creating a new group after adding friends',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp(home: MainScreen()));
 
-    // Switch to friends tab
-    final friendsTab = find.byIcon(Icons.people_outline_rounded);
-    await tester.tap(friendsTab);
+    // Switch to profile tab and tap Friends
+    final profileTab = find.byIcon(Icons.person_outline_rounded);
+    await tester.tap(profileTab);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Friends'));
     await tester.pumpAndSettle();
 
     // Add 2 friends first
@@ -162,7 +172,7 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'Create Group'));
     await tester.pumpAndSettle();
 
-    // Verify group was created and shows in Groups tab
+    // Verify group was created and shows in Groups list
     expect(find.text('Weekend Trek'), findsOneWidget);
     expect(find.text('2 members'), findsOneWidget);
   });
@@ -170,22 +180,15 @@ void main() {
   testWidgets(
       'AddExpenseScreen sequence: expense title, friends/groups toggle, search bar, friend tiles, and fixed continue button',
       (WidgetTester tester) async {
+    // Add friends directly to repository
+    FriendsRepository.instance.addFriend(const Friend(name: 'Alex Johnson', phone: '+91 98765 43210'));
+    FriendsRepository.instance.addFriend(const Friend(name: 'Sophia Martinez', phone: '+91 99887 76655'));
+
     await tester.pumpWidget(const MyApp(home: MainScreen()));
 
-    // Switch to friends tab and add a friend first so available friends exists
-    final friendsTab = find.byIcon(Icons.people_outline_rounded);
-    await tester.tap(friendsTab);
-    await tester.pumpAndSettle();
-    await _addFriendHelper(tester, 'Alex Johnson', '+91 98765 43210');
-    await _addFriendHelper(tester, 'Sophia Martinez', '+91 99887 76655');
-
-    // Switch to Home tab and tap Add Expense quick action tile to open AddExpenseScreen
-    final homeTab = find.byIcon(Icons.home_outlined);
-    await tester.tap(homeTab);
-    await tester.pumpAndSettle();
-
-    final addExpenseTile = find.textContaining('Add\nExpense');
-    await tester.tap(addExpenseTile);
+    // Tap Create story floating action button to open AddExpenseScreen
+    final createStoryFab = find.widgetWithText(FloatingActionButton, 'Create story');
+    await tester.tap(createStoryFab);
     await tester.pumpAndSettle();
 
     // Verify screen title
@@ -326,5 +329,45 @@ void main() {
     // Verify detail sheet shows recorded split details
     expect(find.text('Recorded Split Details'), findsOneWidget);
     expect(find.text('Who Pays Whom'), findsOneWidget);
+  });
+
+  testWidgets(
+      'MainScreen has 3 tabs and Profile tab has Friends and Groups options',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp(home: MainScreen()));
+
+    // Verify only 3 tabs in bottom nav: Home, Activity, Profile (Friends removed)
+    expect(find.text('Home'), findsWidgets);
+    expect(find.text('Activity'), findsWidgets);
+    expect(find.text('Profile'), findsWidgets);
+    expect(find.byIcon(Icons.people_outline_rounded), findsNothing);
+
+    // Switch to Profile tab
+    await tester.tap(find.byIcon(Icons.person_outline_rounded));
+    await tester.pumpAndSettle();
+
+    // Verify Friends and Groups options are in ProfileMenuCard
+    expect(find.text('Friends'), findsOneWidget);
+    expect(find.text('Groups'), findsOneWidget);
+
+    // Tap Friends -> navigates to Friends screen with back button
+    await tester.tap(find.text('Friends'));
+    await tester.pumpAndSettle();
+    expect(find.byType(FriendsTab), findsOneWidget);
+    expect(find.text('No friends yet'), findsOneWidget);
+
+    // Tap Back button -> returns to Profile tab
+    final backBtn = find.byType(PlatformBackButton);
+    expect(backBtn, findsOneWidget);
+    await tester.tap(backBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Roshan Badwaik'), findsOneWidget);
+
+    // Tap Groups -> navigates to Groups list
+    await tester.tap(find.text('Groups'));
+    await tester.pumpAndSettle();
+    expect(find.byType(FriendsTab), findsOneWidget);
+    expect(find.text('No groups yet'), findsOneWidget);
   });
 }

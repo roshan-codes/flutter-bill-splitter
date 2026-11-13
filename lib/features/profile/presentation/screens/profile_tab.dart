@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
+import 'package:flutter_bill_splitter/features/friends/presentation/screens/friends_tab.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_avatar.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_header.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_logout_button.dart';
@@ -8,18 +11,53 @@ import 'package:flutter_bill_splitter/features/profile/presentation/widgets/prof
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Profile Tab screen matching platform design (Material on Android, Cupertino on iOS).
+/// Adheres to design.md Section 2, 3, 4, 6 & 9.
 class ProfileTab extends StatelessWidget {
   final VoidCallback? onLogout;
+  final VoidCallback? onFriendsTap;
+  final VoidCallback? onGroupsTap;
 
   const ProfileTab({
     super.key,
     this.onLogout,
+    this.onFriendsTap,
+    this.onGroupsTap,
   });
+
+  void _openFriends(BuildContext context) {
+    if (onFriendsTap != null) {
+      onFriendsTap!();
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const FriendsTab(
+          initialSubTabIndex: 0,
+          showBackButton: true,
+        ),
+      ),
+    );
+  }
+
+  void _openGroups(BuildContext context) {
+    if (onGroupsTap != null) {
+      onGroupsTap!();
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const FriendsTab(
+          initialSubTabIndex: 1,
+          showBackButton: true,
+        ),
+      ),
+    );
+  }
 
   void _showNotice(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(message, style: GoogleFonts.manrope()),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -30,8 +68,8 @@ class ProfileTab extends StatelessWidget {
       showCupertinoDialog(
         context: context,
         builder: (ctx) => CupertinoAlertDialog(
-          title: const Text('Confirm Logout'),
-          content: const Text('Are you sure you want to log out of BillSplit?'),
+          title: Text('Confirm Logout', style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
+          content: Text('Are you sure you want to log out of BillSplit?', style: GoogleFonts.manrope()),
           actions: [
             CupertinoDialogAction(
               onPressed: () => Navigator.of(ctx).pop(),
@@ -56,30 +94,33 @@ class ProfileTab extends StatelessWidget {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            side: const BorderSide(color: AppColors.border, width: 1.0),
+          ),
+          title: Text(
             'Confirm Logout',
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
+            style: GoogleFonts.manrope(
+              fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
           ),
-          content: const Text(
+          content: Text(
             'Are you sure you want to log out of BillSplit?',
-            style: TextStyle(color: AppColors.textSecondary),
+            style: GoogleFonts.manrope(color: AppColors.textSecondary),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
+              child: Text('Cancel', style: GoogleFonts.manrope(color: AppColors.textSecondary)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE53935),
+                backgroundColor: AppColors.danger,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.buttonSecondary),
                 ),
               ),
               onPressed: () {
@@ -90,7 +131,7 @@ class ProfileTab extends StatelessWidget {
                   _showNotice(context, 'Logged out successfully');
                 }
               },
-              child: const Text('Logout'),
+              child: Text('Logout', style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -126,8 +167,10 @@ class ProfileTab extends StatelessWidget {
               ),
               const SizedBox(height: 28),
 
-              // Menu Card with 5 items
+              // Menu Card with Friends, Groups, and settings
               ProfileMenuCard(
+                onFriendsTap: () => _openFriends(context),
+                onGroupsTap: () => _openGroups(context),
                 onEditProfileTap: () => _showNotice(context, 'Edit Profile opened'),
                 onPaymentSettlementTap: () => _showNotice(context, 'Payment & Settlement opened'),
                 onAppSettingsTap: () => _showNotice(context, 'App Settings opened'),

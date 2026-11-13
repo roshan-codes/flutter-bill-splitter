@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 
 /// Helper to determine if current platform is iOS / macOS.
 bool isIOSPlatform(BuildContext context) {
@@ -8,9 +10,11 @@ bool isIOSPlatform(BuildContext context) {
   return platform == TargetPlatform.iOS || platform == TargetPlatform.macOS;
 }
 
-/// Platform-adaptive Card:
-/// - Material 3 Card with elevation, rounded corners and ripple on Android.
-/// - Cupertino rounded grouped container with subtle border and iOS tap feedback on iOS.
+/// Platform-adaptive Card adhering to design.md Section 5:
+/// - Pure white surface on off-white background
+/// - Subtle 1 px border (#EAEAE7)
+/// - 20 px default corner radius
+/// - Minimal subtle elevation (0 - 1)
 class PlatformCard extends StatelessWidget {
   final Widget child;
   final double? width;
@@ -31,9 +35,9 @@ class PlatformCard extends StatelessWidget {
     this.height,
     this.padding,
     this.margin,
-    this.borderRadius = 16.0,
+    this.borderRadius = AppRadius.card,
     this.color,
-    this.elevation = 1.0,
+    this.elevation = 0.0,
     this.border,
     this.onTap,
     this.clipBehavior = Clip.none,
@@ -42,6 +46,8 @@ class PlatformCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isIOS = isIOSPlatform(context);
+    final cardColor = color ?? AppColors.surface;
+    final cardBorder = border ?? Border.all(color: AppColors.border, width: 1.0);
 
     if (isIOS) {
       final cardContent = Container(
@@ -50,20 +56,18 @@ class PlatformCard extends StatelessWidget {
         margin: margin,
         padding: padding,
         decoration: BoxDecoration(
-          color: color ?? CupertinoColors.secondarySystemGroupedBackground,
+          color: cardColor,
           borderRadius: BorderRadius.circular(borderRadius),
-          border: border ??
-              Border.all(
-                color: CupertinoColors.separator.resolveFrom(context).withOpacity(0.18),
-                width: 0.8,
-              ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          border: cardBorder,
+          boxShadow: elevation > 0
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         clipBehavior: clipBehavior,
         child: child,
@@ -81,17 +85,19 @@ class PlatformCard extends StatelessWidget {
     }
 
     // Material 3 Design
+    final borderSide = cardBorder is Border
+        ? cardBorder.top
+        : const BorderSide(color: AppColors.border, width: 1.0);
+
     Widget card = Card(
       elevation: elevation,
       margin: margin ?? EdgeInsets.zero,
-      color: color ?? Colors.white,
-      shadowColor: Colors.black.withOpacity(0.08),
+      color: cardColor,
+      shadowColor: Colors.black.withOpacity(0.04),
       clipBehavior: clipBehavior,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(borderRadius),
-        side: border is Border
-            ? (border as Border).top
-            : const BorderSide(color: AppColors.border, width: 0.8),
+        side: borderSide,
       ),
       child: Container(
         width: width,
@@ -105,14 +111,12 @@ class PlatformCard extends StatelessWidget {
       card = Card(
         elevation: elevation,
         margin: margin ?? EdgeInsets.zero,
-        color: color ?? Colors.white,
-        shadowColor: Colors.black.withOpacity(0.08),
+        color: cardColor,
+        shadowColor: Colors.black.withOpacity(0.04),
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadius),
-          side: border is Border
-              ? (border as Border).top
-              : const BorderSide(color: AppColors.border, width: 0.8),
+          side: borderSide,
         ),
         child: InkWell(
           onTap: onTap,
@@ -131,9 +135,8 @@ class PlatformCard extends StatelessWidget {
   }
 }
 
-/// Platform-adaptive Inset container (for input fields, search bars, filter bars):
-/// - Material 3 filled surface container on Android.
-/// - Cupertino tertiary system fill container on iOS.
+/// Platform-adaptive Inset container (for input fields, search bars, filter bars)
+/// following design.md Section 7.
 class PlatformInsetContainer extends StatelessWidget {
   final Widget child;
   final double? width;
@@ -141,6 +144,7 @@ class PlatformInsetContainer extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final double borderRadius;
   final Color? color;
+  final BoxBorder? border;
 
   const PlatformInsetContainer({
     super.key,
@@ -148,27 +152,21 @@ class PlatformInsetContainer extends StatelessWidget {
     this.width,
     this.height,
     this.padding,
-    this.borderRadius = 14.0,
+    this.borderRadius = AppRadius.input,
     this.color,
+    this.border,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isIOS = isIOSPlatform(context);
-
     return Container(
       width: width,
       height: height,
       padding: padding,
       decoration: BoxDecoration(
-        color: color ??
-            (isIOS
-                ? CupertinoColors.tertiarySystemFill.resolveFrom(context)
-                : const Color(0xFFEFF2F5)),
+        color: color ?? AppColors.surfaceSubtle,
         borderRadius: BorderRadius.circular(borderRadius),
-        border: isIOS
-            ? null
-            : Border.all(color: AppColors.border, width: 0.8),
+        border: border ?? Border.all(color: AppColors.border, width: 1.0),
       ),
       child: child,
     );
@@ -176,8 +174,7 @@ class PlatformInsetContainer extends StatelessWidget {
 }
 
 /// Platform-adaptive Circular Icon / Button:
-/// - Material circular container with ripple & elevation on Android.
-/// - Cupertino circular button with smooth press opacity on iOS.
+/// Clean white surface with subtle 1px border (#EAEAE7) and monochrome icon (#111111).
 class PlatformCircleButton extends StatelessWidget {
   final Widget child;
   final double size;
@@ -193,7 +190,7 @@ class PlatformCircleButton extends StatelessWidget {
     this.color,
     this.onTap,
     this.tooltip,
-    this.elevation = 1.0,
+    this.elevation = 0.0,
   });
 
   @override
@@ -207,18 +204,20 @@ class PlatformCircleButton extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: color ?? CupertinoColors.secondarySystemGroupedBackground,
+          color: color ?? AppColors.surface,
           border: Border.all(
-            color: CupertinoColors.separator.resolveFrom(context).withOpacity(0.18),
-            width: 0.8,
+            color: AppColors.border,
+            width: 1.0,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 6,
-              offset: const Offset(0, 1),
-            ),
-          ],
+          boxShadow: elevation > 0
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
         ),
         child: onTap != null
             ? CupertinoButton(
@@ -231,10 +230,12 @@ class PlatformCircleButton extends StatelessWidget {
       );
     } else {
       button = Material(
-        shape: const CircleBorder(),
-        color: color ?? Colors.white,
+        shape: const CircleBorder(
+          side: BorderSide(color: AppColors.border, width: 1.0),
+        ),
+        color: color ?? AppColors.surface,
         elevation: elevation,
-        shadowColor: Colors.black.withOpacity(0.1),
+        shadowColor: Colors.black.withOpacity(0.05),
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onTap,
@@ -257,9 +258,13 @@ class PlatformCircleButton extends StatelessWidget {
   }
 }
 
-/// Platform-adaptive Primary Button:
-/// - Material ElevatedButton with bold typography and ripple on Android.
-/// - CupertinoButton.filled with smooth press opacity on iOS.
+/// Platform-adaptive Primary Button adhering to design.md Section 6:
+/// Height: 54–56 px (default 56)
+/// Background: #111111 (near-black)
+/// Text: #FFFFFF (white)
+/// Font: Manrope SemiBold/Bold, 15–16 px
+/// Radius: 16–18 px (default 18)
+/// Elevation: 0
 class PlatformButton extends StatelessWidget {
   final Widget child;
   final VoidCallback? onPressed;
@@ -275,14 +280,16 @@ class PlatformButton extends StatelessWidget {
     required this.onPressed,
     this.color,
     this.textColor,
-    this.height = 52.0,
-    this.borderRadius = 16.0,
-    this.elevation = 1.0,
+    this.height = 56.0,
+    this.borderRadius = AppRadius.button,
+    this.elevation = 0.0,
   });
 
   @override
   Widget build(BuildContext context) {
     final isIOS = isIOSPlatform(context);
+    final btnBg = color ?? AppColors.primary;
+    final btnFg = textColor ?? Colors.white;
 
     if (isIOS) {
       return SizedBox(
@@ -290,12 +297,13 @@ class PlatformButton extends StatelessWidget {
         height: height,
         child: CupertinoButton(
           padding: EdgeInsets.zero,
-          color: color ?? AppColors.primary,
+          color: btnBg,
+          disabledColor: AppColors.surfaceSubtle,
           borderRadius: BorderRadius.circular(borderRadius),
           onPressed: onPressed,
           child: DefaultTextStyle(
-            style: TextStyle(
-              color: textColor ?? AppColors.primaryDark,
+            style: GoogleFonts.manrope(
+              color: btnFg,
               fontWeight: FontWeight.w700,
               fontSize: 16,
             ),
@@ -310,15 +318,99 @@ class PlatformButton extends StatelessWidget {
       height: height,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: color ?? AppColors.primary,
-          foregroundColor: textColor ?? AppColors.primaryDark,
+          backgroundColor: btnBg,
+          foregroundColor: btnFg,
           elevation: elevation,
+          disabledBackgroundColor: AppColors.surfaceSubtle,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
         ),
         onPressed: onPressed,
-        child: child,
+        child: DefaultTextStyle(
+          style: GoogleFonts.manrope(
+            color: btnFg,
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// Platform-adaptive Secondary Button adhering to design.md Section 6:
+/// Height: 48–52 px (default 50)
+/// Background: #F1F1EF or white with #EAEAE7 border
+/// Text: #111111
+/// Radius: 14–16 px (default 16)
+class PlatformSecondaryButton extends StatelessWidget {
+  final Widget child;
+  final VoidCallback? onPressed;
+  final Color? color;
+  final Color? textColor;
+  final double height;
+  final double borderRadius;
+
+  const PlatformSecondaryButton({
+    super.key,
+    required this.child,
+    required this.onPressed,
+    this.color,
+    this.textColor,
+    this.height = 50.0,
+    this.borderRadius = AppRadius.buttonSecondary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isIOS = isIOSPlatform(context);
+    final btnBg = color ?? AppColors.surfaceSubtle;
+    final btnFg = textColor ?? AppColors.textPrimary;
+
+    if (isIOS) {
+      return SizedBox(
+        width: double.infinity,
+        height: height,
+        child: CupertinoButton(
+          padding: EdgeInsets.zero,
+          color: btnBg,
+          borderRadius: BorderRadius.circular(borderRadius),
+          onPressed: onPressed,
+          child: DefaultTextStyle(
+            style: GoogleFonts.manrope(
+              color: btnFg,
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+            ),
+            child: child,
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      height: height,
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          backgroundColor: btnBg,
+          foregroundColor: btnFg,
+          side: const BorderSide(color: AppColors.border, width: 1.0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+          ),
+        ),
+        onPressed: onPressed,
+        child: DefaultTextStyle(
+          style: GoogleFonts.manrope(
+            color: btnFg,
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+          ),
+          child: child,
+        ),
       ),
     );
   }
@@ -361,4 +453,3 @@ class PlatformBackButton extends StatelessWidget {
     );
   }
 }
-

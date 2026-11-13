@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/navigation/presentation/screens/main_screen.dart';
@@ -11,6 +13,7 @@ import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Splash Screen matching platform design:
 /// Centered lightning squircle badge, BillSplit title, subtitle, and decorative waves.
+/// Adheres to design.md Section 2, 3, 5 & 10.
 class SplashScreen extends StatefulWidget {
   final bool autoNavigate;
   final Duration duration;
@@ -97,37 +100,40 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Vibrant Lime Squircle with Lightning Bolt
+                    // Official App Logo
                     Container(
                       width: 96,
                       height: 96,
                       decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(28),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(AppRadius.cardLarge),
+                        border: Border.all(color: AppColors.border, width: 1.0),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.4),
+                            color: Colors.black.withOpacity(0.08),
                             blurRadius: 16,
-                            offset: const Offset(0, 6),
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.bolt_rounded,
-                          color: AppColors.primaryDark,
-                          size: 54,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(AppRadius.cardLarge),
+                        child: Image.asset(
+                          'assets/icon/app_icon.png',
+                          width: 96,
+                          height: 96,
+                          fit: BoxFit.cover,
                         ),
                       ),
                     ),
                     const SizedBox(height: 24),
 
                     // App Title
-                    const Text(
-                      'BillSplit',
-                      style: TextStyle(
+                    Text(
+                      'TTMM',
+                      style: GoogleFonts.manrope(
                         fontSize: 34,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary,
                         letterSpacing: -0.6,
                       ),
@@ -135,10 +141,10 @@ class _SplashScreenState extends State<SplashScreen> {
                     const SizedBox(height: 12),
 
                     // Subtitle / Tagline
-                    const Text(
+                    Text(
                       'Split expenses, track balances\nand settle easily',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: GoogleFonts.manrope(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                         color: AppColors.textSecondary,

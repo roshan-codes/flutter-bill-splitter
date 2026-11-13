@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/group.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Single group selection card matching the platform-adaptive selection tile style.
+/// Adheres to design.md Section 4, 5 & 10.
 class GroupSelectionTile extends StatelessWidget {
   final Group group;
   final bool isSelected;
@@ -19,27 +22,28 @@ class GroupSelectionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PlatformCard(
-      borderRadius: 16,
-      elevation: 1,
+      borderRadius: AppRadius.card,
+      elevation: 0,
+      color: AppColors.surface,
       onTap: onToggle,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          // Squircle Checkbox
+          // Checkbox
           Container(
             width: 22,
             height: 22,
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF86E829) : Colors.white,
-              borderRadius: BorderRadius.circular(7),
+              color: isSelected ? AppColors.primary : AppColors.surface,
+              borderRadius: BorderRadius.circular(6),
               border: isSelected
                   ? null
-                  : Border.all(color: const Color(0xFFCFDAE2), width: 1.5),
+                  : Border.all(color: AppColors.border, width: 1.5),
             ),
             child: isSelected
                 ? const Icon(
                     Icons.check_rounded,
-                    color: Color(0xFF10210A),
+                    color: Colors.white,
                     size: 16,
                   )
                 : null,
@@ -51,13 +55,13 @@ class GroupSelectionTile extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: const BoxDecoration(
-              color: Color(0xFFE8F8D8),
+              color: AppColors.surfaceSubtle,
               shape: BoxShape.circle,
             ),
             child: const Center(
               child: Icon(
                 Icons.groups_rounded,
-                color: Color(0xFF284821),
+                color: AppColors.textPrimary,
                 size: 20,
               ),
             ),
@@ -71,7 +75,7 @@ class GroupSelectionTile extends StatelessWidget {
               children: [
                 Text(
                   group.name,
-                  style: const TextStyle(
+                  style: GoogleFonts.manrope(
                     fontSize: 15.5,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
@@ -81,7 +85,7 @@ class GroupSelectionTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '${group.members.length} members',
-                  style: const TextStyle(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textSecondary,

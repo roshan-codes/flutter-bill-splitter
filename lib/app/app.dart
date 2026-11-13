@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Bill Splitter',
+      title: 'TTMM',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: home ?? const SplashScreen(),

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 
 /// Platform-adaptive Dialog to input a new friend's name and mobile number.
+/// Adheres to design.md Section 6 & 7.
 class AddFriendDialog extends StatefulWidget {
   final ValueChanged<Friend> onFriendAdded;
 
@@ -51,9 +54,10 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppRadius.cardLarge),
+        side: const BorderSide(color: AppColors.border, width: 1.0),
       ),
       title: Row(
         children: [
@@ -62,20 +66,20 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
             height: 40,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.primaryLight,
+              color: AppColors.surfaceSubtle,
             ),
             child: const Icon(
               Icons.person_add_alt_1_rounded,
-              color: AppColors.primaryDeep,
+              color: AppColors.textPrimary,
               size: 20,
             ),
           ),
           const SizedBox(width: 12),
-          const Text(
+          Text(
             'Add Friend',
-            style: TextStyle(
+            style: GoogleFonts.manrope(
               fontSize: 20,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
               letterSpacing: -0.3,
             ),
@@ -90,17 +94,26 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
             TextFormField(
               controller: _nameController,
               autofocus: true,
+              style: GoogleFonts.manrope(color: AppColors.textPrimary, fontSize: 15),
               decoration: InputDecoration(
                 labelText: 'Friend Name',
                 hintText: 'Enter name',
-                prefixIcon: const Icon(Icons.person_outline, color: AppColors.primaryDeep),
+                prefixIcon: const Icon(Icons.person_outline, color: AppColors.textSecondary),
                 filled: true,
-                fillColor: const Color(0xFFEFF2F5),
+                fillColor: AppColors.surface,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(AppRadius.input),
+                  borderSide: const BorderSide(color: AppColors.border, width: 1.0),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.input),
+                  borderSide: const BorderSide(color: AppColors.border, width: 1.0),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.input),
+                  borderSide: const BorderSide(color: AppColors.textPrimary, width: 1.5),
+                ),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -113,17 +126,26 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
             TextFormField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
+              style: GoogleFonts.manrope(color: AppColors.textPrimary, fontSize: 15),
               decoration: InputDecoration(
                 labelText: 'Mobile Number',
                 hintText: 'Enter mobile no',
-                prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primaryDeep),
+                prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.textSecondary),
                 filled: true,
-                fillColor: const Color(0xFFEFF2F5),
+                fillColor: AppColors.surface,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(AppRadius.input),
+                  borderSide: const BorderSide(color: AppColors.border, width: 1.0),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.input),
+                  borderSide: const BorderSide(color: AppColors.border, width: 1.0),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.input),
+                  borderSide: const BorderSide(color: AppColors.textPrimary, width: 1.5),
+                ),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -140,21 +162,21 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
           onPressed: () => Navigator.pop(context),
           child: Text(
             'Cancel',
-            style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w700),
+            style: GoogleFonts.manrope(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
           ),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
-            foregroundColor: AppColors.primaryDark,
-            elevation: 1,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppRadius.buttonSecondary),
             ),
           ),
           onPressed: _submit,
-          child: const Text('Add', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+          child: Text('Add', style: GoogleFonts.manrope(fontWeight: FontWeight.w700, fontSize: 15)),
         ),
       ],
     );

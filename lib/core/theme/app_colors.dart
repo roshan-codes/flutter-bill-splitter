@@ -1,35 +1,43 @@
 import 'package:flutter/material.dart';
 
-/// Centralized color palette and platform design tokens for the Bill Splitter app.
+/// Centralized color palette following design.md Section 2 (CRED-inspired minimal fintech).
 class AppColors {
   AppColors._();
 
-  // Canvas and surface base
-  static const Color background = Color(0xFFF5F7FA);
-  static const Color surface = Colors.white;
-  static const Color surfaceElevated = Colors.white;
+  // Backgrounds & Surfaces
+  static const Color background = Color(0xFFF7F7F5);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceSubtle = Color(0xFFF1F1EF);
+  static const Color surfaceElevated = Color(0xFFFFFFFF);
 
-  // Cupertino / iOS specific surface colors
-  static const Color iosBackground = Color(0xFFF5F7FA);
-  static const Color iosCard = Colors.white;
-  static const Color iosSeparator = Color(0x33000000);
-  static const Color iosTertiaryFill = Color(0xFFE5E5EA);
+  // iOS specific tokens aligned with design.md
+  static const Color iosBackground = Color(0xFFF7F7F5);
+  static const Color iosCard = Color(0xFFFFFFFF);
+  static const Color iosSeparator = Color(0xFFEAEAE7);
+  static const Color iosTertiaryFill = Color(0xFFF1F1EF);
 
-  // Vibrant primary accents
-  static const Color primary = Color(0xFF76E026);
-  static const Color primaryDark = Color(0xFF10210A);
-  static const Color primaryDeep = Color(0xFF284821);
-  static const Color primaryLight = Color(0xFFD6F3BF);
+  // Primary action tokens (near-black #111111)
+  static const Color primary = Color(0xFF111111);
+  static const Color primaryDark = Color(0xFF111111);
+  static const Color primaryDeep = Color(0xFF111111);
+  static const Color primaryLight = Color(0xFFF1F1EF);
 
   // Text hierarchy
-  static const Color textPrimary = Color(0xFF1B241E);
-  static const Color textSecondary = Color(0xFF6E7E75);
-  static const Color textMuted = Color(0xFF97A69E);
+  static const Color textPrimary = Color(0xFF111111);
+  static const Color textSecondary = Color(0xFF777777);
+  static const Color textTertiary = Color(0xFFA0A0A0);
+  static const Color textMuted = Color(0xFFA0A0A0);
 
-  // Borders & subtle accents
-  static const Color border = Color(0xFFE2E8F0);
-  static const Color borderMedium = Color(0xFFCBD5E1);
+  // Borders & Dividers
+  static const Color border = Color(0xFFEAEAE7);
+  static const Color borderMedium = Color(0xFFEAEAE7);
 
-  static const Color amber = Color(0xFFF7B731);
-  static const Color danger = Colors.redAccent;
+  // Financial status tokens
+  static const Color success = Color(0xFF247A45);
+  static const Color successSoft = Color(0xFFE7F4E9);
+  static const Color danger = Color(0xFFC74747);
+  static const Color dangerSoft = Color(0xFFFBEAEA);
+  static const Color warning = Color(0xFFA66A16);
+  static const Color warningSoft = Color(0xFFFFF3DC);
+  static const Color amber = Color(0xFFA66A16);
 }

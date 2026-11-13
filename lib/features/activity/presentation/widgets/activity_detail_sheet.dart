@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/settlement_card.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Bottom sheet displaying the full split breakdown for a recorded activity with platform-adaptive UI styling.
+/// Adheres to design.md Section 5, 8 & 10.
 class ActivityDetailSheet extends StatelessWidget {
   final SplitActivity activity;
 
@@ -41,8 +44,8 @@ class ActivityDetailSheet extends StatelessWidget {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: isIOS ? AppColors.iosBackground : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            color: isIOS ? AppColors.iosBackground : AppColors.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
           ),
           child: Column(
             children: [
@@ -53,8 +56,8 @@ class ActivityDetailSheet extends StatelessWidget {
                   width: 44,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: AppColors.borderMedium,
-                    borderRadius: BorderRadius.circular(4),
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                 ),
               ),
@@ -70,16 +73,16 @@ class ActivityDetailSheet extends StatelessWidget {
                         children: [
                           Text(
                             activity.groupName,
-                            style: const TextStyle(
+                            style: GoogleFonts.manrope(
                               fontSize: 20,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
-                          const Text(
+                          Text(
                             'Recorded Split Details',
-                            style: TextStyle(
+                            style: GoogleFonts.manrope(
                               fontSize: 13,
                               color: AppColors.textSecondary,
                             ),
@@ -104,8 +107,8 @@ class ActivityDetailSheet extends StatelessWidget {
                   children: [
                     // Overview stats
                     PlatformCard(
-                      borderRadius: 18,
-                      elevation: 1.5,
+                      borderRadius: AppRadius.card,
+                      elevation: 0,
                       padding: const EdgeInsets.all(18),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -113,9 +116,9 @@ class ActivityDetailSheet extends StatelessWidget {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Total Expense',
-                                style: TextStyle(
+                                style: GoogleFonts.manrope(
                                   fontSize: 12,
                                   color: AppColors.textSecondary,
                                   fontWeight: FontWeight.w500,
@@ -124,9 +127,9 @@ class ActivityDetailSheet extends StatelessWidget {
                               const SizedBox(height: 4),
                               Text(
                                 _formatAmount(activity.totalAmount),
-                                style: const TextStyle(
+                                style: GoogleFonts.manrope(
                                   fontSize: 22,
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w800,
                                   color: AppColors.textPrimary,
                                 ),
                               ),
@@ -135,9 +138,9 @@ class ActivityDetailSheet extends StatelessWidget {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              const Text(
+                              Text(
                                 'Per Person Share',
-                                style: TextStyle(
+                                style: GoogleFonts.manrope(
                                   fontSize: 12,
                                   color: AppColors.textSecondary,
                                   fontWeight: FontWeight.w500,
@@ -146,10 +149,10 @@ class ActivityDetailSheet extends StatelessWidget {
                               const SizedBox(height: 4),
                               Text(
                                 _formatAmount(activity.sharePerPerson),
-                                style: const TextStyle(
+                                style: GoogleFonts.manrope(
                                   fontSize: 20,
-                                  fontWeight: FontWeight.w900,
-                                  color: AppColors.primaryDeep,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primary,
                                 ),
                               ),
                             ],
@@ -160,31 +163,32 @@ class ActivityDetailSheet extends StatelessWidget {
                     const SizedBox(height: 20),
 
                     // Settlements Section
-                    const Text(
+                    Text(
                       'Who Pays Whom',
-                      style: TextStyle(
+                      style: GoogleFonts.manrope(
                         fontSize: 16,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 10),
                     if (activity.settlements.isEmpty)
-                      const PlatformCard(
-                        borderRadius: 16,
-                        color: Color(0xFFF0FDF4),
-                        padding: EdgeInsets.all(16),
+                      PlatformCard(
+                        borderRadius: AppRadius.card,
+                        color: AppColors.successSoft,
+                        border: Border.all(color: AppColors.success.withOpacity(0.2), width: 1.0),
+                        padding: const EdgeInsets.all(16),
                         child: Row(
                           children: [
-                            Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 24),
-                            SizedBox(width: 12),
+                            const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 24),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 'All settled up! No payments pending.',
-                                style: TextStyle(
+                                style: GoogleFonts.manrope(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF166534),
+                                  color: AppColors.success,
                                 ),
                               ),
                             ),
@@ -204,18 +208,18 @@ class ActivityDetailSheet extends StatelessWidget {
                     const SizedBox(height: 24),
 
                     // Member breakdown
-                    const Text(
+                    Text(
                       'Members',
-                      style: TextStyle(
+                      style: GoogleFonts.manrope(
                         fontSize: 16,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 10),
                     PlatformCard(
-                      borderRadius: 18,
-                      elevation: 1,
+                      borderRadius: AppRadius.card,
+                      elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 6),
                       child: ListView.separated(
                         shrinkWrap: true,
@@ -234,17 +238,17 @@ class ActivityDetailSheet extends StatelessWidget {
                                 Container(
                                   width: 38,
                                   height: 38,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    color: AppColors.primaryLight,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppColors.surfaceSubtle,
                                   ),
                                   child: Center(
                                     child: Text(
                                       initial,
-                                      style: const TextStyle(
-                                        color: Color(0xFF284821),
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 15,
+                                      style: GoogleFonts.manrope(
+                                        color: AppColors.textPrimary,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14,
                                       ),
                                     ),
                                   ),
@@ -253,18 +257,18 @@ class ActivityDetailSheet extends StatelessWidget {
                                 Expanded(
                                   child: Text(
                                     member.name,
-                                    style: const TextStyle(
+                                    style: GoogleFonts.manrope(
                                       fontSize: 14,
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: FontWeight.w600,
                                       color: AppColors.textPrimary,
                                     ),
                                   ),
                                 ),
                                 Text(
                                   'Paid ${_formatAmount(paid)}',
-                                  style: const TextStyle(
+                                  style: GoogleFonts.manrope(
                                     fontSize: 13,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w500,
                                     color: AppColors.textSecondary,
                                   ),
                                 ),

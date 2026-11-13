@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Platform-adaptive segmented pill toggle for switching between Friends and Groups.
+/// Adheres to design.md Section 4 & 6.
 class FriendsGroupsToggle extends StatelessWidget {
   final int selectedIndex; // 0: Friends, 1: Groups
   final ValueChanged<int> onToggle;
@@ -16,7 +19,7 @@ class FriendsGroupsToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PlatformInsetContainer(
-      borderRadius: 18,
+      borderRadius: AppRadius.pill,
       width: double.infinity,
       height: 52,
       padding: const EdgeInsets.all(4),
@@ -56,7 +59,7 @@ class FriendsGroupsToggle extends StatelessWidget {
     if (isSelected) {
       return Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
           color: AppColors.primary,
           boxShadow: [
             BoxShadow(
@@ -72,16 +75,16 @@ class FriendsGroupsToggle extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                color: AppColors.primaryDark,
+                color: Colors.white,
                 size: 20,
               ),
               const SizedBox(width: 8),
               Text(
                 title,
-                style: const TextStyle(
+                style: GoogleFonts.manrope(
                   fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primaryDark,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
                 ),
               ),
             ],
@@ -92,23 +95,23 @@ class FriendsGroupsToggle extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
       child: Center(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              color: AppColors.textPrimary,
+              color: AppColors.textSecondary,
               size: 20,
             ),
             const SizedBox(width: 8),
             Text(
               title,
-              style: const TextStyle(
+              style: GoogleFonts.manrope(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: AppColors.textSecondary,
               ),
             ),
           ],

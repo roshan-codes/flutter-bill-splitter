@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Single friend selection card with custom squircle checkbox, pastel avatar, and name.
+/// Single friend selection card with minimal checkbox, circular avatar, and name.
+/// Adheres to design.md Section 4, 5, 8 & 10.
 class FriendSelectionTile extends StatelessWidget {
   final Friend friend;
   final bool isSelected;
@@ -16,51 +19,6 @@ class FriendSelectionTile extends StatelessWidget {
     required this.isSelected,
     required this.onToggle,
   });
-
-  Color _getAvatarBg(String name) {
-    final firstChar = name.isNotEmpty ? name[0].toUpperCase() : 'A';
-    switch (firstChar) {
-      case 'V':
-      case 'S':
-        return const Color(0xFFE8F8D8);
-      case 'N':
-      case 'R':
-        return const Color(0xFFFFECE0);
-      case 'A':
-        return const Color(0xFFE0E7FF);
-      case 'P':
-        return const Color(0xFFE2E8F0);
-      default:
-        final hash = name.hashCode.abs();
-        final colors = [
-          const Color(0xFFE8F8D8),
-          const Color(0xFFFFECE0),
-          const Color(0xFFE0E7FF),
-          const Color(0xFFE2E8F0),
-          const Color(0xFFFCE7F3),
-          const Color(0xFFFEF3C7),
-        ];
-        return colors[hash % colors.length];
-    }
-  }
-
-  Color _getAvatarTextColor(String name) {
-    final firstChar = name.isNotEmpty ? name[0].toUpperCase() : 'A';
-    switch (firstChar) {
-      case 'V':
-      case 'S':
-        return const Color(0xFF284821);
-      case 'N':
-      case 'R':
-        return const Color(0xFFDC2626);
-      case 'A':
-        return const Color(0xFF3730A3);
-      case 'P':
-        return const Color(0xFF334155);
-      default:
-        return AppColors.textPrimary;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,8 +35,9 @@ class FriendSelectionTile extends StatelessWidget {
       },
       excludeSemantics: true,
       child: PlatformCard(
-        borderRadius: 16,
-        elevation: 1,
+        borderRadius: AppRadius.card,
+        elevation: 0,
+        color: AppColors.surface,
         onTap: () {
           HapticFeedback.selectionClick();
           onToggle();
@@ -86,42 +45,42 @@ class FriendSelectionTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            // Squircle Checkbox
+            // Checkbox
             Container(
               width: 22,
               height: 22,
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF86E829) : Colors.white,
-                borderRadius: BorderRadius.circular(7),
+                color: isSelected ? AppColors.primary : AppColors.surface,
+                borderRadius: BorderRadius.circular(6),
                 border: isSelected
                     ? null
-                    : Border.all(color: const Color(0xFFCFDAE2), width: 1.5),
+                    : Border.all(color: AppColors.border, width: 1.5),
               ),
               child: isSelected
                   ? const Icon(
                       Icons.check_rounded,
-                      color: Color(0xFF10210A),
+                      color: Colors.white,
                       size: 16,
                     )
                   : null,
             ),
             const SizedBox(width: 14),
 
-            // Circular Pastel Avatar
+            // Circular Neutral Avatar
             Container(
               width: 38,
               height: 38,
-              decoration: BoxDecoration(
-                color: _getAvatarBg(friend.name),
+              decoration: const BoxDecoration(
+                color: AppColors.surfaceSubtle,
                 shape: BoxShape.circle,
               ),
               child: Center(
                 child: Text(
                   initial,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: _getAvatarTextColor(friend.name),
+                  style: GoogleFonts.manrope(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -132,7 +91,7 @@ class FriendSelectionTile extends StatelessWidget {
             Expanded(
               child: Text(
                 friend.name,
-                style: const TextStyle(
+                style: GoogleFonts.manrope(
                   fontSize: 15.5,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,

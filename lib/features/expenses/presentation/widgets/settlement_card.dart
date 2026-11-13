@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/expenses/domain/models/settlement_transaction.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Platform-adaptive Card displaying an individual settlement transaction:
 /// Debtor (Avatar, Name, Pay ₹Amount) -> Arrow -> Creditor (Avatar, Name).
+/// Adheres to design.md Section 2, 3, 5 & 10.7.
 class SettlementCard extends StatelessWidget {
   final SettlementTransaction transaction;
 
@@ -34,26 +37,27 @@ class SettlementCard extends StatelessWidget {
     return Semantics(
       label: '${transaction.from.name} should pay $amountFormatted to ${transaction.to.name}',
       child: PlatformCard(
-        borderRadius: 18,
-        elevation: 1.5,
+        borderRadius: AppRadius.card,
+        elevation: 0,
+        color: AppColors.surface,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            // Debtor Circular Avatar (Soft peach/pink)
+            // Debtor Circular Avatar (Soft red/danger)
             Container(
               width: 38,
               height: 38,
               decoration: const BoxDecoration(
-                color: Color(0xFFFFECE0),
+                color: AppColors.dangerSoft,
                 shape: BoxShape.circle,
               ),
               child: Center(
                 child: Text(
                   fromInitial,
-                  style: const TextStyle(
-                    color: Color(0xFFDC2626),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
+                  style: GoogleFonts.manrope(
+                    color: AppColors.danger,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
                   ),
                 ),
               ),
@@ -67,9 +71,9 @@ class SettlementCard extends StatelessWidget {
                 children: [
                   Text(
                     transaction.from.name,
-                    style: const TextStyle(
+                    style: GoogleFonts.manrope(
                       fontSize: 15,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
                     maxLines: 1,
@@ -78,10 +82,10 @@ class SettlementCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     'Pay $amountFormatted',
-                    style: const TextStyle(
+                    style: GoogleFonts.manrope(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
+                      color: AppColors.danger,
                     ),
                   ),
                 ],
@@ -93,26 +97,26 @@ class SettlementCard extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 10),
               child: Icon(
                 Icons.arrow_forward_rounded,
-                color: AppColors.textPrimary,
+                color: AppColors.primary,
                 size: 20,
               ),
             ),
 
-            // Creditor Circular Avatar (Soft lime)
+            // Creditor Circular Avatar (Soft green/success)
             Container(
               width: 38,
               height: 38,
               decoration: const BoxDecoration(
-                color: Color(0xFFE8F8D8),
+                color: AppColors.successSoft,
                 shape: BoxShape.circle,
               ),
               child: Center(
                 child: Text(
                   toInitial,
-                  style: const TextStyle(
-                    color: Color(0xFF284821),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
+                  style: GoogleFonts.manrope(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
                   ),
                 ),
               ),
@@ -123,9 +127,9 @@ class SettlementCard extends StatelessWidget {
             Expanded(
               child: Text(
                 transaction.to.name,
-                style: const TextStyle(
+                style: GoogleFonts.manrope(
                   fontSize: 15,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
                 ),
                 maxLines: 1,

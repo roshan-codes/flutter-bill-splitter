@@ -1,4 +1,4 @@
-package com.example.flutter_bill_splitter
+package com.roshancodes.ttmm
 
 import io.flutter.embedding.android.FlutterActivity
 

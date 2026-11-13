@@ -5,7 +5,6 @@ import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/screens/activity_tab.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
-import 'package:flutter_bill_splitter/features/friends/presentation/screens/friends_tab.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/screens/home_tab.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/screens/profile_tab.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
@@ -23,7 +22,6 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<String> _tabTitles = const [
     'Home',
-    'Friends',
     'Activity',
     'Profile',
   ];
@@ -69,22 +67,6 @@ class _MainScreenState extends State<MainScreen> {
         HomeTab(
           onAddExpense: _openAddExpenseScreen,
         ),
-        FriendsTab(
-          friends: FriendsRepository.instance.friends,
-          groups: FriendsRepository.instance.groups,
-          onFriendAdded: (newFriend) {
-            FriendsRepository.instance.addFriend(newFriend);
-          },
-          onGroupCreated: (newGroup) {
-            FriendsRepository.instance.addGroup(newGroup);
-          },
-          onFriendDeleted: (index) {
-            FriendsRepository.instance.removeFriendAt(index);
-          },
-          onGroupDeleted: (index) {
-            FriendsRepository.instance.removeGroupAt(index);
-          },
-        ),
         const ActivityTab(),
         const ProfileTab(),
       ],
@@ -93,7 +75,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hasCustomHeader = _currentIndex >= 0 && _currentIndex <= 3;
+    final hasCustomHeader = _currentIndex >= 0 && _currentIndex <= 2;
     final isIOS = isIOSPlatform(context);
 
     return PopScope(
@@ -123,20 +105,18 @@ class _MainScreenState extends State<MainScreen> {
           ? CupertinoTabBar(
               currentIndex: _currentIndex,
               onTap: _onNavTap,
-              backgroundColor: Colors.white.withOpacity(0.95),
-              activeColor: const Color(0xFF1B4D20),
-              inactiveColor: const Color(0xFF9CA3AF),
-              iconSize: 25,
+              backgroundColor: AppColors.surface.withOpacity(0.96),
+              activeColor: AppColors.primary,
+              inactiveColor: AppColors.textTertiary,
+              iconSize: 24,
+              border: const Border(
+                top: BorderSide(color: AppColors.border, width: 1.0),
+              ),
               items: const [
                 BottomNavigationBarItem(
                   icon: Icon(Icons.home_outlined),
                   activeIcon: Icon(Icons.home_rounded),
                   label: 'Home',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.people_outline_rounded),
-                  activeIcon: Icon(Icons.people_rounded),
-                  label: 'Friends',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.access_time_rounded),
@@ -150,34 +130,37 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ],
             )
-          : NavigationBar(
-              selectedIndex: _currentIndex,
-              onDestinationSelected: _onNavTap,
-              backgroundColor: Colors.white,
-              elevation: 2,
-              indicatorColor: AppColors.primary.withOpacity(0.35),
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.home_outlined),
-                  selectedIcon: Icon(Icons.home_rounded, color: AppColors.primaryDeep),
-                  label: 'Home',
+          : Container(
+              decoration: const BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: AppColors.border, width: 1.0),
                 ),
-                NavigationDestination(
-                  icon: Icon(Icons.people_outline_rounded),
-                  selectedIcon: Icon(Icons.people_rounded, color: AppColors.primaryDeep),
-                  label: 'Friends',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.access_time_rounded),
-                  selectedIcon: Icon(Icons.access_time_filled_rounded, color: AppColors.primaryDeep),
-                  label: 'Activity',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.person_outline_rounded),
-                  selectedIcon: Icon(Icons.person_rounded, color: AppColors.primaryDeep),
-                  label: 'Profile',
-                ),
-              ],
+              ),
+              child: NavigationBar(
+                selectedIndex: _currentIndex,
+                onDestinationSelected: _onNavTap,
+                backgroundColor: AppColors.surface,
+                surfaceTintColor: Colors.transparent,
+                elevation: 0,
+                indicatorColor: AppColors.surfaceSubtle,
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(Icons.home_outlined, color: AppColors.textSecondary),
+                    selectedIcon: Icon(Icons.home_rounded, color: AppColors.primary),
+                    label: 'Home',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.access_time_rounded, color: AppColors.textSecondary),
+                    selectedIcon: Icon(Icons.access_time_filled_rounded, color: AppColors.primary),
+                    label: 'Activity',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.person_outline_rounded, color: AppColors.textSecondary),
+                    selectedIcon: Icon(Icons.person_rounded, color: AppColors.primary),
+                    label: 'Profile',
+                  ),
+                ],
+              ),
             ),
       ),
     );

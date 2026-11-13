@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/group.dart';
 
 /// Bottom sheet to add/remove members from an existing group.
+/// Adheres to design.md Section 6, 7 & 10.
 class AddMemberToGroupSheet extends StatefulWidget {
   final Group group;
   final List<Friend> allFriends;
@@ -28,7 +31,7 @@ class AddMemberToGroupSheet extends StatefulWidget {
       isScrollControlled: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
       ),
       builder: (_) => AddMemberToGroupSheet(
         group: group,
@@ -72,16 +75,16 @@ class _AddMemberToGroupSheetState extends State<AddMemberToGroupSheet> {
                 height: 4,
                 decoration: BoxDecoration(
                   color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
               ),
             ),
             const SizedBox(height: 16),
             Text(
               'Members of ${widget.group.name}',
-              style: const TextStyle(
+              style: GoogleFonts.manrope(
                 fontSize: 19,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               ),
             ),
@@ -91,7 +94,7 @@ class _AddMemberToGroupSheetState extends State<AddMemberToGroupSheet> {
                 padding: const EdgeInsets.all(16),
                 child: Text(
                   'No friends in your list yet.\nAdd friends in the Friends tab.',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                  style: GoogleFonts.manrope(color: AppColors.textSecondary, fontSize: 13),
                 ),
               )
             else
@@ -100,7 +103,7 @@ class _AddMemberToGroupSheetState extends State<AddMemberToGroupSheet> {
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: widget.allFriends.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF0F4F0)),
+                  separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.border),
                   itemBuilder: (context, idx) {
                     final friend = widget.allFriends[idx];
                     final isSelected = _selectedIndices.contains(idx);
@@ -109,17 +112,26 @@ class _AddMemberToGroupSheetState extends State<AddMemberToGroupSheet> {
                     return ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                       leading: CircleAvatar(
-                        backgroundColor: AppColors.primary.withOpacity(0.2),
+                        backgroundColor: isSelected ? AppColors.primary : AppColors.surfaceSubtle,
                         child: Text(
                           initials,
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryDeep),
+                          style: GoogleFonts.manrope(
+                            fontWeight: FontWeight.w700,
+                            color: isSelected ? Colors.white : AppColors.textPrimary,
+                          ),
                         ),
                       ),
-                      title: Text(friend.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                      subtitle: Text(friend.phone, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                      title: Text(
+                        friend.name,
+                        style: GoogleFonts.manrope(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                      ),
+                      subtitle: Text(
+                        friend.phone,
+                        style: GoogleFonts.manrope(color: AppColors.textSecondary, fontSize: 12),
+                      ),
                       trailing: Icon(
                         isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                        color: isSelected ? AppColors.primary : Colors.grey.shade400,
+                        color: isSelected ? AppColors.primary : AppColors.textTertiary,
                       ),
                       onTap: () {
                         setState(() {
@@ -138,17 +150,20 @@ class _AddMemberToGroupSheetState extends State<AddMemberToGroupSheet> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.primaryDark,
-                minimumSize: const Size.fromHeight(50),
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(56),
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.button)),
               ),
               onPressed: () {
                 final updatedMembers = _selectedIndices.map((i) => widget.allFriends[i]).toList();
                 widget.onMembersUpdated(updatedMembers);
                 Navigator.pop(context);
               },
-              child: const Text('Save Members', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+              child: Text(
+                'Save Members',
+                style: GoogleFonts.manrope(fontWeight: FontWeight.w700, fontSize: 16),
+              ),
             ),
           ],
         ),
