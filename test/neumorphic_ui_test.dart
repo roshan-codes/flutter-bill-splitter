@@ -26,8 +26,10 @@ void main() {
     FriendsRepository.instance.clearAll();
   });
 
-  group('Platform Adaptive UI Tests (Material for Android, Cupertino for iOS)', () {
-    testWidgets('PlatformCard renders Material Card on Android', (tester) async {
+  group('Platform Adaptive UI Tests (Material for Android, Cupertino for iOS)',
+      () {
+    testWidgets('PlatformCard renders Material Card on Android',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(platform: TargetPlatform.android),
@@ -45,7 +47,8 @@ void main() {
       expect(find.text('Card Content'), findsOneWidget);
     });
 
-    testWidgets('PlatformCard renders iOS styled container on iOS', (tester) async {
+    testWidgets('PlatformCard renders iOS styled container on iOS',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(platform: TargetPlatform.iOS),
@@ -62,7 +65,8 @@ void main() {
       expect(find.text('iOS Card Content'), findsOneWidget);
     });
 
-    testWidgets('PlatformInsetContainer renders container on both platforms', (tester) async {
+    testWidgets('PlatformInsetContainer renders container on both platforms',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -77,7 +81,9 @@ void main() {
       expect(find.text('Inset Content'), findsOneWidget);
     });
 
-    testWidgets('EmptyStateView renders with clean icon container without neumorphism', (tester) async {
+    testWidgets(
+        'EmptyStateView renders with clean icon container without neumorphism',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -95,7 +101,8 @@ void main() {
       expect(find.byIcon(Icons.receipt_long_rounded), findsOneWidget);
     });
 
-    testWidgets('SearchNameGroupBar renders with text field and action button', (tester) async {
+    testWidgets('SearchNameGroupBar renders with text field and action button',
+        (tester) async {
       final controller = TextEditingController();
       bool searchPressed = false;
 
@@ -119,7 +126,9 @@ void main() {
       expect(searchPressed, isTrue);
     });
 
-    testWidgets('MainScreen renders FloatingPillNavBar on Android with Add Story hero pill', (tester) async {
+    testWidgets(
+        'MainScreen renders FloatingPillNavBar on Android with Add Story hero pill',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(platform: TargetPlatform.android),
@@ -140,7 +149,9 @@ void main() {
       expect(find.byType(AddExpenseScreen), findsOneWidget);
     });
 
-    testWidgets('MainScreen renders FloatingPillNavBar on iOS with Add Story hero pill', (tester) async {
+    testWidgets(
+        'MainScreen renders FloatingPillNavBar on iOS with Add Story hero pill',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(platform: TargetPlatform.iOS),
@@ -155,7 +166,8 @@ void main() {
       expect(find.byTooltip('Add Story'), findsOneWidget);
     });
 
-    testWidgets('HomeTab renders screenshot-matching UI elements', (tester) async {
+    testWidgets('HomeTab renders screenshot-matching UI elements',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: HomeTab(
@@ -197,7 +209,9 @@ void main() {
       expect(find.text('₹620'), findsOneWidget);
     });
 
-    testWidgets('ProfileTab renders adaptive UI elements and Material dialog on Android', (tester) async {
+    testWidgets(
+        'ProfileTab renders adaptive UI elements and Material dialog on Android',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(platform: TargetPlatform.android),
@@ -219,7 +233,8 @@ void main() {
       expect(find.byIcon(Icons.person_outline_rounded), findsOneWidget);
 
       expect(find.text('Payment & Settlement'), findsOneWidget);
-      expect(find.byIcon(Icons.account_balance_wallet_outlined), findsOneWidget);
+      expect(
+          find.byIcon(Icons.account_balance_wallet_outlined), findsOneWidget);
 
       expect(find.text('App Settings'), findsOneWidget);
       expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
@@ -240,7 +255,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(AlertDialog), findsOneWidget);
       expect(find.text('Confirm Logout'), findsOneWidget);
-      expect(find.text('Are you sure you want to log out of TTMM?'), findsOneWidget);
+      expect(find.text('Are you sure you want to log out of TTMM?'),
+          findsOneWidget);
     });
 
     testWidgets('ProfileTab renders Cupertino dialog on iOS', (tester) async {
@@ -257,7 +273,8 @@ void main() {
       expect(find.byType(CupertinoAlertDialog), findsOneWidget);
     });
 
-    testWidgets('ActivityTab renders UI elements without filter bar', (tester) async {
+    testWidgets('ActivityTab renders UI elements without filter bar',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: ActivityTab(
@@ -299,7 +316,8 @@ void main() {
       expect(find.text('₹480'), findsOneWidget);
     });
 
-    testWidgets('AddExpenseScreen renders adaptive UI elements', (tester) async {
+    testWidgets('AddExpenseScreen renders adaptive UI elements',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: AddExpenseScreen(
@@ -315,7 +333,8 @@ void main() {
 
       // Verify Expense Title Section
       expect(find.text('Expense Title'), findsOneWidget);
-      expect(find.widgetWithText(TextFormField, 'e.g. Dinner, Groceries, Trip'), findsOneWidget);
+      expect(find.widgetWithText(TextFormField, 'e.g. Dinner, Groceries, Trip'),
+          findsOneWidget);
       expect(find.byIcon(Icons.restaurant_rounded), findsOneWidget);
 
       // Verify Friends & Groups Toggle
@@ -323,7 +342,8 @@ void main() {
       expect(find.text('Groups'), findsOneWidget);
 
       // Verify Search Bar
-      expect(find.widgetWithText(TextField, 'Search friends...'), findsOneWidget);
+      expect(
+          find.widgetWithText(TextField, 'Search friends...'), findsOneWidget);
 
       // Verify default screenshot friends
       expect(find.text('Vinit'), findsOneWidget);
@@ -336,7 +356,8 @@ void main() {
       expect(find.byIcon(Icons.arrow_forward_rounded), findsOneWidget);
     });
 
-    testWidgets('SplitDetailScreen renders adaptive UI elements', (tester) async {
+    testWidgets('SplitDetailScreen renders adaptive UI elements',
+        (tester) async {
       final members = [
         const Friend(name: 'Vinit', phone: '+91 98765 11111'),
         const Friend(name: 'Nishant', phone: '+91 98765 22222'),
@@ -362,7 +383,8 @@ void main() {
       expect(find.byIcon(Icons.groups_rounded), findsOneWidget);
 
       // Verify Member Badges
-      expect(find.text('V'), findsNWidgets(2)); // Avatar badge + member card avatar
+      expect(find.text('V'),
+          findsNWidgets(2)); // Avatar badge + member card avatar
       expect(find.text('N'), findsNWidgets(2));
       expect(find.text('S'), findsNWidgets(2));
 
@@ -377,11 +399,13 @@ void main() {
       expect(find.text('Add expense'), findsNWidgets(3));
 
       // Verify Confirm Split button
-      expect(find.widgetWithText(ElevatedButton, 'Confirm Split'), findsOneWidget);
+      expect(
+          find.widgetWithText(ElevatedButton, 'Confirm Split'), findsOneWidget);
       expect(find.byIcon(Icons.arrow_forward_rounded), findsOneWidget);
     });
 
-    testWidgets('SplitSummaryScreen renders adaptive UI elements', (tester) async {
+    testWidgets('SplitSummaryScreen renders adaptive UI elements',
+        (tester) async {
       final members = [
         const Friend(name: 'Vinit', phone: '+91 98765 11111'),
         const Friend(name: 'Nishant', phone: '+91 98765 22222'),
@@ -440,11 +464,13 @@ void main() {
       expect(find.text('-₹183'), findsOneWidget);
 
       // Verify Fixed Save & Track Settlement button
-      expect(find.widgetWithText(ElevatedButton, 'Save & Track Settlement'), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Save & Track Settlement'),
+          findsOneWidget);
       expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
     });
 
-    testWidgets('SplashScreen renders screenshot-matching branding and waves', (tester) async {
+    testWidgets('SplashScreen renders screenshot-matching branding and waves',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: SplashScreen(autoNavigate: false),
@@ -456,11 +482,13 @@ void main() {
 
       // Verify Title & Subtitle
       expect(find.text('TTMM'), findsOneWidget);
-      expect(find.textContaining('Split expenses, track balances'), findsOneWidget);
+      expect(find.textContaining('Split expenses, track balances'),
+          findsOneWidget);
       expect(find.textContaining('and settle easily'), findsOneWidget);
     });
 
-    testWidgets('OnboardingScreen renders receipt visual, copy, and actions', (tester) async {
+    testWidgets('OnboardingScreen renders receipt visual, copy, and actions',
+        (tester) async {
       bool getStartedTapped = false;
       await tester.pumpWidget(
         MaterialApp(
@@ -478,11 +506,13 @@ void main() {
       // Verify Headline & Body
       expect(find.textContaining('Split Expenses'), findsOneWidget);
       expect(find.textContaining('with Friends'), findsOneWidget);
-      expect(find.textContaining('Add bills, split fairly and'), findsOneWidget);
+      expect(
+          find.textContaining('Add bills, split fairly and'), findsOneWidget);
       expect(find.textContaining('track who owes whom.'), findsOneWidget);
 
       // Verify Buttons
-      expect(find.widgetWithText(ElevatedButton, 'Get Started'), findsOneWidget);
+      expect(
+          find.widgetWithText(ElevatedButton, 'Get Started'), findsOneWidget);
       expect(find.text('I already have an account'), findsOneWidget);
 
       // Tap Get Started

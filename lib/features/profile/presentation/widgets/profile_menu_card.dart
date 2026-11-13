@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_menu_item.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Platform-adaptive Card container grouping profile navigation menu items.
-/// Adheres to design.md Section 4 & 5.
+/// Platform-adaptive Card container grouping profile navigation menu items into
+/// distinct sections (SOCIAL, ACCOUNT, APP) matching the design screenshot.
 class ProfileMenuCard extends StatelessWidget {
   final VoidCallback? onFriendsTap;
   final VoidCallback? onGroupsTap;
@@ -26,59 +27,104 @@ class ProfileMenuCard extends StatelessWidget {
     this.onAboutBillSplitTap,
   });
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildSectionLabel(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        title,
+        style: GoogleFonts.manrope(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textTertiary,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGroupCard(List<Widget> children) {
     return PlatformCard(
       borderRadius: AppRadius.card,
       elevation: 0,
       color: AppColors.surface,
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+      padding: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
       child: Column(
-        children: [
+        children: children,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const divider = Divider(
+      color: AppColors.border,
+      height: 1,
+      thickness: 0.8,
+      indent: 18,
+      endIndent: 18,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // SECTION 1: SOCIAL
+        _buildSectionLabel('SOCIAL'),
+        _buildGroupCard([
           ProfileMenuItem(
             icon: Icons.people_outline_rounded,
             title: 'Friends',
             onTap: onFriendsTap,
           ),
-          const Divider(color: AppColors.border, height: 1, thickness: 1.0),
+          divider,
           ProfileMenuItem(
             icon: Icons.groups_outlined,
             title: 'Groups',
             onTap: onGroupsTap,
           ),
-          const Divider(color: AppColors.border, height: 1, thickness: 1.0),
+        ]),
+        const SizedBox(height: 20),
+
+        // SECTION 2: ACCOUNT
+        _buildSectionLabel('ACCOUNT'),
+        _buildGroupCard([
           ProfileMenuItem(
             icon: Icons.person_outline_rounded,
             title: 'Edit Profile',
             onTap: onEditProfileTap,
           ),
-          const Divider(color: AppColors.border, height: 1, thickness: 1.0),
+          divider,
           ProfileMenuItem(
             icon: Icons.account_balance_wallet_outlined,
             title: 'Payment & Settlement',
             onTap: onPaymentSettlementTap,
           ),
-          const Divider(color: AppColors.border, height: 1, thickness: 1.0),
+        ]),
+        const SizedBox(height: 20),
+
+        // SECTION 3: APP
+        _buildSectionLabel('APP'),
+        _buildGroupCard([
           ProfileMenuItem(
             icon: Icons.settings_outlined,
             title: 'App Settings',
             onTap: onAppSettingsTap,
           ),
-          const Divider(color: AppColors.border, height: 1, thickness: 1.0),
+          divider,
           ProfileMenuItem(
             icon: Icons.help_outline_rounded,
             title: 'Help & Support',
             onTap: onHelpSupportTap,
           ),
-          const Divider(color: AppColors.border, height: 1, thickness: 1.0),
+          divider,
           ProfileMenuItem(
             icon: Icons.info_outline_rounded,
-            title: 'About BillSplit',
+            title: 'About TTMM',
             onTap: onAboutBillSplitTap,
           ),
-        ],
-      ),
+        ]),
+      ],
     );
   }
 }

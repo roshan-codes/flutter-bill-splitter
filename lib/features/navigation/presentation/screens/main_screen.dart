@@ -1,7 +1,8 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:floating_pill_navbar/floating_pill_navbar.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/screens/activity_tab.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
@@ -100,68 +101,65 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ),
             ),
-      body: _buildBody(),
-      bottomNavigationBar: isIOS
-          ? CupertinoTabBar(
-              currentIndex: _currentIndex,
-              onTap: _onNavTap,
-              backgroundColor: AppColors.surface.withOpacity(0.96),
-              activeColor: AppColors.primary,
-              inactiveColor: AppColors.textTertiary,
-              iconSize: 24,
-              border: const Border(
-                top: BorderSide(color: AppColors.border, width: 1.0),
-              ),
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home_outlined),
-                  activeIcon: Icon(Icons.home_rounded),
-                  label: 'Home',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.access_time_rounded),
-                  activeIcon: Icon(Icons.access_time_filled_rounded),
-                  label: 'Activity',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person_outline_rounded),
-                  activeIcon: Icon(Icons.person_rounded),
-                  label: 'Profile',
-                ),
-              ],
-            )
-          : Container(
-              decoration: const BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: AppColors.border, width: 1.0),
-                ),
-              ),
-              child: NavigationBar(
-                selectedIndex: _currentIndex,
-                onDestinationSelected: _onNavTap,
-                backgroundColor: AppColors.surface,
-                surfaceTintColor: Colors.transparent,
-                elevation: 0,
-                indicatorColor: AppColors.surfaceSubtle,
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.home_outlined, color: AppColors.textSecondary),
-                    selectedIcon: Icon(Icons.home_rounded, color: AppColors.primary),
-                    label: 'Home',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.access_time_rounded, color: AppColors.textSecondary),
-                    selectedIcon: Icon(Icons.access_time_filled_rounded, color: AppColors.primary),
-                    label: 'Activity',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.person_outline_rounded, color: AppColors.textSecondary),
-                    selectedIcon: Icon(Icons.person_rounded, color: AppColors.primary),
-                    label: 'Profile',
-                  ),
-                ],
-              ),
+        body: _buildBody(),
+        bottomNavigationBar: FloatingPillNavBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: _onNavTap,
+          backgroundColor: AppColors.surface,
+          border: Border.all(color: AppColors.border, width: 1.0),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          height: 68,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          selectedItemPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          selectedIconSize: 22,
+          unselectedIconSize: 22,
+          selectedFontSize: 11,
+          unselectedFontSize: 11,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          elevation: 0,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
+          ],
+          selectedBackgroundColor: AppColors.surfaceSubtle,
+          selectedIconColor: AppColors.primary,
+          selectedLabelColor: AppColors.primary,
+          unselectedIconColor: AppColors.textTertiary,
+          unselectedLabelColor: AppColors.textTertiary,
+          selectedItemBorderRadius: BorderRadius.circular(AppRadius.pill),
+          showLabels: true,
+          destinations: const [
+            FloatingPillDestination(
+              icon: Icons.home_outlined,
+              selectedIcon: Icons.home_rounded,
+              label: 'Home',
+            ),
+            FloatingPillDestination(
+              icon: Icons.access_time_rounded,
+              selectedIcon: Icons.access_time_filled_rounded,
+              label: 'Activity',
+            ),
+            FloatingPillDestination(
+              icon: Icons.person_outline_rounded,
+              selectedIcon: Icons.person_rounded,
+              label: 'Profile',
+            ),
+          ],
+          actionButton: FloatingPillAction(
+            heroTag: 'add_story_hero_pill',
+            icon: Icons.add_rounded,
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            tooltip: 'Add Story',
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              _openAddExpenseScreen();
+            },
+          ),
+        ),
       ),
     );
   }

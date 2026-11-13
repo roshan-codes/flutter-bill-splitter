@@ -186,9 +186,10 @@ void main() {
 
     await tester.pumpWidget(const MyApp(home: MainScreen()));
 
-    // Tap Create story floating action button to open AddExpenseScreen
-    final createStoryFab = find.widgetWithText(FloatingActionButton, 'Create story');
-    await tester.tap(createStoryFab);
+    // Tap Add Story hero action pill to open AddExpenseScreen
+    final addStoryButton = find.byTooltip('Add Story');
+    expect(addStoryButton, findsOneWidget);
+    await tester.tap(addStoryButton);
     await tester.pumpAndSettle();
 
     // Verify screen title

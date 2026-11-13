@@ -113,14 +113,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.1"
-  floating_pill_navbar:
-    dependency: "direct main"
-    description:
-      name: floating_pill_navbar
-      sha256: "441bda88e3b063b08cfe54947e7f78bb6aa5218a5c55833f393d7fd1ff6abc35"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.1"
   flutter:
     dependency: "direct main"
     description: flutter

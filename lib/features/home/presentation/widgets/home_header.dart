@@ -103,7 +103,9 @@ class HomeHeader extends StatelessWidget {
               },
               child: Center(
                 child: Icon(
-                  isIOS ? CupertinoIcons.bell : Icons.notifications_none_rounded,
+                  isIOS
+                      ? CupertinoIcons.bell
+                      : Icons.notifications_none_rounded,
                   color: AppColors.textPrimary,
                   size: 22,
                 ),

@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/friends/presentation/screens/friends_tab.dart';
+import 'package:flutter_bill_splitter/features/profile/presentation/widgets/memo_avatar_picker_sheet.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_avatar.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_header.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_logout_button.dart';
@@ -12,21 +14,47 @@ import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Profile Tab screen matching platform design (Material on Android, Cupertino on iOS).
 /// Adheres to design.md Section 2, 3, 4, 6 & 9.
-class ProfileTab extends StatelessWidget {
+class ProfileTab extends StatefulWidget {
   final VoidCallback? onLogout;
   final VoidCallback? onFriendsTap;
   final VoidCallback? onGroupsTap;
+  final int? initialAvatarIndex;
 
   const ProfileTab({
     super.key,
     this.onLogout,
     this.onFriendsTap,
     this.onGroupsTap,
+    this.initialAvatarIndex,
   });
 
+  @override
+  State<ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends State<ProfileTab> {
+  int? _avatarIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _avatarIndex = widget.initialAvatarIndex;
+    if (_avatarIndex == null) {
+      _loadSavedAvatar();
+    }
+  }
+
+  Future<void> _loadSavedAvatar() async {
+    final saved =
+        await StorageService.instance.getInt('user_profile_avatar_index');
+    if (mounted && saved != null) {
+      setState(() => _avatarIndex = saved);
+    }
+  }
+
   void _openFriends(BuildContext context) {
-    if (onFriendsTap != null) {
-      onFriendsTap!();
+    if (widget.onFriendsTap != null) {
+      widget.onFriendsTap!();
       return;
     }
     Navigator.of(context).push(
@@ -40,8 +68,8 @@ class ProfileTab extends StatelessWidget {
   }
 
   void _openGroups(BuildContext context) {
-    if (onGroupsTap != null) {
-      onGroupsTap!();
+    if (widget.onGroupsTap != null) {
+      widget.onGroupsTap!();
       return;
     }
     Navigator.of(context).push(
@@ -51,6 +79,21 @@ class ProfileTab extends StatelessWidget {
           showBackButton: true,
         ),
       ),
+    );
+  }
+
+  void _openAvatarPicker(BuildContext context) {
+    MemoAvatarPickerSheet.show(
+      context,
+      initialIndex: _avatarIndex,
+      onAvatarSelected: (newIndex) async {
+        setState(() => _avatarIndex = newIndex);
+        await StorageService.instance
+            .setInt('user_profile_avatar_index', newIndex);
+        if (context.mounted) {
+          _showNotice(context, 'Avatar updated successfully!');
+        }
+      },
     );
   }
 
@@ -68,8 +111,10 @@ class ProfileTab extends StatelessWidget {
       showCupertinoDialog(
         context: context,
         builder: (ctx) => CupertinoAlertDialog(
-          title: Text('Confirm Logout', style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
-          content: Text('Are you sure you want to log out of BillSplit?', style: GoogleFonts.manrope()),
+          title: Text('Confirm Logout',
+              style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
+          content: Text('Are you sure you want to log out of TTMM?',
+              style: GoogleFonts.manrope()),
           actions: [
             CupertinoDialogAction(
               onPressed: () => Navigator.of(ctx).pop(),
@@ -79,8 +124,8 @@ class ProfileTab extends StatelessWidget {
               isDestructiveAction: true,
               onPressed: () {
                 Navigator.of(ctx).pop();
-                if (onLogout != null) {
-                  onLogout!();
+                if (widget.onLogout != null) {
+                  widget.onLogout!();
                 } else {
                   _showNotice(context, 'Logged out successfully');
                 }
@@ -107,31 +152,34 @@ class ProfileTab extends StatelessWidget {
             ),
           ),
           content: Text(
-            'Are you sure you want to log out of BillSplit?',
+            'Are you sure you want to log out of TTMM?',
             style: GoogleFonts.manrope(color: AppColors.textSecondary),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: Text('Cancel', style: GoogleFonts.manrope(color: AppColors.textSecondary)),
+              child: Text('Cancel',
+                  style: GoogleFonts.manrope(color: AppColors.textSecondary)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.danger,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.buttonSecondary),
+                  borderRadius:
+                      BorderRadius.circular(AppRadius.buttonSecondary),
                 ),
               ),
               onPressed: () {
                 Navigator.of(ctx).pop();
-                if (onLogout != null) {
-                  onLogout!();
+                if (widget.onLogout != null) {
+                  widget.onLogout!();
                 } else {
                   _showNotice(context, 'Logged out successfully');
                 }
               },
-              child: Text('Logout', style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
+              child: Text('Logout',
+                  style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -148,38 +196,45 @@ class ProfileTab extends StatelessWidget {
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
-          physics: isIOS ? const BouncingScrollPhysics() : const ClampingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
+          physics: isIOS
+              ? const BouncingScrollPhysics()
+              : const ClampingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 110),
           child: Column(
             children: [
-              // Header: Profile title + Edit icon
+              // Header: Profile title + Edit icon (opens avatar picker)
               ProfileHeader(
-                onEditPressed: () => _showNotice(context, 'Edit Profile opened'),
+                onEditPressed: () => _openAvatarPicker(context),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-              // Avatar with primary circle, name, and phone
+              // Avatar with memo avatar / primary circle, name, and phone
               ProfileAvatar(
                 name: 'Roshan Badwaik',
                 phone: '+91 9876543210',
                 initial: 'R',
-                onTap: () => _showNotice(context, 'Avatar selected'),
-              ),
-              const SizedBox(height: 28),
-
-              // Menu Card with Friends, Groups, and settings
-              ProfileMenuCard(
-                onFriendsTap: () => _openFriends(context),
-                onGroupsTap: () => _openGroups(context),
-                onEditProfileTap: () => _showNotice(context, 'Edit Profile opened'),
-                onPaymentSettlementTap: () => _showNotice(context, 'Payment & Settlement opened'),
-                onAppSettingsTap: () => _showNotice(context, 'App Settings opened'),
-                onHelpSupportTap: () => _showNotice(context, 'Help & Support opened'),
-                onAboutBillSplitTap: () => _showNotice(context, 'About BillSplit opened'),
+                avatarIndex: _avatarIndex,
+                onTap: () => _openAvatarPicker(context),
               ),
               const SizedBox(height: 24),
 
-              // Logout Button
+              // Menu Cards grouped into SOCIAL, ACCOUNT, APP
+              ProfileMenuCard(
+                onFriendsTap: () => _openFriends(context),
+                onGroupsTap: () => _openGroups(context),
+                onEditProfileTap: () => _openAvatarPicker(context),
+                onPaymentSettlementTap: () =>
+                    _showNotice(context, 'Payment & Settlement opened'),
+                onAppSettingsTap: () =>
+                    _showNotice(context, 'App Settings opened'),
+                onHelpSupportTap: () =>
+                    _showNotice(context, 'Help & Support opened'),
+                onAboutBillSplitTap: () =>
+                    _showNotice(context, 'About TTMM opened'),
+              ),
+              const SizedBox(height: 20),
+
+              // Logout Button with soft red tint
               ProfileLogoutButton(
                 onLogout: () => _showLogoutConfirmation(context),
               ),

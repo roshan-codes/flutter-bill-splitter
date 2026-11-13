@@ -48,7 +48,9 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkNavigation() async {
-    final hasSeenOnboarding = await StorageService.instance.getBool('has_completed_onboarding') ?? false;
+    final hasSeenOnboarding =
+        await StorageService.instance.getBool('has_completed_onboarding') ??
+            false;
     if (!mounted) return;
     if (hasSeenOnboarding) {
       Navigator.of(context).pushReplacement(
@@ -106,7 +108,8 @@ class _SplashScreenState extends State<SplashScreen> {
                       height: 96,
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(AppRadius.cardLarge),
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.cardLarge),
                         border: Border.all(color: AppColors.border, width: 1.0),
                         boxShadow: [
                           BoxShadow(
@@ -117,7 +120,8 @@ class _SplashScreenState extends State<SplashScreen> {
                         ],
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(AppRadius.cardLarge),
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.cardLarge),
                         child: Image.asset(
                           'assets/icon/app_icon.png',
                           width: 96,
