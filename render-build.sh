@@ -3,17 +3,25 @@
 set -e
 
 FLUTTER_VERSION="3.24.5"
+FLUTTER_DIR="$HOME/flutter-$FLUTTER_VERSION"
 
 echo "----------------------------------------"
 echo "Setting up Flutter $FLUTTER_VERSION..."
 echo "----------------------------------------"
 
-if [ ! -d "$HOME/flutter" ]; then
-  git clone --depth 1 -b "$FLUTTER_VERSION" https://github.com/flutter/flutter.git "$HOME/flutter"
+# Remove any legacy unpinned flutter directory
+if [ -d "$HOME/flutter" ]; then
+  echo "Removing legacy cached flutter..."
+  rm -rf "$HOME/flutter"
+fi
+
+if [ ! -d "$FLUTTER_DIR" ]; then
+  echo "Cloning Flutter $FLUTTER_VERSION..."
+  git clone --depth 1 -b "$FLUTTER_VERSION" https://github.com/flutter/flutter.git "$FLUTTER_DIR"
 fi
 
 # Add Flutter to PATH
-export PATH="$HOME/flutter/bin:$PATH"
+export PATH="$FLUTTER_DIR/bin:$PATH"
 
 echo "----------------------------------------"
 echo "Flutter Information:"
