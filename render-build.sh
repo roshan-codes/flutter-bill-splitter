@@ -2,18 +2,14 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
+FLUTTER_VERSION="3.24.5"
+
 echo "----------------------------------------"
-echo "Installing / Updating Flutter SDK..."
+echo "Setting up Flutter $FLUTTER_VERSION..."
 echo "----------------------------------------"
 
-if [ -d "$HOME/flutter" ]; then
-  echo "Flutter directory exists. Pulling latest stable..."
-  cd "$HOME/flutter"
-  git pull
-  cd - > /dev/null
-else
-  echo "Cloning Flutter stable channel..."
-  git clone -b stable https://github.com/flutter/flutter.git "$HOME/flutter"
+if [ ! -d "$HOME/flutter" ]; then
+  git clone --depth 1 -b "$FLUTTER_VERSION" https://github.com/flutter/flutter.git "$HOME/flutter"
 fi
 
 # Add Flutter to PATH
