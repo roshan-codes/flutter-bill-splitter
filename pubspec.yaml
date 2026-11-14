@@ -21,6 +21,8 @@ dependencies:
 
 dependency_overrides:
   flutter_svg: 2.0.17
+  google_fonts:
+    path: packages/google_fonts
 
 dev_dependencies:
   flutter_test:
