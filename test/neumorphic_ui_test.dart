@@ -377,22 +377,23 @@ void main() {
       expect(find.text('Split with Members'), findsOneWidget);
       expect(find.byTooltip('Back'), findsOneWidget);
 
-      // Verify Summary Card
+      // Verify Title & Subtitle with member count
       expect(find.text('Lunch'), findsOneWidget);
-      expect(find.text('3 members included in split'), findsOneWidget);
-      expect(find.byIcon(Icons.groups_rounded), findsOneWidget);
+      expect(find.textContaining('3 members'), findsOneWidget);
 
-      // Verify Member Badges
-      expect(find.text('V'),
-          findsNWidgets(2)); // Avatar badge + member card avatar
-      expect(find.text('N'), findsNWidgets(2));
-      expect(find.text('S'), findsNWidgets(2));
+      // Verify 3 Segment Tabs
+      expect(find.text('Overview'), findsOneWidget);
+      expect(find.text('Expenses'), findsOneWidget);
+      expect(find.text('Members'), findsOneWidget);
 
-      // Verify Section Header
-      expect(find.text('Selected Members'), findsOneWidget);
-      expect(find.text('3 total'), findsOneWidget);
+      // Verify Total expenses & Per person labels on Hero Card
+      expect(find.text('Total expenses'), findsOneWidget);
+      expect(find.text('Per person'), findsOneWidget);
 
-      // Verify Member Cards & "+ Add expense"
+      // Verify Group summary
+      expect(find.text('Group summary'), findsOneWidget);
+
+      // Verify Members & "Add expense" actions
       expect(find.text('Vinit'), findsOneWidget);
       expect(find.text('Nishant'), findsOneWidget);
       expect(find.text('Saurabh'), findsOneWidget);

@@ -33,7 +33,8 @@ class HomeQuickActions extends StatelessWidget {
               height: 50,
               decoration: BoxDecoration(
                 color: AppColors.primary,
-                borderRadius: BorderRadius.circular(AppRadius.iconContainer + 2),
+                borderRadius:
+                    BorderRadius.circular(AppRadius.iconContainer + 2),
               ),
               child: const Icon(
                 Icons.add,
@@ -56,7 +57,8 @@ class HomeQuickActions extends StatelessWidget {
               height: 50,
               decoration: BoxDecoration(
                 color: AppColors.surfaceSubtle,
-                borderRadius: BorderRadius.circular(AppRadius.iconContainer + 2),
+                borderRadius:
+                    BorderRadius.circular(AppRadius.iconContainer + 2),
               ),
               child: const Icon(
                 Icons.qr_code_scanner_rounded,
@@ -79,7 +81,8 @@ class HomeQuickActions extends StatelessWidget {
               height: 50,
               decoration: BoxDecoration(
                 color: AppColors.surfaceSubtle,
-                borderRadius: BorderRadius.circular(AppRadius.iconContainer + 2),
+                borderRadius:
+                    BorderRadius.circular(AppRadius.iconContainer + 2),
               ),
               child: const Icon(
                 Icons.credit_card_rounded,

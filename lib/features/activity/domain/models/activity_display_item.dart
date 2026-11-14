@@ -31,4 +31,3 @@ class ActivityDisplayItem {
     this.splitActivity,
   });
 }
-

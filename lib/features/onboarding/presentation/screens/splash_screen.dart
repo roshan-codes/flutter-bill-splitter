@@ -6,6 +6,7 @@ import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
+import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/features/navigation/presentation/screens/main_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/splash_wave_painter.dart';
@@ -36,6 +37,7 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     ActivityRepository.instance.init();
     FriendsRepository.instance.init();
+    StoryRepository.instance.init();
     if (widget.autoNavigate) {
       _timer = Timer(widget.duration, _checkNavigation);
     }

@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_bill_splitter/core/animations/app_motion.dart';
+import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
@@ -15,16 +17,8 @@ import 'package:flutter_bill_splitter/features/friends/presentation/widgets/grou
 import 'package:flutter_bill_splitter/features/friends/presentation/widgets/import_contacts_sheet.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Friends & Groups Tab with platform-adaptive UI (Material for Android, Cupertino for iOS).
-/// Friends & Groups screen with platform-adaptive UI (Material for Android, Cupertino for iOS).
-/// Adheres to design.md Section 2, 3, 4, 6 & 9.
+/// Friends & Groups Screen with platform-adaptive UI (Material for Android, Cupertino for iOS).
 class FriendsTab extends StatefulWidget {
-  final List<Friend> friends;
-  final List<Group> groups;
-  final ValueChanged<Friend> onFriendAdded;
-  final ValueChanged<Group> onGroupCreated;
-  final ValueChanged<int> onFriendDeleted;
-  final ValueChanged<int> onGroupDeleted;
   final List<Friend>? friends;
   final List<Group>? groups;
   final ValueChanged<Friend>? onFriendAdded;
@@ -36,12 +30,6 @@ class FriendsTab extends StatefulWidget {
 
   const FriendsTab({
     super.key,
-    required this.friends,
-    required this.groups,
-    required this.onFriendAdded,
-    required this.onGroupCreated,
-    required this.onFriendDeleted,
-    required this.onGroupDeleted,
     this.friends,
     this.groups,
     this.onFriendAdded,
@@ -59,7 +47,6 @@ class FriendsTab extends StatefulWidget {
 typedef FriendsScreen = FriendsTab;
 
 class _FriendsTabState extends State<FriendsTab> {
-  int _subTabIndex = 0; // 0 = Friends, 1 = Groups
   late int _subTabIndex;
 
   @override
@@ -127,26 +114,21 @@ class _FriendsTabState extends State<FriendsTab> {
       context,
       onAddNewFriend: () => AddFriendDialog.show(
         context,
-        onFriendAdded: widget.onFriendAdded,
         onFriendAdded: _handleFriendAdded,
       ),
       onImportContacts: () => ImportContactsSheet.show(
         context,
-        existingFriends: widget.friends,
         existingFriends: _currentFriends,
         onContactsImported: (imported) {
           for (final friend in imported) {
-            widget.onFriendAdded(friend);
             _handleFriendAdded(friend);
           }
         },
       ),
       onCreateGroup: () => CreateGroupBottomSheet.show(
         context,
-        availableFriends: widget.friends,
         availableFriends: _currentFriends,
         onGroupCreated: (newGroup) {
-          widget.onGroupCreated(newGroup);
           _handleGroupCreated(newGroup);
           setState(() {
             _subTabIndex = 1; // Switch to Groups tab
@@ -168,7 +150,6 @@ class _FriendsTabState extends State<FriendsTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 16, 14),
               padding: EdgeInsets.fromLTRB(
                   widget.showBackButton ? 16 : 20, 16, 16, 14),
               child: Row(
@@ -187,7 +168,6 @@ class _FriendsTabState extends State<FriendsTab> {
                           thumbColor: AppColors.surface,
                           children: {
                             0: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 8),
                               child: Text(
@@ -200,7 +180,6 @@ class _FriendsTabState extends State<FriendsTab> {
                               ),
                             ),
                             1: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 8),
                               child: Text(
@@ -220,8 +199,6 @@ class _FriendsTabState extends State<FriendsTab> {
                       : Container(
                           decoration: BoxDecoration(
                             color: AppColors.surfaceSubtle,
-                            borderRadius: BorderRadius.circular(AppRadius.input),
-                            border: Border.all(color: AppColors.border, width: 1.0),
                             borderRadius:
                                 BorderRadius.circular(AppRadius.input),
                             border:
@@ -233,11 +210,9 @@ class _FriendsTabState extends State<FriendsTab> {
                               GestureDetector(
                                 onTap: () => setState(() => _subTabIndex = 0),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 18, vertical: 8),
                                   decoration: BoxDecoration(
-                                    color: _subTabIndex == 0 ? AppColors.surface : Colors.transparent,
                                     color: _subTabIndex == 0
                                         ? AppColors.surface
                                         : Colors.transparent,
@@ -245,7 +220,6 @@ class _FriendsTabState extends State<FriendsTab> {
                                     boxShadow: _subTabIndex == 0
                                         ? [
                                             BoxShadow(
-                                              color: Colors.black.withOpacity(0.04),
                                               color: Colors.black
                                                   .withOpacity(0.04),
                                               blurRadius: 4,
@@ -269,11 +243,9 @@ class _FriendsTabState extends State<FriendsTab> {
                               GestureDetector(
                                 onTap: () => setState(() => _subTabIndex = 1),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 18, vertical: 8),
                                   decoration: BoxDecoration(
-                                    color: _subTabIndex == 1 ? AppColors.surface : Colors.transparent,
                                     color: _subTabIndex == 1
                                         ? AppColors.surface
                                         : Colors.transparent,
@@ -281,7 +253,6 @@ class _FriendsTabState extends State<FriendsTab> {
                                     boxShadow: _subTabIndex == 1
                                         ? [
                                             BoxShadow(
-                                              color: Colors.black.withOpacity(0.04),
                                               color: Colors.black
                                                   .withOpacity(0.04),
                                               blurRadius: 4,
@@ -329,9 +300,14 @@ class _FriendsTabState extends State<FriendsTab> {
               ),
             ),
             Expanded(
-              child: _subTabIndex == 0 ? _buildFriendsList() : _buildGroupsList(),
-              child:
-                  _subTabIndex == 0 ? _buildFriendsList() : _buildGroupsList(),
+              child: AppTransitions.fadeThroughSwitcher(
+                context: context,
+                transitionKey: _subTabIndex,
+                duration: AppMotion.normal,
+                child: _subTabIndex == 0
+                    ? _buildFriendsList()
+                    : _buildGroupsList(),
+              ),
             ),
           ],
         ),
@@ -346,7 +322,6 @@ class _FriendsTabState extends State<FriendsTab> {
         context: context,
         builder: (ctx) => CupertinoAlertDialog(
           title: Text('Delete ${friend.name}?'),
-          content: const Text('This will remove this friend from your saved list.'),
           content:
               const Text('This will remove this friend from your saved list.'),
           actions: [
@@ -359,7 +334,6 @@ class _FriendsTabState extends State<FriendsTab> {
               onPressed: () {
                 HapticFeedback.mediumImpact();
                 Navigator.of(ctx).pop();
-                widget.onFriendDeleted(index);
                 _handleFriendDeleted(index);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -374,11 +348,10 @@ class _FriendsTabState extends State<FriendsTab> {
         ),
       );
     } else {
-      showDialog(
+      AppTransitions.showFadeScaleDialog(
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadius.card)),
           title: Text(
@@ -395,7 +368,6 @@ class _FriendsTabState extends State<FriendsTab> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: Text('Cancel', style: GoogleFonts.manrope(color: AppColors.textSecondary)),
               child: Text('Cancel',
                   style: GoogleFonts.manrope(color: AppColors.textSecondary)),
             ),
@@ -404,7 +376,6 @@ class _FriendsTabState extends State<FriendsTab> {
                 backgroundColor: AppColors.danger,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.buttonSecondary),
                   borderRadius:
                       BorderRadius.circular(AppRadius.buttonSecondary),
                 ),
@@ -412,7 +383,6 @@ class _FriendsTabState extends State<FriendsTab> {
               onPressed: () {
                 HapticFeedback.mediumImpact();
                 Navigator.of(ctx).pop();
-                widget.onFriendDeleted(index);
                 _handleFriendDeleted(index);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -436,7 +406,6 @@ class _FriendsTabState extends State<FriendsTab> {
         context: context,
         builder: (ctx) => CupertinoAlertDialog(
           title: Text('Delete ${group.name}?'),
-          content: const Text('This will remove this group from your saved list.'),
           content:
               const Text('This will remove this group from your saved list.'),
           actions: [
@@ -449,7 +418,6 @@ class _FriendsTabState extends State<FriendsTab> {
               onPressed: () {
                 HapticFeedback.mediumImpact();
                 Navigator.of(ctx).pop();
-                widget.onGroupDeleted(index);
                 _handleGroupDeleted(index);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -464,11 +432,10 @@ class _FriendsTabState extends State<FriendsTab> {
         ),
       );
     } else {
-      showDialog(
+      AppTransitions.showFadeScaleDialog(
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadius.card)),
           title: Text(
@@ -485,7 +452,6 @@ class _FriendsTabState extends State<FriendsTab> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: Text('Cancel', style: GoogleFonts.manrope(color: AppColors.textSecondary)),
               child: Text('Cancel',
                   style: GoogleFonts.manrope(color: AppColors.textSecondary)),
             ),
@@ -494,7 +460,6 @@ class _FriendsTabState extends State<FriendsTab> {
                 backgroundColor: AppColors.danger,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.buttonSecondary),
                   borderRadius:
                       BorderRadius.circular(AppRadius.buttonSecondary),
                 ),
@@ -502,7 +467,6 @@ class _FriendsTabState extends State<FriendsTab> {
               onPressed: () {
                 HapticFeedback.mediumImpact();
                 Navigator.of(ctx).pop();
-                widget.onGroupDeleted(index);
                 _handleGroupDeleted(index);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -520,7 +484,6 @@ class _FriendsTabState extends State<FriendsTab> {
   }
 
   Widget _buildFriendsList() {
-    if (widget.friends.isEmpty) {
     if (_currentFriends.isEmpty) {
       return Center(
         child: Column(
@@ -555,11 +518,9 @@ class _FriendsTabState extends State<FriendsTab> {
 
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
-      itemCount: widget.friends.length,
       itemCount: _currentFriends.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        final friend = widget.friends[index];
         final friend = _currentFriends[index];
         return FriendListItem(
           friend: friend,
@@ -570,7 +531,6 @@ class _FriendsTabState extends State<FriendsTab> {
   }
 
   Widget _buildGroupsList() {
-    if (widget.groups.isEmpty) {
     if (_currentGroups.isEmpty) {
       return Center(
         child: Column(
@@ -605,11 +565,9 @@ class _FriendsTabState extends State<FriendsTab> {
 
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
-      itemCount: widget.groups.length,
       itemCount: _currentGroups.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        final group = widget.groups[index];
         final group = _currentGroups[index];
         return GroupListItem(
           group: group,

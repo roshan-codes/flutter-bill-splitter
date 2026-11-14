@@ -16,4 +16,3 @@ class StringUtils {
     return trimmed[0].toUpperCase();
   }
 }
-

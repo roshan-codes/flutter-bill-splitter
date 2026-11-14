@@ -85,9 +85,12 @@ class SelectGroupSection extends StatelessWidget {
                     return PlatformCard(
                       borderRadius: 22,
                       elevation: isSelected ? 2 : 1,
-                      color: isSelected ? AppColors.primaryLight.withOpacity(0.35) : Colors.white,
+                      color: isSelected
+                          ? AppColors.primaryLight.withOpacity(0.35)
+                          : Colors.white,
                       border: Border.all(
-                        color: isSelected ? AppColors.primary : AppColors.border,
+                        color:
+                            isSelected ? AppColors.primary : AppColors.border,
                         width: isSelected ? 1.5 : 0.8,
                       ),
                       onTap: () => onGroupSelected(index),
@@ -140,7 +143,8 @@ class SelectGroupSection extends StatelessWidget {
                                     shrinkWrap: true,
                                     physics: const BouncingScrollPhysics(),
                                     itemCount: group.members.length,
-                                    separatorBuilder: (_, __) => const SizedBox(width: 6),
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(width: 6),
                                     itemBuilder: (context, mIdx) {
                                       final member = group.members[mIdx];
                                       return SquircleAvatar(

@@ -31,7 +31,8 @@ class CreateGroupBottomSheet extends StatefulWidget {
       isScrollControlled: true,
       backgroundColor: isIOS ? AppColors.iosBackground : AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
       ),
       builder: (_) => CreateGroupBottomSheet(
         availableFriends: availableFriends,
@@ -68,7 +69,9 @@ class _CreateGroupBottomSheetState extends State<CreateGroupBottomSheet> {
       }
 
       final gName = _groupNameController.text.trim();
-      final selectedFriends = _selectedMemberIndices.map((i) => widget.availableFriends[i]).toList();
+      final selectedFriends = _selectedMemberIndices
+          .map((i) => widget.availableFriends[i])
+          .toList();
       final newGroup = Group(name: gName, members: selectedFriends);
 
       widget.onGroupCreated(newGroup);
@@ -117,26 +120,32 @@ class _CreateGroupBottomSheetState extends State<CreateGroupBottomSheet> {
                 child: TextFormField(
                   controller: _groupNameController,
                   autofocus: true,
-                  style: GoogleFonts.manrope(color: AppColors.textPrimary, fontSize: 15),
+                  style: GoogleFonts.manrope(
+                      color: AppColors.textPrimary, fontSize: 15),
                   decoration: InputDecoration(
                     labelText: 'Group Name',
                     hintText: 'e.g. Goa Trip, Flatmates',
-                    prefixIcon: const Icon(Icons.groups_outlined, color: AppColors.textSecondary),
+                    prefixIcon: const Icon(Icons.groups_outlined,
+                        color: AppColors.textSecondary),
                     filled: true,
                     fillColor: AppColors.surface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.input),
-                      borderSide: const BorderSide(color: AppColors.border, width: 1.0),
+                      borderSide:
+                          const BorderSide(color: AppColors.border, width: 1.0),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.input),
-                      borderSide: const BorderSide(color: AppColors.border, width: 1.0),
+                      borderSide:
+                          const BorderSide(color: AppColors.border, width: 1.0),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.input),
-                      borderSide: const BorderSide(color: AppColors.textPrimary, width: 1.5),
+                      borderSide: const BorderSide(
+                          color: AppColors.textPrimary, width: 1.5),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -183,7 +192,8 @@ class _CreateGroupBottomSheetState extends State<CreateGroupBottomSheet> {
                   child: Center(
                     child: Text(
                       'No friends added yet to add to group.',
-                      style: GoogleFonts.manrope(color: AppColors.textSecondary, fontSize: 13),
+                      style: GoogleFonts.manrope(
+                          color: AppColors.textSecondary, fontSize: 13),
                     ),
                   ),
                 )
@@ -213,10 +223,15 @@ class _CreateGroupBottomSheetState extends State<CreateGroupBottomSheet> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: isSelected ? AppColors.surfaceSubtle : AppColors.surface,
-                            borderRadius: BorderRadius.circular(AppRadius.input),
+                            color: isSelected
+                                ? AppColors.surfaceSubtle
+                                : AppColors.surface,
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.input),
                             border: Border.all(
-                              color: isSelected ? AppColors.primary : AppColors.border,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.border,
                               width: isSelected ? 1.5 : 1.0,
                             ),
                           ),
@@ -263,8 +278,12 @@ class _CreateGroupBottomSheetState extends State<CreateGroupBottomSheet> {
                                 ),
                               ),
                               Icon(
-                                isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                                color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                                isSelected
+                                    ? Icons.check_circle_rounded
+                                    : Icons.circle_outlined,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.textTertiary,
                                 size: 24,
                               ),
                             ],
@@ -282,7 +301,9 @@ class _CreateGroupBottomSheetState extends State<CreateGroupBottomSheet> {
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         'Cancel',
-                        style: GoogleFonts.manrope(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.manrope(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -300,7 +321,9 @@ class _CreateGroupBottomSheetState extends State<CreateGroupBottomSheet> {
                         ),
                       ),
                       onPressed: _submit,
-                      child: Text('Create Group', style: GoogleFonts.manrope(fontWeight: FontWeight.w700, fontSize: 15)),
+                      child: Text('Create Group',
+                          style: GoogleFonts.manrope(
+                              fontWeight: FontWeight.w700, fontSize: 15)),
                     ),
                   ),
                 ],

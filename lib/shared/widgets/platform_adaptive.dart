@@ -47,7 +47,8 @@ class PlatformCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isIOS = isIOSPlatform(context);
     final cardColor = color ?? AppColors.surface;
-    final cardBorder = border ?? Border.all(color: AppColors.border, width: 1.0);
+    final cardBorder =
+        border ?? Border.all(color: AppColors.border, width: 1.0);
 
     if (isIOS) {
       final cardContent = Container(

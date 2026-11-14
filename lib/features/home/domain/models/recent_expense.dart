@@ -22,4 +22,3 @@ class RecentExpense {
     required this.iconColor,
   });
 }
-

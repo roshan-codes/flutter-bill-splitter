@@ -99,7 +99,8 @@ class RecentExpensesCard extends StatelessWidget {
                 borderRadius: AppRadius.cardLarge,
                 elevation: 0,
                 color: AppColors.surface,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 34),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 34),
                 child: Center(
                   child: Column(
                     children: [
@@ -108,7 +109,8 @@ class RecentExpensesCard extends StatelessWidget {
                         height: 52,
                         decoration: BoxDecoration(
                           color: AppColors.successSoft,
-                          borderRadius: BorderRadius.circular(AppRadius.iconContainer + 2),
+                          borderRadius: BorderRadius.circular(
+                              AppRadius.iconContainer + 2),
                         ),
                         child: const Icon(
                           Icons.receipt_long_rounded,
@@ -155,8 +157,8 @@ class RecentExpensesCard extends StatelessWidget {
                         if (onExpenseTap != null) {
                           onExpenseTap!(displayExpenses[i]);
                         } else {
-                          final activity = ActivityRepository.instance.activities
-                              .firstWhere(
+                          final activity =
+                              ActivityRepository.instance.activities.firstWhere(
                             (a) => a.id == displayExpenses[i].id,
                             orElse: () => SplitActivity(
                               id: displayExpenses[i].id,

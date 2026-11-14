@@ -34,7 +34,8 @@ class AddOptionsBottomSheet extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: isIOS ? AppColors.iosBackground : AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
       ),
       builder: (_) => AddOptionsBottomSheet(
         onAddNewFriend: onAddNewFriend,
@@ -112,7 +113,9 @@ class AddOptionsBottomSheet extends StatelessWidget {
                     ),
                   ),
                   Icon(
-                    isIOS ? CupertinoIcons.chevron_right : Icons.chevron_right_rounded,
+                    isIOS
+                        ? CupertinoIcons.chevron_right
+                        : Icons.chevron_right_rounded,
                     color: AppColors.textSecondary,
                   ),
                 ],
@@ -156,7 +159,9 @@ class AddOptionsBottomSheet extends StatelessWidget {
                     ),
                   ),
                   Icon(
-                    isIOS ? CupertinoIcons.chevron_right : Icons.chevron_right_rounded,
+                    isIOS
+                        ? CupertinoIcons.chevron_right
+                        : Icons.chevron_right_rounded,
                     color: AppColors.textSecondary,
                   ),
                 ],
@@ -200,7 +205,9 @@ class AddOptionsBottomSheet extends StatelessWidget {
                     ),
                   ),
                   Icon(
-                    isIOS ? CupertinoIcons.chevron_right : Icons.chevron_right_rounded,
+                    isIOS
+                        ? CupertinoIcons.chevron_right
+                        : Icons.chevron_right_rounded,
                     color: AppColors.textSecondary,
                   ),
                 ],

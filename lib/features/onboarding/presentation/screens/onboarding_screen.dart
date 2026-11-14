@@ -35,11 +35,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     },
     {
       'title': 'Real-Time Balance\n& Debt Tracking',
-      'subtitle': 'Know instantly who owes you\nand whom you need to settle with.',
+      'subtitle':
+          'Know instantly who owes you\nand whom you need to settle with.',
     },
     {
       'title': 'Settle Up with\na Single Tap',
-      'subtitle': 'Automatically calculate optimal paths\nto minimize total transactions.',
+      'subtitle':
+          'Automatically calculate optimal paths\nto minimize total transactions.',
     },
   ];
 

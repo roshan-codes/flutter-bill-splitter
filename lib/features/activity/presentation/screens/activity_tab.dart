@@ -88,7 +88,9 @@ class ActivityTab extends StatelessWidget {
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
-          physics: isIOS ? const BouncingScrollPhysics() : const ClampingScrollPhysics(),
+          physics: isIOS
+              ? const BouncingScrollPhysics()
+              : const ClampingScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,7 +151,8 @@ class ActivityTab extends StatelessWidget {
                                 height: 64,
                                 decoration: BoxDecoration(
                                   color: AppColors.surfaceSubtle,
-                                  borderRadius: BorderRadius.circular(AppRadius.card),
+                                  borderRadius:
+                                      BorderRadius.circular(AppRadius.card),
                                 ),
                                 child: const Icon(
                                   Icons.receipt_long_rounded,
@@ -198,8 +201,11 @@ class ActivityTab extends StatelessWidget {
                           ? AppColors.textSecondary
                           : AppColors.success,
                       icon: Icons.receipt_long_rounded,
-                      iconBgColor: isSettled ? AppColors.surfaceSubtle : AppColors.successSoft,
-                      iconColor: isSettled ? AppColors.textPrimary : AppColors.success,
+                      iconBgColor: isSettled
+                          ? AppColors.surfaceSubtle
+                          : AppColors.successSoft,
+                      iconColor:
+                          isSettled ? AppColors.textPrimary : AppColors.success,
                       section: 'Recent Activity',
                       isSettlement: isSettled,
                       splitActivity: act,

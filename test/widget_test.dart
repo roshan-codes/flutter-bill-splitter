@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bill_splitter/features/friends/presentation/screens/friends_tab.dart';
 import 'package:flutter_bill_splitter/main.dart';
 
-Future<void> _addFriendHelper(WidgetTester tester, String name, String phone) async {
+Future<void> _addFriendHelper(
+    WidgetTester tester, String name, String phone) async {
   final addBtn = find.byTooltip('Add');
   await tester.tap(addBtn);
   await tester.pumpAndSettle();
@@ -12,8 +13,10 @@ Future<void> _addFriendHelper(WidgetTester tester, String name, String phone) as
   await tester.tap(find.text('Add New Friend'));
   await tester.pumpAndSettle();
 
-  await tester.enterText(find.widgetWithText(TextFormField, 'Friend Name'), name);
-  await tester.enterText(find.widgetWithText(TextFormField, 'Mobile Number'), phone);
+  await tester.enterText(
+      find.widgetWithText(TextFormField, 'Friend Name'), name);
+  await tester.enterText(
+      find.widgetWithText(TextFormField, 'Mobile Number'), phone);
   await tester.pumpAndSettle();
 
   await tester.tap(find.widgetWithText(ElevatedButton, 'Add'));
@@ -54,8 +57,10 @@ void main() {
     expect(find.text('Add New Friend'), findsOneWidget);
     expect(find.text('Import from Contacts'), findsOneWidget);
     expect(find.text('Create New Group'), findsOneWidget);
-    expect(find.text('Add an individual friend with name & phone'), findsNothing);
-    expect(find.text('Select multiple friends to create a split group'), findsNothing);
+    expect(
+        find.text('Add an individual friend with name & phone'), findsNothing);
+    expect(find.text('Select multiple friends to create a split group'),
+        findsNothing);
 
     // Select 'Add New Friend'
     await tester.tap(find.text('Add New Friend'));
@@ -110,7 +115,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify button says 'Import 1 Contact'
-    expect(find.widgetWithText(ElevatedButton, 'Import 1 Contact'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Import 1 Contact'),
+        findsOneWidget);
 
     // Tap import button
     await tester.tap(find.widgetWithText(ElevatedButton, 'Import 1 Contact'));
@@ -120,8 +126,7 @@ void main() {
     expect(find.text('Rahul Sharma'), findsOneWidget);
   });
 
-  testWidgets(
-      'Friends screen allows creating a new group after adding friends',
+  testWidgets('Friends screen allows creating a new group after adding friends',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp(home: MainScreen()));
 
@@ -181,8 +186,10 @@ void main() {
       'AddExpenseScreen sequence: expense title, friends/groups toggle, search bar, friend tiles, and fixed continue button',
       (WidgetTester tester) async {
     // Add friends directly to repository
-    FriendsRepository.instance.addFriend(const Friend(name: 'Alex Johnson', phone: '+91 98765 43210'));
-    FriendsRepository.instance.addFriend(const Friend(name: 'Sophia Martinez', phone: '+91 99887 76655'));
+    FriendsRepository.instance.addFriend(
+        const Friend(name: 'Alex Johnson', phone: '+91 98765 43210'));
+    FriendsRepository.instance.addFriend(
+        const Friend(name: 'Sophia Martinez', phone: '+91 99887 76655'));
 
     await tester.pumpWidget(const MyApp(home: MainScreen()));
 
@@ -197,7 +204,8 @@ void main() {
 
     // Verify 1: Expense Title Input
     expect(find.text('Expense Title'), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, 'e.g. Dinner, Groceries, Trip'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'e.g. Dinner, Groceries, Trip'),
+        findsOneWidget);
 
     // Verify 2: Friends vs Groups Segmented Toggle
     expect(find.text('Friends'), findsWidgets);
@@ -215,13 +223,15 @@ void main() {
     expect(continueBtn, findsOneWidget);
 
     // Test Search filter: search for 'Sophia'
-    await tester.enterText(find.widgetWithText(TextField, 'Search friends...'), 'Sophia');
+    await tester.enterText(
+        find.widgetWithText(TextField, 'Search friends...'), 'Sophia');
     await tester.pumpAndSettle();
     expect(find.text('Sophia Martinez'), findsOneWidget);
     expect(find.text('Alex Johnson'), findsNothing);
 
     // Clear search
-    await tester.enterText(find.widgetWithText(TextField, 'Search friends...'), '');
+    await tester.enterText(
+        find.widgetWithText(TextField, 'Search friends...'), '');
     await tester.pumpAndSettle();
     expect(find.text('Alex Johnson'), findsOneWidget);
 
@@ -241,7 +251,8 @@ void main() {
 
     // Enter expense title
     await tester.enterText(
-        find.widgetWithText(TextFormField, 'e.g. Dinner, Groceries, Trip'), 'Friday Dinner');
+        find.widgetWithText(TextFormField, 'e.g. Dinner, Groceries, Trip'),
+        'Friday Dinner');
     await tester.pumpAndSettle();
 
     // Tap fixed Continue button
@@ -267,7 +278,8 @@ void main() {
 
     // Verify dialog opens
     expect(find.textContaining('Expense for Alex Johnson'), findsOneWidget);
-    await tester.enterText(find.widgetWithText(TextFormField, 'Enter amount e.g. 250'), '600');
+    await tester.enterText(
+        find.widgetWithText(TextFormField, 'Enter amount e.g. 250'), '600');
     await tester.pumpAndSettle();
 
     // Save expense
@@ -279,7 +291,8 @@ void main() {
     expect(find.text('Edit expense'), findsOneWidget);
 
     // Tap Confirm Split to navigate to SplitSummaryScreen
-    final confirmSplitBtn = find.widgetWithText(ElevatedButton, 'Confirm Split');
+    final confirmSplitBtn =
+        find.widgetWithText(ElevatedButton, 'Confirm Split');
     await tester.tap(confirmSplitBtn);
     await tester.pumpAndSettle();
 
@@ -302,13 +315,16 @@ void main() {
     expect(find.text('-₹300'), findsOneWidget);
 
     // Tap Save & Track Settlement button
-    final saveBtn = find.widgetWithText(ElevatedButton, 'Save & Track Settlement');
+    final saveBtn =
+        find.widgetWithText(ElevatedButton, 'Save & Track Settlement');
     await tester.tap(saveBtn);
     await tester.pumpAndSettle();
 
     // Verify screen popped back to MainScreen and success SnackBar is shown
     expect(find.text('Split Summary'), findsNothing);
-    expect(find.textContaining('Split settled successfully for "Friday Dinner"!'), findsOneWidget);
+    expect(
+        find.textContaining('Split settled successfully for "Friday Dinner"!'),
+        findsOneWidget);
 
     // Switch to Activity Tab (index 2)
     final activityTab = find.byIcon(Icons.access_time_rounded);
@@ -321,7 +337,8 @@ void main() {
     expect(find.text('₹600'), findsOneWidget);
     expect(find.text('₹300 / person'), findsOneWidget);
     expect(find.text('2 members'), findsWidgets);
-    expect(find.text('Sophia Martinez pays ₹300 to Alex Johnson'), findsOneWidget);
+    expect(
+        find.text('Sophia Martinez pays ₹300 to Alex Johnson'), findsOneWidget);
 
     // Tap on the activity card to open ActivityDetailSheet
     await tester.tap(find.text('Friday Dinner'));

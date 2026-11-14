@@ -49,7 +49,8 @@ class ProfileAvatar extends StatelessWidget {
         height: 84,
         decoration: const BoxDecoration(
           shape: BoxShape.circle,
-          color: Color(0xFF22262E), // Dark charcoal circle as seen in screenshot
+          color:
+              Color(0xFF22262E), // Dark charcoal circle as seen in screenshot
         ),
         child: Center(
           child: Text(

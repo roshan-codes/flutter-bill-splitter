@@ -20,7 +20,8 @@ void main() {
       expect(result, 'hello_world');
     });
 
-    test('setStringList and getStringList persists and retrieves list', () async {
+    test('setStringList and getStringList persists and retrieves list',
+        () async {
       final list = ['item1', 'item2', 'item3'];
       final success = await storageService.setStringList('list_key', list);
       expect(success, isTrue);
@@ -47,4 +48,3 @@ void main() {
     });
   });
 }
-

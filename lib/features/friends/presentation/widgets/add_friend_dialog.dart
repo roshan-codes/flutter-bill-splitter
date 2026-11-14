@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
@@ -18,7 +19,7 @@ class AddFriendDialog extends StatefulWidget {
     BuildContext context, {
     required ValueChanged<Friend> onFriendAdded,
   }) {
-    return showDialog(
+    return AppTransitions.showFadeScaleDialog(
       context: context,
       builder: (_) => AddFriendDialog(onFriendAdded: onFriendAdded),
     );
@@ -94,25 +95,31 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
             TextFormField(
               controller: _nameController,
               autofocus: true,
-              style: GoogleFonts.manrope(color: AppColors.textPrimary, fontSize: 15),
+              style: GoogleFonts.manrope(
+                  color: AppColors.textPrimary, fontSize: 15),
               decoration: InputDecoration(
                 labelText: 'Friend Name',
                 hintText: 'Enter name',
-                prefixIcon: const Icon(Icons.person_outline, color: AppColors.textSecondary),
+                prefixIcon: const Icon(Icons.person_outline,
+                    color: AppColors.textSecondary),
                 filled: true,
                 fillColor: AppColors.surface,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.input),
-                  borderSide: const BorderSide(color: AppColors.border, width: 1.0),
+                  borderSide:
+                      const BorderSide(color: AppColors.border, width: 1.0),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.input),
-                  borderSide: const BorderSide(color: AppColors.border, width: 1.0),
+                  borderSide:
+                      const BorderSide(color: AppColors.border, width: 1.0),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.input),
-                  borderSide: const BorderSide(color: AppColors.textPrimary, width: 1.5),
+                  borderSide: const BorderSide(
+                      color: AppColors.textPrimary, width: 1.5),
                 ),
               ),
               validator: (value) {
@@ -126,25 +133,31 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
             TextFormField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
-              style: GoogleFonts.manrope(color: AppColors.textPrimary, fontSize: 15),
+              style: GoogleFonts.manrope(
+                  color: AppColors.textPrimary, fontSize: 15),
               decoration: InputDecoration(
                 labelText: 'Mobile Number',
                 hintText: 'Enter mobile no',
-                prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.textSecondary),
+                prefixIcon: const Icon(Icons.phone_outlined,
+                    color: AppColors.textSecondary),
                 filled: true,
                 fillColor: AppColors.surface,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.input),
-                  borderSide: const BorderSide(color: AppColors.border, width: 1.0),
+                  borderSide:
+                      const BorderSide(color: AppColors.border, width: 1.0),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.input),
-                  borderSide: const BorderSide(color: AppColors.border, width: 1.0),
+                  borderSide:
+                      const BorderSide(color: AppColors.border, width: 1.0),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.input),
-                  borderSide: const BorderSide(color: AppColors.textPrimary, width: 1.5),
+                  borderSide: const BorderSide(
+                      color: AppColors.textPrimary, width: 1.5),
                 ),
               ),
               validator: (value) {
@@ -162,7 +175,8 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
           onPressed: () => Navigator.pop(context),
           child: Text(
             'Cancel',
-            style: GoogleFonts.manrope(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+            style: GoogleFonts.manrope(
+                color: AppColors.textSecondary, fontWeight: FontWeight.w600),
           ),
         ),
         ElevatedButton(
@@ -176,7 +190,9 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
             ),
           ),
           onPressed: _submit,
-          child: Text('Add', style: GoogleFonts.manrope(fontWeight: FontWeight.w700, fontSize: 15)),
+          child: Text('Add',
+              style: GoogleFonts.manrope(
+                  fontWeight: FontWeight.w700, fontSize: 15)),
         ),
       ],
     );

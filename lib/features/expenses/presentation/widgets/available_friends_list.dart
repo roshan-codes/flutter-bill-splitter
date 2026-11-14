@@ -86,7 +86,9 @@ class AvailableFriendsList extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primaryLight.withOpacity(0.4) : Colors.white,
+                    color: isSelected
+                        ? AppColors.primaryLight.withOpacity(0.4)
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isSelected ? AppColors.primary : AppColors.border,
@@ -104,11 +106,15 @@ class AvailableFriendsList extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 21,
-                        backgroundColor: isSelected ? AppColors.primary : AppColors.primaryLight,
+                        backgroundColor: isSelected
+                            ? AppColors.primary
+                            : AppColors.primaryLight,
                         child: Text(
                           initials,
                           style: TextStyle(
-                            color: isSelected ? AppColors.primaryDark : AppColors.primaryDeep,
+                            color: isSelected
+                                ? AppColors.primaryDark
+                                : AppColors.primaryDeep,
                             fontWeight: FontWeight.w800,
                             fontSize: 14,
                           ),
@@ -140,8 +146,12 @@ class AvailableFriendsList extends StatelessWidget {
                         ),
                       ),
                       Icon(
-                        isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                        color: isSelected ? AppColors.primaryDeep : Colors.grey.shade400,
+                        isSelected
+                            ? Icons.check_circle_rounded
+                            : Icons.circle_outlined,
+                        color: isSelected
+                            ? AppColors.primaryDeep
+                            : Colors.grey.shade400,
                         size: 22,
                       ),
                     ],

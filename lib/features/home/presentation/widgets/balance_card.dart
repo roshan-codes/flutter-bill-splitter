@@ -80,7 +80,9 @@ class BalanceCard extends StatelessWidget {
                     ),
                   ),
                   Icon(
-                    isIOS ? CupertinoIcons.chevron_right : Icons.chevron_right_rounded,
+                    isIOS
+                        ? CupertinoIcons.chevron_right
+                        : Icons.chevron_right_rounded,
                     color: const Color(0xFF94A3B8),
                     size: 20,
                   ),

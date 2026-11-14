@@ -31,7 +31,8 @@ class AddMemberToGroupSheet extends StatefulWidget {
       isScrollControlled: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
       ),
       builder: (_) => AddMemberToGroupSheet(
         group: group,
@@ -54,7 +55,8 @@ class _AddMemberToGroupSheetState extends State<AddMemberToGroupSheet> {
     _selectedIndices = {};
     for (int i = 0; i < widget.allFriends.length; i++) {
       final f = widget.allFriends[i];
-      if (widget.group.members.any((m) => m.name == f.name || m.phone == f.phone)) {
+      if (widget.group.members
+          .any((m) => m.name == f.name || m.phone == f.phone)) {
         _selectedIndices.add(i);
       }
     }
@@ -94,7 +96,8 @@ class _AddMemberToGroupSheetState extends State<AddMemberToGroupSheet> {
                 padding: const EdgeInsets.all(16),
                 child: Text(
                   'No friends in your list yet.\nAdd friends in the Friends tab.',
-                  style: GoogleFonts.manrope(color: AppColors.textSecondary, fontSize: 13),
+                  style: GoogleFonts.manrope(
+                      color: AppColors.textSecondary, fontSize: 13),
                 ),
               )
             else
@@ -103,35 +106,48 @@ class _AddMemberToGroupSheetState extends State<AddMemberToGroupSheet> {
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: widget.allFriends.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.border),
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1, color: AppColors.border),
                   itemBuilder: (context, idx) {
                     final friend = widget.allFriends[idx];
                     final isSelected = _selectedIndices.contains(idx);
                     final initials = StringUtils.getInitials(friend.name);
 
                     return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 2),
                       leading: CircleAvatar(
-                        backgroundColor: isSelected ? AppColors.primary : AppColors.surfaceSubtle,
+                        backgroundColor: isSelected
+                            ? AppColors.primary
+                            : AppColors.surfaceSubtle,
                         child: Text(
                           initials,
                           style: GoogleFonts.manrope(
                             fontWeight: FontWeight.w700,
-                            color: isSelected ? Colors.white : AppColors.textPrimary,
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.textPrimary,
                           ),
                         ),
                       ),
                       title: Text(
                         friend.name,
-                        style: GoogleFonts.manrope(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                        style: GoogleFonts.manrope(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary),
                       ),
                       subtitle: Text(
                         friend.phone,
-                        style: GoogleFonts.manrope(color: AppColors.textSecondary, fontSize: 12),
+                        style: GoogleFonts.manrope(
+                            color: AppColors.textSecondary, fontSize: 12),
                       ),
                       trailing: Icon(
-                        isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                        color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                        isSelected
+                            ? Icons.check_circle_rounded
+                            : Icons.circle_outlined,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textTertiary,
                       ),
                       onTap: () {
                         setState(() {
@@ -153,16 +169,19 @@ class _AddMemberToGroupSheetState extends State<AddMemberToGroupSheet> {
                 foregroundColor: Colors.white,
                 minimumSize: const Size.fromHeight(56),
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.button)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.button)),
               ),
               onPressed: () {
-                final updatedMembers = _selectedIndices.map((i) => widget.allFriends[i]).toList();
+                final updatedMembers =
+                    _selectedIndices.map((i) => widget.allFriends[i]).toList();
                 widget.onMembersUpdated(updatedMembers);
                 Navigator.pop(context);
               },
               child: Text(
                 'Save Members',
-                style: GoogleFonts.manrope(fontWeight: FontWeight.w700, fontSize: 16),
+                style: GoogleFonts.manrope(
+                    fontWeight: FontWeight.w700, fontSize: 16),
               ),
             ),
           ],

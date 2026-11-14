@@ -53,7 +53,8 @@ class ActivityItemRow extends StatelessWidget {
                   height: 46,
                   decoration: BoxDecoration(
                     color: item.iconBgColor,
-                    borderRadius: BorderRadius.circular(AppRadius.iconContainer),
+                    borderRadius:
+                        BorderRadius.circular(AppRadius.iconContainer),
                   ),
                   child: Icon(
                     item.icon,
@@ -128,7 +129,8 @@ class ActivityItemRow extends StatelessWidget {
                 item.splitActivity!.settlements.isNotEmpty) ...[
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceSubtle,
                   borderRadius: BorderRadius.circular(8),

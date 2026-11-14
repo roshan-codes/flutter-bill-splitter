@@ -76,8 +76,18 @@ void main() {
       );
 
       expect(settlements.length, 2);
-      expect(settlements.any((s) => s.from.name == 'Bob' && s.to.name == 'Alice' && s.amount == 300.0), isTrue);
-      expect(settlements.any((s) => s.from.name == 'Charlie' && s.to.name == 'Alice' && s.amount == 300.0), isTrue);
+      expect(
+          settlements.any((s) =>
+              s.from.name == 'Bob' &&
+              s.to.name == 'Alice' &&
+              s.amount == 300.0),
+          isTrue);
+      expect(
+          settlements.any((s) =>
+              s.from.name == 'Charlie' &&
+              s.to.name == 'Alice' &&
+              s.amount == 300.0),
+          isTrue);
     });
   });
 }

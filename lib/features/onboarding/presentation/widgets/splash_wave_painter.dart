@@ -55,7 +55,8 @@ class SplashWavePainter extends CustomPainter {
     canvas.drawPath(backWavePath, backWavePaint);
 
     // Bottom front wave (restrained subtle gradient wave)
-    final rect = Rect.fromLTWH(0, size.height * 0.78, size.width, size.height * 0.22);
+    final rect =
+        Rect.fromLTWH(0, size.height * 0.78, size.width, size.height * 0.22);
     final frontWavePaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topLeft,

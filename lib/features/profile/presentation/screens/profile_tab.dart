@@ -1,6 +1,9 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_bill_splitter/core/animations/app_motion.dart';
+import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
@@ -34,21 +37,35 @@ class ProfileTab extends StatefulWidget {
 
 class _ProfileTabState extends State<ProfileTab> {
   int? _avatarIndex;
+  String _userName = 'Roshan Badwaik';
+  String _userPhone = '+91 9876543210';
 
   @override
   void initState() {
     super.initState();
     _avatarIndex = widget.initialAvatarIndex;
-    if (_avatarIndex == null) {
-      _loadSavedAvatar();
-    }
+    _loadSavedProfile();
   }
 
-  Future<void> _loadSavedAvatar() async {
-    final saved =
+  Future<void> _loadSavedProfile() async {
+    final savedAvatar =
         await StorageService.instance.getInt('user_profile_avatar_index');
-    if (mounted && saved != null) {
-      setState(() => _avatarIndex = saved);
+    final savedName =
+        await StorageService.instance.getString('user_profile_name');
+    final savedPhone =
+        await StorageService.instance.getString('user_profile_phone');
+    if (mounted) {
+      setState(() {
+        if (_avatarIndex == null && savedAvatar != null) {
+          _avatarIndex = savedAvatar;
+        }
+        if (savedName != null && savedName.isNotEmpty) {
+          _userName = savedName;
+        }
+        if (savedPhone != null && savedPhone.isNotEmpty) {
+          _userPhone = savedPhone;
+        }
+      });
     }
   }
 
@@ -58,7 +75,9 @@ class _ProfileTabState extends State<ProfileTab> {
       return;
     }
     Navigator.of(context).push(
-      MaterialPageRoute(
+      AppTransitions.sharedAxisRoute(
+        type: SharedAxisTransitionType.horizontal,
+        duration: AppMotion.medium,
         builder: (context) => const FriendsTab(
           initialSubTabIndex: 0,
           showBackButton: true,
@@ -73,7 +92,9 @@ class _ProfileTabState extends State<ProfileTab> {
       return;
     }
     Navigator.of(context).push(
-      MaterialPageRoute(
+      AppTransitions.sharedAxisRoute(
+        type: SharedAxisTransitionType.horizontal,
+        duration: AppMotion.medium,
         builder: (context) => const FriendsTab(
           initialSubTabIndex: 1,
           showBackButton: true,
@@ -94,6 +115,182 @@ class _ProfileTabState extends State<ProfileTab> {
           _showNotice(context, 'Avatar updated successfully!');
         }
       },
+    );
+  }
+
+  void _openEditProfileSheet(BuildContext context) {
+    final nameCtrl = TextEditingController(text: _userName);
+    final phoneCtrl = TextEditingController(text: _userPhone);
+    final formKey = GlobalKey<FormState>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor:
+          isIOSPlatform(context) ? AppColors.iosBackground : AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          20,
+          20,
+          MediaQuery.of(ctx).viewInsets.bottom + 24,
+        ),
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Edit Profile',
+                    style: GoogleFonts.manrope(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      _openAvatarPicker(context);
+                    },
+                    child: Text(
+                      'Change Avatar',
+                      style: GoogleFonts.manrope(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Full Name',
+                style: GoogleFonts.manrope(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: nameCtrl,
+                style: GoogleFonts.manrope(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Your name',
+                  filled: true,
+                  fillColor: AppColors.surfaceSubtle,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.input),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.input),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                ),
+                validator: (val) => val == null || val.trim().isEmpty
+                    ? 'Please enter your name'
+                    : null,
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Phone Number',
+                style: GoogleFonts.manrope(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: phoneCtrl,
+                keyboardType: TextInputType.phone,
+                style: GoogleFonts.manrope(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+                decoration: InputDecoration(
+                  hintText: '+91 9876543210',
+                  filled: true,
+                  fillColor: AppColors.surfaceSubtle,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.input),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.input),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 22),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.button),
+                    ),
+                  ),
+                  onPressed: () async {
+                    if (formKey.currentState?.validate() ?? false) {
+                      final newName = nameCtrl.text.trim();
+                      final newPhone = phoneCtrl.text.trim();
+                      setState(() {
+                        _userName = newName;
+                        _userPhone = newPhone;
+                      });
+                      await StorageService.instance
+                          .setString('user_profile_name', newName);
+                      await StorageService.instance
+                          .setString('user_profile_phone', newPhone);
+                      if (ctx.mounted) Navigator.of(ctx).pop();
+                      if (context.mounted) {
+                        _showNotice(context, 'Profile updated!');
+                      }
+                    }
+                  },
+                  child: Text(
+                    'Save Profile',
+                    style: GoogleFonts.manrope(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -136,7 +333,7 @@ class _ProfileTabState extends State<ProfileTab> {
         ),
       );
     } else {
-      showDialog(
+      AppTransitions.showFadeScaleDialog(
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.surface,
@@ -202,17 +399,18 @@ class _ProfileTabState extends State<ProfileTab> {
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 110),
           child: Column(
             children: [
-              // Header: Profile title + Edit icon (opens avatar picker)
+              // Header: Profile title + Edit icon
               ProfileHeader(
-                onEditPressed: () => _openAvatarPicker(context),
+                onEditPressed: () => _openEditProfileSheet(context),
               ),
               const SizedBox(height: 16),
 
               // Avatar with memo avatar / primary circle, name, and phone
               ProfileAvatar(
-                name: 'Roshan Badwaik',
-                phone: '+91 9876543210',
-                initial: 'R',
+                name: _userName,
+                phone: _userPhone,
+                initial:
+                    _userName.isNotEmpty ? _userName[0].toUpperCase() : 'R',
                 avatarIndex: _avatarIndex,
                 onTap: () => _openAvatarPicker(context),
               ),
@@ -222,7 +420,7 @@ class _ProfileTabState extends State<ProfileTab> {
               ProfileMenuCard(
                 onFriendsTap: () => _openFriends(context),
                 onGroupsTap: () => _openGroups(context),
-                onEditProfileTap: () => _openAvatarPicker(context),
+                onEditProfileTap: () => _openEditProfileSheet(context),
                 onPaymentSettlementTap: () =>
                     _showNotice(context, 'Payment & Settlement opened'),
                 onAppSettingsTap: () =>

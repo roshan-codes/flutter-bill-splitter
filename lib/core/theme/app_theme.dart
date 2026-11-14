@@ -53,7 +53,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.input),
           borderSide: const BorderSide(color: AppColors.border, width: 1.0),
@@ -64,7 +65,8 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.input),
-          borderSide: const BorderSide(color: AppColors.textPrimary, width: 1.5),
+          borderSide:
+              const BorderSide(color: AppColors.textPrimary, width: 1.5),
         ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(

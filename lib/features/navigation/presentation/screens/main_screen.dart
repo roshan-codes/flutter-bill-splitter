@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:animations/animations.dart';
 import 'package:floating_pill_navbar/floating_pill_navbar.dart';
+import 'package:flutter_bill_splitter/core/animations/app_motion.dart';
+import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/screens/activity_tab.dart';
@@ -50,9 +53,19 @@ class _MainScreenState extends State<MainScreen> {
     setState(() => _currentIndex = index);
   }
 
+  late final List<Widget> _tabs = [
+    HomeTab(
+      onAddExpense: _openAddExpenseScreen,
+    ),
+    const ActivityTab(),
+    const ProfileTab(),
+  ];
+
   void _openAddExpenseScreen() {
     Navigator.of(context).push(
-      MaterialPageRoute(
+      AppTransitions.sharedAxisRoute(
+        type: SharedAxisTransitionType.vertical,
+        duration: AppMotion.medium,
         builder: (context) => AddExpenseScreen(
           friends: FriendsRepository.instance.friends,
           groups: FriendsRepository.instance.groups,
@@ -62,15 +75,11 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildBody() {
-    return IndexedStack(
-      index: _currentIndex,
-      children: [
-        HomeTab(
-          onAddExpense: _openAddExpenseScreen,
-        ),
-        const ActivityTab(),
-        const ProfileTab(),
-      ],
+    return AppTransitions.fadeThroughSwitcher(
+      context: context,
+      transitionKey: _currentIndex,
+      duration: AppMotion.normal,
+      child: _tabs[_currentIndex],
     );
   }
 
@@ -92,15 +101,15 @@ class _MainScreenState extends State<MainScreen> {
         appBar: hasCustomHeader
             ? null
             : AppBar(
-              title: Text(
-                _tabTitles[_currentIndex],
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
+                title: Text(
+                  _tabTitles[_currentIndex],
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-            ),
         body: _buildBody(),
         bottomNavigationBar: FloatingPillNavBar(
           selectedIndex: _currentIndex,
@@ -110,7 +119,8 @@ class _MainScreenState extends State<MainScreen> {
           borderRadius: BorderRadius.circular(AppRadius.pill),
           height: 68,
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          selectedItemPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          selectedItemPadding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           selectedIconSize: 22,
           unselectedIconSize: 22,
           selectedFontSize: 11,

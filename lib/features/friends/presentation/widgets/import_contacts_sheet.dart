@@ -42,9 +42,11 @@ class ImportContactsSheet extends StatefulWidget {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isIOSPlatform(context) ? AppColors.iosBackground : AppColors.surface,
+      backgroundColor:
+          isIOSPlatform(context) ? AppColors.iosBackground : AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
       ),
       builder: (_) => ImportContactsSheet(
         existingFriends: existingFriends,
@@ -103,7 +105,7 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
           setState(() {
             _isLoading = false;
             _permissionDenied = true;
-            _contacts = ImportContactsSheet.defaultDeviceContacts;
+            _contacts = const [];
           });
         }
         return;
@@ -127,9 +129,7 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _contacts = friendsFromContacts.isNotEmpty
-              ? friendsFromContacts
-              : ImportContactsSheet.defaultDeviceContacts;
+          _contacts = friendsFromContacts;
         });
       }
     } catch (e) {
@@ -137,7 +137,7 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _contacts = ImportContactsSheet.defaultDeviceContacts;
+          _contacts = const [];
         });
       }
     }
@@ -200,7 +200,9 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
     final filteredContacts = _contacts.where((c) {
       if (_searchQuery.isEmpty) return true;
       return c.name.toLowerCase().contains(_searchQuery) ||
-          c.phone.replaceAll(' ', '').contains(_searchQuery.replaceAll(' ', ''));
+          c.phone
+              .replaceAll(' ', '')
+              .contains(_searchQuery.replaceAll(' ', ''));
     }).toList();
 
     final availableFiltered =
@@ -269,8 +271,8 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
                           if (allSelected) {
                             _selectedPhones.clear();
                           } else {
-                            _selectedPhones.addAll(
-                                availableFiltered.map((c) => c.phone));
+                            _selectedPhones
+                                .addAll(availableFiltered.map((c) => c.phone));
                           }
                         });
                       },
@@ -294,7 +296,8 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border, width: 0.8),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 child: Row(
                   children: [
                     const Icon(
@@ -323,7 +326,8 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
                               const EdgeInsets.symmetric(vertical: 10),
                           suffixIcon: _searchQuery.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(Icons.clear_rounded, size: 18),
+                                  icon:
+                                      const Icon(Icons.clear_rounded, size: 18),
                                   color: AppColors.textSecondary,
                                   onPressed: () => _searchController.clear(),
                                 )
@@ -345,8 +349,8 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
                       color: const Color(0xFFFEF3C7),
                       border: Border.all(color: const Color(0xFFFDE68A)),
                     ),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     child: Row(
                       children: [
                         const Icon(
@@ -411,172 +415,176 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
               else
                 Expanded(
                   child: filteredContacts.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.search_off_rounded,
-                              size: 40,
-                              color: AppColors.textSecondary,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'No contacts match "$_searchQuery"',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.search_off_rounded,
+                                size: 40,
                                 color: AppColors.textSecondary,
                               ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: filteredContacts.length,
-                        itemBuilder: (context, index) {
-                          final contact = filteredContacts[index];
-                          final isAdded = _isAlreadyAdded(contact);
-                          final isSelected =
-                              _selectedPhones.contains(contact.phone);
-
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                color: isSelected
-                                    ? const Color(0xFFF0FDF4)
-                                    : (isAdded
-                                        ? const Color(0xFFF3F4F6)
-                                        : Colors.white),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? const Color(0xFF16A34A)
-                                      : AppColors.border,
-                                  width: isSelected ? 1.5 : 0.8,
+                              const SizedBox(height: 8),
+                              Text(
+                                'No contacts match "$_searchQuery"',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 10,
-                              ),
-                              child: InkWell(
-                                onTap: isAdded ? null : () => _toggleSelection(contact),
-                                borderRadius: BorderRadius.circular(16),
-                                child: Row(
-                                  children: [
-                                    // Contact avatar
-                                    Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: isAdded
-                                            ? const Color(0xFFE5E7EB)
-                                            : const Color(0xFFE0F2FE),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          StringUtils.getInitials(contact.name),
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 14,
-                                            color: isAdded
-                                                ? AppColors.textSecondary
-                                                : const Color(0xFF0369A1),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: filteredContacts.length,
+                          itemBuilder: (context, index) {
+                            final contact = filteredContacts[index];
+                            final isAdded = _isAlreadyAdded(contact);
+                            final isSelected =
+                                _selectedPhones.contains(contact.phone);
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  color: isSelected
+                                      ? const Color(0xFFF0FDF4)
+                                      : (isAdded
+                                          ? const Color(0xFFF3F4F6)
+                                          : Colors.white),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? const Color(0xFF16A34A)
+                                        : AppColors.border,
+                                    width: isSelected ? 1.5 : 0.8,
+                                  ),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 10,
+                                ),
+                                child: InkWell(
+                                  onTap: isAdded
+                                      ? null
+                                      : () => _toggleSelection(contact),
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Row(
+                                    children: [
+                                      // Contact avatar
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: isAdded
+                                              ? const Color(0xFFE5E7EB)
+                                              : const Color(0xFFE0F2FE),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            StringUtils.getInitials(
+                                                contact.name),
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 14,
+                                              color: isAdded
+                                                  ? AppColors.textSecondary
+                                                  : const Color(0xFF0369A1),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 12),
+                                      const SizedBox(width: 12),
 
-                                    // Name and phone
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            contact.name,
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 15,
-                                              color: isAdded
-                                                  ? AppColors.textSecondary
-                                                  : AppColors.textPrimary,
+                                      // Name and phone
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              contact.name,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 15,
+                                                color: isAdded
+                                                    ? AppColors.textSecondary
+                                                    : AppColors.textPrimary,
+                                              ),
                                             ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              contact.phone,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                                color: AppColors.textSecondary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      // Checkbox or Added badge
+                                      if (isAdded)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 4,
                                           ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            contact.phone,
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFE5E7EB),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: const Text(
+                                            'Added',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
                                               color: AppColors.textSecondary,
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                    ),
-
-                                    // Checkbox or Added badge
-                                    if (isAdded)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFE5E7EB),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: const Text(
-                                          'Added',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        ),
-                                      )
-                                    else
-                                      Semantics(
-                                        label:
-                                            '${isSelected ? "Deselect" : "Select"} ${contact.name}',
-                                        checked: isSelected,
-                                        child: Container(
-                                          width: 28,
-                                          height: 28,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: isSelected
-                                                ? AppColors.primary
-                                                : Colors.transparent,
-                                            border: Border.all(
+                                        )
+                                      else
+                                        Semantics(
+                                          label:
+                                              '${isSelected ? "Deselect" : "Select"} ${contact.name}',
+                                          checked: isSelected,
+                                          child: Container(
+                                            width: 28,
+                                            height: 28,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
                                               color: isSelected
                                                   ? AppColors.primary
-                                                  : Colors.grey.shade400,
-                                              width: 1.5,
+                                                  : Colors.transparent,
+                                              border: Border.all(
+                                                color: isSelected
+                                                    ? AppColors.primary
+                                                    : Colors.grey.shade400,
+                                                width: 1.5,
+                                              ),
                                             ),
+                                            child: isSelected
+                                                ? const Icon(
+                                                    Icons.check_rounded,
+                                                    size: 16,
+                                                    color: Colors.white,
+                                                  )
+                                                : null,
                                           ),
-                                          child: isSelected
-                                              ? const Icon(
-                                                  Icons.check_rounded,
-                                                  size: 16,
-                                                  color: Colors.white,
-                                                )
-                                              : null,
                                         ),
-                                      ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
+                            );
+                          },
+                        ),
+                ),
               const SizedBox(height: 12),
 
               // Import Action Button
@@ -584,8 +592,7 @@ class _ImportContactsSheetState extends State<ImportContactsSheet> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed:
-                      _selectedPhones.isEmpty ? null : _importSelected,
+                  onPressed: _selectedPhones.isEmpty ? null : _importSelected,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     disabledBackgroundColor: AppColors.surfaceSubtle,

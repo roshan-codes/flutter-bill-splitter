@@ -151,6 +151,22 @@ class StorySummary {
         'member_count': memberCount,
         'expense_count': expenseCount,
       };
+
+  StorySummary copyWith({
+    double? totalExpenses,
+    double? totalSettled,
+    double? pendingAmount,
+    int? memberCount,
+    int? expenseCount,
+  }) {
+    return StorySummary(
+      totalExpenses: totalExpenses ?? this.totalExpenses,
+      totalSettled: totalSettled ?? this.totalSettled,
+      pendingAmount: pendingAmount ?? this.pendingAmount,
+      memberCount: memberCount ?? this.memberCount,
+      expenseCount: expenseCount ?? this.expenseCount,
+    );
+  }
 }
 
 /// Domain model representing a member's balance status inside a Story.
@@ -388,6 +404,42 @@ class Story {
     );
   }
 
+  Story copyWith({
+    String? storyId,
+    String? title,
+    String? description,
+    String? coverEmoji,
+    String? currency,
+    String? status,
+    String? createdBy,
+    String? createdAt,
+    String? startDate,
+    String? endDate,
+    List<StoryMember>? members,
+    StorySummary? summary,
+    List<StoryExpense>? expenses,
+    List<StoryMemberBalance>? memberBalances,
+    List<StorySettlement>? settlements,
+  }) {
+    return Story(
+      storyId: storyId ?? this.storyId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      coverEmoji: coverEmoji ?? this.coverEmoji,
+      currency: currency ?? this.currency,
+      status: status ?? this.status,
+      createdBy: createdBy ?? this.createdBy,
+      createdAt: createdAt ?? this.createdAt,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      members: members ?? this.members,
+      summary: summary ?? this.summary,
+      expenses: expenses ?? this.expenses,
+      memberBalances: memberBalances ?? this.memberBalances,
+      settlements: settlements ?? this.settlements,
+    );
+  }
+
   /// Internal recalculation engine guaranteeing mathematical consistency across balances and settlements.
   static Story _buildCalculatedStory({
     required String storyId,
@@ -471,7 +523,8 @@ class Story {
       final debtor = debtors[dIdx];
       final creditor = creditors[cIdx];
 
-      final minAmount = debtor.value < creditor.value ? debtor.value : creditor.value;
+      final minAmount =
+          debtor.value < creditor.value ? debtor.value : creditor.value;
       if (minAmount > 0.01) {
         computedSettlements.add(
           StorySettlement(
@@ -492,9 +545,10 @@ class Story {
       if (creditors[cIdx].value <= 0.01) cIdx++;
     }
 
-    final finalSettlements = (existingSettlements != null && existingSettlements.isNotEmpty)
-        ? existingSettlements
-        : computedSettlements;
+    final finalSettlements =
+        (existingSettlements != null && existingSettlements.isNotEmpty)
+            ? existingSettlements
+            : computedSettlements;
 
     final double totalSettled = finalSettlements.fold<double>(
       0.0,

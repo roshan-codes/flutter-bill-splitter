@@ -45,7 +45,8 @@ class ActivityDetailSheet extends StatelessWidget {
         return Container(
           decoration: BoxDecoration(
             color: isIOS ? AppColors.iosBackground : AppColors.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
+            borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadius.cardLarge)),
           ),
           child: Column(
             children: [
@@ -64,7 +65,8 @@ class ActivityDetailSheet extends StatelessWidget {
 
               // Title Header
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 child: Row(
                   children: [
                     Expanded(
@@ -93,7 +95,8 @@ class ActivityDetailSheet extends StatelessWidget {
                     PlatformCircleButton(
                       size: 36,
                       onTap: () => Navigator.pop(context),
-                      child: const Icon(Icons.close_rounded, color: AppColors.textPrimary, size: 18),
+                      child: const Icon(Icons.close_rounded,
+                          color: AppColors.textPrimary, size: 18),
                     ),
                   ],
                 ),
@@ -176,11 +179,14 @@ class ActivityDetailSheet extends StatelessWidget {
                       PlatformCard(
                         borderRadius: AppRadius.card,
                         color: AppColors.successSoft,
-                        border: Border.all(color: AppColors.success.withOpacity(0.2), width: 1.0),
+                        border: Border.all(
+                            color: AppColors.success.withOpacity(0.2),
+                            width: 1.0),
                         padding: const EdgeInsets.all(16),
                         child: Row(
                           children: [
-                            const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 24),
+                            const Icon(Icons.check_circle_rounded,
+                                color: AppColors.success, size: 24),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
@@ -202,7 +208,8 @@ class ActivityDetailSheet extends StatelessWidget {
                         itemCount: activity.settlements.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 10),
                         itemBuilder: (context, index) {
-                          return SettlementCard(transaction: activity.settlements[index]);
+                          return SettlementCard(
+                              transaction: activity.settlements[index]);
                         },
                       ),
                     const SizedBox(height: 24),
@@ -225,14 +232,18 @@ class ActivityDetailSheet extends StatelessWidget {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: activity.members.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.border),
+                        separatorBuilder: (_, __) =>
+                            const Divider(height: 1, color: AppColors.border),
                         itemBuilder: (context, index) {
                           final member = activity.members[index];
-                          final paid = activity.memberExpenses[member.name] ?? 0.0;
-                          final initial = StringUtils.getSingleInitial(member.name);
+                          final paid =
+                              activity.memberExpenses[member.name] ?? 0.0;
+                          final initial =
+                              StringUtils.getSingleInitial(member.name);
 
                           return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
                             child: Row(
                               children: [
                                 Container(

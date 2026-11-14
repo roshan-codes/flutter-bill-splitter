@@ -9,7 +9,8 @@ import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/o
 
 void main() {
   group('Apple HIG Compliance Tests', () {
-    testWidgets('Back button in AddExpenseScreen has at least 44x44pt hit target and semantic label',
+    testWidgets(
+        'Back button in AddExpenseScreen has at least 44x44pt hit target and semantic label',
         (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -25,7 +26,8 @@ void main() {
       expect(renderBox.size.height, greaterThanOrEqualTo(44.0));
     });
 
-    testWidgets('Back button in SplitDetailScreen has at least 44x44pt hit target and semantic label',
+    testWidgets(
+        'Back button in SplitDetailScreen has at least 44x44pt hit target and semantic label',
         (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -44,7 +46,8 @@ void main() {
       expect(renderBox.size.height, greaterThanOrEqualTo(44.0));
     });
 
-    testWidgets('Back button in SplitSummaryScreen has at least 44x44pt hit target and semantic label',
+    testWidgets(
+        'Back button in SplitSummaryScreen has at least 44x44pt hit target and semantic label',
         (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -64,7 +67,8 @@ void main() {
       expect(renderBox.size.height, greaterThanOrEqualTo(44.0));
     });
 
-    testWidgets('FriendSelectionTile declares checkbox semantics and is interactive',
+    testWidgets(
+        'FriendSelectionTile declares checkbox semantics and is interactive',
         (tester) async {
       bool toggled = false;
       const friend = Friend(name: 'Saurabh', phone: '+91 98765 33333');

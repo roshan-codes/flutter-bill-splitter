@@ -35,7 +35,8 @@ class SettlementCard extends StatelessWidget {
     final amountFormatted = _formatAmount(transaction.amount);
 
     return Semantics(
-      label: '${transaction.from.name} should pay $amountFormatted to ${transaction.to.name}',
+      label:
+          '${transaction.from.name} should pay $amountFormatted to ${transaction.to.name}',
       child: PlatformCard(
         borderRadius: AppRadius.card,
         elevation: 0,

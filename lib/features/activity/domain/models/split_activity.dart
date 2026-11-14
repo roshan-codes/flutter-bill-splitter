@@ -45,8 +45,8 @@ class SplitActivity {
         memberExpenses: (json['memberExpenses'] as Map<dynamic, dynamic>? ?? {})
             .map((k, v) => MapEntry(k.toString(), (v as num).toDouble())),
         settlements: (json['settlements'] as List<dynamic>? ?? [])
-            .map((s) =>
-                SettlementTransaction.fromJson(Map<String, dynamic>.from(s as Map)))
+            .map((s) => SettlementTransaction.fromJson(
+                Map<String, dynamic>.from(s as Map)))
             .toList(),
         timestamp: json['timestamp'] != null
             ? DateTime.tryParse(json['timestamp'] as String) ?? DateTime.now()

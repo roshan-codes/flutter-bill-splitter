@@ -1,6 +1,9 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_bill_splitter/core/animations/app_motion.dart';
+import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
@@ -48,9 +51,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   String _searchQuery = '';
 
   List<Friend> get _effectiveFriends {
-    return widget.friends.isNotEmpty
-        ? widget.friends
-        : (widget.groups.isEmpty ? AddExpenseScreen.sampleFriends : <Friend>[]);
+    return widget.friends;
   }
 
   List<Friend> get filteredFriends {
@@ -86,8 +87,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       }
       _selectedFriendIndices.clear();
       for (final m in selectedGroup.members) {
-        final existingIdx = _effectiveFriends.indexWhere(
-            (f) => f.name.toLowerCase() == m.name.toLowerCase());
+        final existingIdx = _effectiveFriends
+            .indexWhere((f) => f.name.toLowerCase() == m.name.toLowerCase());
         if (existingIdx != -1) {
           _selectedFriendIndices.add(existingIdx);
         }
@@ -101,23 +102,25 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       if (_selectedFriendIndices.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Please select at least one friend or group member to split with'),
+            content: Text(
+                'Please select at least one friend or group member to split with'),
             behavior: SnackBarBehavior.floating,
           ),
         );
         return;
       }
 
-      final chosenFriends = _selectedFriendIndices
-          .map((i) => _effectiveFriends[i])
-          .toList();
+      final chosenFriends =
+          _selectedFriendIndices.map((i) => _effectiveFriends[i]).toList();
 
       final title = _expenseTitleController.text.trim().isNotEmpty
           ? _expenseTitleController.text.trim()
           : 'Shared Expense';
 
       Navigator.of(context).push(
-        MaterialPageRoute(
+        AppTransitions.sharedAxisRoute(
+          type: SharedAxisTransitionType.horizontal,
+          duration: AppMotion.medium,
           builder: (context) => SplitDetailScreen(
             groupName: title,
             members: chosenFriends,
@@ -161,7 +164,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          physics: isIOS ? const BouncingScrollPhysics() : const ClampingScrollPhysics(),
+          physics: isIOS
+              ? const BouncingScrollPhysics()
+              : const ClampingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Form(
             key: _formKey,
@@ -214,7 +219,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             color: AppColors.textPrimary,
                           ),
                           decoration: InputDecoration(
-                            hintText: _selectedTab == 0 ? 'Search friends...' : 'Search groups...',
+                            hintText: _selectedTab == 0
+                                ? 'Search friends...'
+                                : 'Search groups...',
                             hintStyle: const TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 14,
@@ -245,113 +252,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // 4. Selection Tiles (Friends or Groups)
-                if (_selectedTab == 0) ...[
-                  if (_effectiveFriends.isEmpty)
-                    const PlatformInsetContainer(
-                      borderRadius: 18,
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 32),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.people_outline_rounded,
-                              size: 40,
-                              color: AppColors.textSecondary,
-                            ),
-                            SizedBox(height: 12),
-                            Text(
-                              'No Friends Added Yet',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            SizedBox(height: 6),
-                            Text(
-                              'Add friends in the Friends tab to select them here.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else if (filteredFriends.isEmpty)
-                    PlatformInsetContainer(
-                      borderRadius: 18,
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      child: Center(
-                        child: Text(
-                          'No friends matching "$_searchQuery"',
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    )
-                  else
-                    for (final friend in filteredFriends) ...[
-                      () {
-                        final origIdx = _effectiveFriends.indexOf(friend);
-                        final isSelected = _selectedFriendIndices.contains(origIdx);
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: FriendSelectionTile(
-                            friend: friend,
-                            isSelected: isSelected,
-                            onToggle: () {
-                              setState(() {
-                                if (isSelected) {
-                                  _selectedFriendIndices.remove(origIdx);
-                                } else {
-                                  _selectedFriendIndices.add(origIdx);
-                                }
-                              });
-                            },
-                          ),
-                        );
-                      }(),
-                    ],
-                ] else ...[
-                  if (filteredGroups.isEmpty)
-                    const PlatformInsetContainer(
-                      borderRadius: 18,
-                      width: double.infinity,
-                      padding: EdgeInsets.all(24),
-                      child: Center(
-                        child: Text(
-                          'No groups available.\nCreate a group in the Friends tab to split by group.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    )
-                  else
-                    for (int i = 0; i < filteredGroups.length; i++) ...[
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: GroupSelectionTile(
-                          group: filteredGroups[i],
-                          isSelected: _selectedGroupIndex == i,
-                          onToggle: () => _onGroupSelected(i),
-                        ),
-                      ),
-                    ],
-                ],
+                // 4. Selection Tiles (Friends or Groups) with FadeThroughTransition
+                AppTransitions.fadeThroughSwitcher(
+                  context: context,
+                  transitionKey: _selectedTab,
+                  duration: AppMotion.normal,
+                  child: _selectedTab == 0
+                      ? _buildFriendsSelection()
+                      : _buildGroupsSelection(),
+                ),
                 const SizedBox(height: 20),
               ],
             ),
@@ -401,6 +310,127 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildFriendsSelection() {
+    if (_effectiveFriends.isEmpty) {
+      return const PlatformInsetContainer(
+        borderRadius: 18,
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(
+                Icons.people_outline_rounded,
+                size: 40,
+                color: AppColors.textSecondary,
+              ),
+              SizedBox(height: 12),
+              Text(
+                'No Friends Added Yet',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              SizedBox(height: 6),
+              Text(
+                'Add friends in the Friends tab to select them here.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (filteredFriends.isEmpty) {
+      return PlatformInsetContainer(
+        borderRadius: 18,
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: Text(
+            'No friends matching "$_searchQuery"',
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      key: const ValueKey('friends_selection_list'),
+      children: [
+        for (final friend in filteredFriends) ...[
+          () {
+            final origIdx = _effectiveFriends.indexOf(friend);
+            final isSelected = _selectedFriendIndices.contains(origIdx);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: FriendSelectionTile(
+                friend: friend,
+                isSelected: isSelected,
+                onToggle: () {
+                  setState(() {
+                    if (isSelected) {
+                      _selectedFriendIndices.remove(origIdx);
+                    } else {
+                      _selectedFriendIndices.add(origIdx);
+                    }
+                  });
+                },
+              ),
+            );
+          }(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildGroupsSelection() {
+    if (filteredGroups.isEmpty) {
+      return const PlatformInsetContainer(
+        borderRadius: 18,
+        width: double.infinity,
+        padding: EdgeInsets.all(24),
+        child: Center(
+          child: Text(
+            'No groups available.\nCreate a group in the Friends tab to split by group.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      key: const ValueKey('groups_selection_list'),
+      children: [
+        for (int i = 0; i < filteredGroups.length; i++) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: GroupSelectionTile(
+              group: filteredGroups[i],
+              isSelected: _selectedGroupIndex == i,
+              onToggle: () => _onGroupSelected(i),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

@@ -42,7 +42,8 @@ class SplitSummaryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = groupName.isNotEmpty ? groupName : 'Shared Expense';
     final totalExpense = ExpenseCalculator.calculateTotal(memberExpenses);
-    final sharePerPerson = ExpenseCalculator.calculateSharePerPerson(totalExpense, members.length);
+    final sharePerPerson =
+        ExpenseCalculator.calculateSharePerPerson(totalExpense, members.length);
     final settlements = ExpenseCalculator.calculateSettlements(
       members: members,
       paidAmounts: memberExpenses,
@@ -79,7 +80,9 @@ class SplitSummaryScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          physics: isIOS ? const BouncingScrollPhysics() : const ClampingScrollPhysics(),
+          physics: isIOS
+              ? const BouncingScrollPhysics()
+              : const ClampingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,14 +93,16 @@ class SplitSummaryScreen extends StatelessWidget {
                 elevation: 0,
                 color: AppColors.surface,
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                 child: Row(
                   children: [
                     Container(
                       width: 46,
                       height: 46,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(AppRadius.iconContainer),
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.iconContainer),
                         color: AppColors.surfaceSubtle,
                       ),
                       child: const Icon(
@@ -145,7 +150,8 @@ class SplitSummaryScreen extends StatelessWidget {
                 elevation: 0,
                 color: AppColors.surface,
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                 child: Row(
                   children: [
                     // Total Expense
@@ -301,7 +307,8 @@ class SplitSummaryScreen extends StatelessWidget {
                 PlatformCard(
                   borderRadius: AppRadius.card,
                   color: AppColors.successSoft,
-                  border: Border.all(color: AppColors.success.withOpacity(0.2), width: 1.0),
+                  border: Border.all(
+                      color: AppColors.success.withOpacity(0.2), width: 1.0),
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   child: Row(
@@ -410,7 +417,8 @@ class SplitSummaryScreen extends StatelessWidget {
 
                 // Build and persist Story adhering to standard Story JSON schema
                 final storyMembers = members.map((m) {
-                  final safeId = 'user_${m.name.toLowerCase().replaceAll(RegExp(r'\s+'), '_')}';
+                  final safeId =
+                      'user_${m.name.toLowerCase().replaceAll(RegExp(r'\s+'), '_')}';
                   return StoryMember(
                     userId: safeId,
                     name: m.name,
@@ -442,7 +450,8 @@ class SplitSummaryScreen extends StatelessWidget {
                         amount: paidAmount,
                         paidBy: memberIdByName[payerName] ?? 'user_$payerName',
                         splitType: 'equal',
-                        participants: storyMembers.map((m) => m.userId).toList(),
+                        participants:
+                            storyMembers.map((m) => m.userId).toList(),
                         shares: storyShares,
                         date: DateTime.now().toIso8601String(),
                       ),
@@ -458,7 +467,9 @@ class SplitSummaryScreen extends StatelessWidget {
                   coverEmoji: '🌴',
                   currency: 'INR',
                   status: 'active',
-                  createdBy: storyMembers.isNotEmpty ? storyMembers.first.userId : 'user_001',
+                  createdBy: storyMembers.isNotEmpty
+                      ? storyMembers.first.userId
+                      : 'user_001',
                   createdAt: DateTime.now().toIso8601String(),
                   members: storyMembers,
                   expenses: storyExpenses,
@@ -475,7 +486,8 @@ class SplitSummaryScreen extends StatelessWidget {
                     backgroundColor: AppColors.primary,
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.buttonSecondary),
+                      borderRadius:
+                          BorderRadius.circular(AppRadius.buttonSecondary),
                     ),
                   ),
                 );

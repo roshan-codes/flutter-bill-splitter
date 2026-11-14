@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
+import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'app/app.dart';
 
 export 'app/app.dart';
+export 'package:supabase_flutter/supabase_flutter.dart';
 export 'core/services/storage_service.dart';
+export 'core/services/supabase_service.dart';
 export 'shared/widgets/platform_adaptive.dart';
 export 'features/friends/domain/models/friend.dart';
 export 'features/friends/domain/models/group.dart';
@@ -39,6 +42,9 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
+
+  // Initialize Supabase backend
+  await SupabaseService.init();
 
   // Initialize offline storage and repositories
   await StorageService.instance.init();

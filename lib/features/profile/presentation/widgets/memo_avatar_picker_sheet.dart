@@ -57,7 +57,8 @@ class _MemoAvatarPickerSheetState extends State<MemoAvatarPickerSheet> {
       constraints: BoxConstraints(maxHeight: maxSheetHeight),
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
@@ -114,7 +115,8 @@ class _MemoAvatarPickerSheetState extends State<MemoAvatarPickerSheet> {
                     ],
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                    icon: const Icon(Icons.close_rounded,
+                        color: AppColors.textSecondary),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -145,10 +147,13 @@ class _MemoAvatarPickerSheetState extends State<MemoAvatarPickerSheet> {
                       duration: const Duration(milliseconds: 180),
                       curve: Curves.easeInOut,
                       decoration: BoxDecoration(
-                        color: isSelected ? AppColors.surfaceSubtle : AppColors.surface,
+                        color: isSelected
+                            ? AppColors.surfaceSubtle
+                            : AppColors.surface,
                         borderRadius: BorderRadius.circular(AppRadius.card - 4),
                         border: Border.all(
-                          color: isSelected ? AppColors.primary : AppColors.border,
+                          color:
+                              isSelected ? AppColors.primary : AppColors.border,
                           width: isSelected ? 2.5 : 1.0,
                         ),
                         boxShadow: isSelected

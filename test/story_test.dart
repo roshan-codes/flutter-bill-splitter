@@ -59,23 +59,27 @@ void main() {
 
       // Verify member_balances
       expect(story.memberBalances.length, equals(4));
-      final roshanBal = story.memberBalances.firstWhere((b) => b.userId == 'user_001');
+      final roshanBal =
+          story.memberBalances.firstWhere((b) => b.userId == 'user_001');
       expect(roshanBal.totalPaid, equals(10000.0));
       expect(roshanBal.totalShare, equals(5000.0));
       expect(roshanBal.netBalance, equals(5000.0));
       expect(roshanBal.status, equals('gets_back'));
 
-      final rahulBal = story.memberBalances.firstWhere((b) => b.userId == 'user_002');
+      final rahulBal =
+          story.memberBalances.firstWhere((b) => b.userId == 'user_002');
       expect(rahulBal.totalPaid, equals(2000.0));
       expect(rahulBal.totalShare, equals(5000.0));
       expect(rahulBal.netBalance, equals(-3000.0));
       expect(rahulBal.status, equals('owes'));
 
-      final amitBal = story.memberBalances.firstWhere((b) => b.userId == 'user_003');
+      final amitBal =
+          story.memberBalances.firstWhere((b) => b.userId == 'user_003');
       expect(amitBal.netBalance, equals(-2000.0));
       expect(amitBal.status, equals('owes'));
 
-      final sanketBal = story.memberBalances.firstWhere((b) => b.userId == 'user_004');
+      final sanketBal =
+          story.memberBalances.firstWhere((b) => b.userId == 'user_004');
       expect(sanketBal.netBalance, equals(0.0));
       expect(sanketBal.status, equals('settled'));
 
@@ -95,7 +99,8 @@ void main() {
       final serialized = story.toJson();
       expect(serialized['story_id'], equals(sampleJson['story_id']));
       expect(serialized['title'], equals(sampleJson['title']));
-      expect(serialized['summary']['total_expenses'], equals(sampleJson['summary']['total_expenses']));
+      expect(serialized['summary']['total_expenses'],
+          equals(sampleJson['summary']['total_expenses']));
       expect(serialized['expenses'].length, equals(5));
       expect(serialized['member_balances'].length, equals(4));
       expect(serialized['settlements'].length, equals(2));
@@ -110,8 +115,10 @@ void main() {
 
     test('Story.create auto-computes summary, balances, and settlements', () {
       final members = [
-        const StoryMember(userId: 'u1', name: 'Alice', joinedAt: '2026-11-12T00:00:00Z'),
-        const StoryMember(userId: 'u2', name: 'Bob', joinedAt: '2026-11-12T00:00:00Z'),
+        const StoryMember(
+            userId: 'u1', name: 'Alice', joinedAt: '2026-11-12T00:00:00Z'),
+        const StoryMember(
+            userId: 'u2', name: 'Bob', joinedAt: '2026-11-12T00:00:00Z'),
       ];
 
       final expenses = [
@@ -166,6 +173,9 @@ void main() {
     test('StoryRepository persists stories and handles settlements', () async {
       final repo = StoryRepository.instance;
       await repo.init();
+      if (repo.stories.isEmpty) {
+        await repo.addStory(Story.sampleGoaTrip());
+      }
 
       // Initialized with sample Goa Trip
       expect(repo.stories.length, equals(1));
@@ -175,7 +185,8 @@ void main() {
       await repo.settlePayment('story_001', 'set_001');
 
       final updatedStory = repo.getStoryById('story_001')!;
-      final s1 = updatedStory.settlements.firstWhere((s) => s.settlementId == 'set_001');
+      final s1 = updatedStory.settlements
+          .firstWhere((s) => s.settlementId == 'set_001');
       expect(s1.status, equals('completed'));
       expect(updatedStory.summary.totalSettled, equals(3000.0));
       expect(updatedStory.summary.pendingAmount, equals(2000.0));

@@ -59,7 +59,8 @@ class ExpenseCalculator {
     while (d < debtors.length && c < creditors.length) {
       final debtor = debtors[d];
       final creditor = creditors[c];
-      final settleAmount = debtor.amount < creditor.amount ? debtor.amount : creditor.amount;
+      final settleAmount =
+          debtor.amount < creditor.amount ? debtor.amount : creditor.amount;
 
       if (settleAmount > 0.01) {
         transactions.add(
@@ -81,4 +82,3 @@ class ExpenseCalculator {
     return transactions;
   }
 }
-

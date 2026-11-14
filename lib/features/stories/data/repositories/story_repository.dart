@@ -18,7 +18,6 @@ class StoryRepository extends ChangeNotifier {
   List<Story> get stories => List.unmodifiable(_stories);
 
   /// Initializes stories from offline persistent storage.
-  /// If no stories exist yet, seeds the initial "Goa Trip" story.
   Future<void> init() async {
     try {
       final jsonStrings = await _storageService.getStringList(_storageKey);
@@ -32,11 +31,6 @@ class StoryRepository extends ChangeNotifier {
             debugPrint('Error parsing stored story: $e');
           }
         }
-      } else {
-        // Seed default sample story provided in user requirements
-        _stories.clear();
-        _stories.add(Story.sampleGoaTrip());
-        await _persist();
       }
       notifyListeners();
     } catch (e) {

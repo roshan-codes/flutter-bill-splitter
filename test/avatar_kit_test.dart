@@ -13,7 +13,8 @@ void main() {
     await StorageService.instance.init();
   });
 
-  testWidgets('ProfileAvatar renders initial when avatarIndex is null', (tester) async {
+  testWidgets('ProfileAvatar renders initial when avatarIndex is null',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
@@ -31,7 +32,8 @@ void main() {
     expect(find.text('+91 9876543210'), findsOneWidget);
   });
 
-  testWidgets('ProfileAvatar renders AvatarWidget when avatarIndex is provided', (tester) async {
+  testWidgets('ProfileAvatar renders AvatarWidget when avatarIndex is provided',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
@@ -50,7 +52,8 @@ void main() {
     expect(find.text('+91 9876543210'), findsOneWidget);
   });
 
-  testWidgets('ProfileTab opens MemoAvatarPickerSheet and updates avatar', (tester) async {
+  testWidgets('ProfileTab opens MemoAvatarPickerSheet and updates avatar',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
@@ -87,7 +90,8 @@ void main() {
     expect(find.byType(AvatarWidget), findsOneWidget);
 
     // Verify persisted in StorageService
-    final savedIndex = await StorageService.instance.getInt('user_profile_avatar_index');
+    final savedIndex =
+        await StorageService.instance.getInt('user_profile_avatar_index');
     expect(savedIndex, equals(2));
   });
 }

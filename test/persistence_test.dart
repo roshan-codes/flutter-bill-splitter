@@ -7,6 +7,8 @@ import 'package:flutter_bill_splitter/features/expenses/domain/models/settlement
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/group.dart';
+import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
+import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
 
 void main() {
   group('Persistence & Serialization Tests', () {
@@ -16,7 +18,10 @@ void main() {
     });
 
     test('Friend serialization and deserialization preserves properties', () {
-      const friend = Friend(name: 'Vinit', phone: '+91 98765 11111', avatarUrl: 'https://example.com/a.png');
+      const friend = Friend(
+          name: 'Vinit',
+          phone: '+91 98765 11111',
+          avatarUrl: 'https://example.com/a.png');
       final json = friend.toJson();
       final restored = Friend.fromJson(json);
 
@@ -81,7 +86,8 @@ void main() {
       expect(restored.settlements.first.amount, 134.0);
     });
 
-    test('ActivityRepository persists data across simulated app restart', () async {
+    test('ActivityRepository persists data across simulated app restart',
+        () async {
       final repo1 = ActivityRepository(storageService: StorageService.instance);
       await repo1.init();
       expect(repo1.activities, isEmpty);
@@ -111,7 +117,9 @@ void main() {
       expect(repo2.activities.first.totalAmount, 2800.0);
     });
 
-    test('FriendsRepository persists friends and groups across simulated restart', () async {
+    test(
+        'FriendsRepository persists friends and groups across simulated restart',
+        () async {
       final repo1 = FriendsRepository(storageService: StorageService.instance);
       await repo1.init();
 
@@ -132,6 +140,24 @@ void main() {
       expect(repo2.groups.length, 1);
       expect(repo2.groups.first.name, 'Office Lunch');
     });
+
+    test('StoryRepository persists stories across simulated restart', () async {
+      final repo1 = StoryRepository(storageService: StorageService.instance);
+      await repo1.init();
+
+      final story = Story.sampleGoaTrip();
+      await repo1.addStory(story);
+      expect(repo1.stories.length, 1);
+
+      // Simulate App Restart
+      final repo2 = StoryRepository(storageService: StorageService.instance);
+      await repo2.init();
+
+      expect(repo2.stories.length, 1);
+      expect(repo2.stories.first.storyId, story.storyId);
+      expect(repo2.stories.first.title, story.title);
+      expect(repo2.stories.first.summary.totalExpenses,
+          story.summary.totalExpenses);
+    });
   });
 }
-

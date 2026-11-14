@@ -20,7 +20,9 @@ void main() {
       expect(repository.activities, isEmpty);
     });
 
-    test('recordActivity inserts new activity at the front and notifies listeners', () {
+    test(
+        'recordActivity inserts new activity at the front and notifies listeners',
+        () {
       int notifyCount = 0;
       repository.addListener(() {
         notifyCount++;
@@ -93,4 +95,3 @@ void main() {
     });
   });
 }
-

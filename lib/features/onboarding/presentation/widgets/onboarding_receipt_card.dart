@@ -73,7 +73,8 @@ class OnboardingReceiptCard extends StatelessWidget {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
                             color: AppColors.surfaceSubtle,
-                            border: Border.all(color: AppColors.border, width: 1.0),
+                            border:
+                                Border.all(color: AppColors.border, width: 1.0),
                           ),
                           child: Center(
                             child: Text(

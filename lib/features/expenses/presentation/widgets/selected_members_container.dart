@@ -52,7 +52,9 @@ class SelectedMembersContainer extends StatelessWidget {
         PlatformCard(
           borderRadius: AppRadius.card,
           elevation: 0,
-          color: selectedIndices.isEmpty ? AppColors.surfaceSubtle : AppColors.surface,
+          color: selectedIndices.isEmpty
+              ? AppColors.surfaceSubtle
+              : AppColors.surface,
           width: double.infinity,
           height: 110,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -96,17 +98,20 @@ class SelectedMembersContainer extends StatelessWidget {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(AppRadius.card),
                             color: AppColors.surfaceSubtle,
-                            border: Border.all(color: AppColors.border, width: 1.0),
+                            border:
+                                Border.all(color: AppColors.border, width: 1.0),
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(AppRadius.card),
-                            child: friend.avatarUrl != null && friend.avatarUrl!.isNotEmpty
+                            child: friend.avatarUrl != null &&
+                                    friend.avatarUrl!.isNotEmpty
                                 ? Image.network(
                                     friend.avatarUrl!,
                                     width: 72,
                                     height: 72,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => _buildFallback(initials),
+                                    errorBuilder: (_, __, ___) =>
+                                        _buildFallback(initials),
                                   )
                                 : _buildFallback(initials),
                           ),
@@ -123,7 +128,8 @@ class SelectedMembersContainer extends StatelessWidget {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: AppColors.surface,
-                                border: Border.all(color: AppColors.border, width: 1.0),
+                                border: Border.all(
+                                    color: AppColors.border, width: 1.0),
                               ),
                               child: const Icon(
                                 Icons.close_rounded,

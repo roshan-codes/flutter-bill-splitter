@@ -95,7 +95,9 @@ class SplitMemberCard extends StatelessWidget {
                       style: GoogleFonts.manrope(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: hasExpense ? AppColors.textPrimary : AppColors.textSecondary,
+                        color: hasExpense
+                            ? AppColors.textPrimary
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ],

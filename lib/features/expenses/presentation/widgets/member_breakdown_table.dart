@@ -205,14 +205,16 @@ class MemberBreakdownTable extends StatelessWidget {
                                   ? 'Owes ${_formatAmount(-net)}'
                                   : 'Settled',
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: isPositive
                                   ? AppColors.successSoft
                                   : isNegative
                                       ? AppColors.dangerSoft
                                       : AppColors.surfaceSubtle,
-                              borderRadius: BorderRadius.circular(AppRadius.pill),
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.pill),
                             ),
                             child: Text(
                               netFormatted,

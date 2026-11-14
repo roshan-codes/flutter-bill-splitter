@@ -130,7 +130,8 @@ class ActivityCard extends StatelessWidget {
             children: [
               PlatformInsetContainer(
                 borderRadius: AppRadius.pill,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
