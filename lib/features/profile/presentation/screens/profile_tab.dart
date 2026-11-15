@@ -417,7 +417,7 @@ class _ProfileTabState extends State<ProfileTab> {
           physics: isIOS
               ? const BouncingScrollPhysics()
               : const ClampingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 110),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 120),
           child: Column(
             children: [
               // Header: Profile title + Edit icon
