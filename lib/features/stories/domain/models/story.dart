@@ -261,6 +261,8 @@ class Story {
   final String coverEmoji;
   final String currency;
   final String status; // "active", "settled", "archived"
+  final String
+      splitMethod; // "equal", "exact", "percentage", "shares", "adjustment"
   final String createdBy;
   final String createdAt;
   final String? startDate;
@@ -278,6 +280,7 @@ class Story {
     this.coverEmoji = '🌴',
     this.currency = 'INR',
     this.status = 'active',
+    this.splitMethod = 'equal',
     required this.createdBy,
     required this.createdAt,
     this.startDate,
@@ -295,6 +298,18 @@ class Story {
     final rawBalances = json['member_balances'] as List<dynamic>? ?? [];
     final rawSettlements = json['settlements'] as List<dynamic>? ?? [];
 
+    final parsedMembers = deduplicateMembers(
+      rawMembers
+          .map((m) => StoryMember.fromJson(m as Map<String, dynamic>))
+          .toList(),
+      creatorId: json['created_by'] as String?,
+    );
+    final parsedBalances = deduplicateBalances(
+      rawBalances
+          .map((b) => StoryMemberBalance.fromJson(b as Map<String, dynamic>))
+          .toList(),
+    );
+
     return Story(
       storyId: json['story_id'] as String? ?? '',
       title: json['title'] as String? ?? '',
@@ -302,32 +317,212 @@ class Story {
       coverEmoji: json['cover_emoji'] as String? ?? '🌴',
       currency: json['currency'] as String? ?? 'INR',
       status: json['status'] as String? ?? 'active',
+      splitMethod: json['split_method'] as String? ?? 'equal',
       createdBy: json['created_by'] as String? ?? '',
       createdAt: json['created_at'] as String? ?? '',
       startDate: json['start_date'] as String?,
       endDate: json['end_date'] as String?,
-      members: rawMembers
-          .map((m) => StoryMember.fromJson(m as Map<String, dynamic>))
-          .toList(),
+      members: parsedMembers,
       summary: json['summary'] != null
           ? StorySummary.fromJson(json['summary'] as Map<String, dynamic>)
-          : const StorySummary(
+              .copyWith(memberCount: parsedMembers.length)
+          : StorySummary(
               totalExpenses: 0,
               totalSettled: 0,
               pendingAmount: 0,
-              memberCount: 0,
+              memberCount: parsedMembers.length,
               expenseCount: 0,
             ),
       expenses: rawExpenses
           .map((e) => StoryExpense.fromJson(e as Map<String, dynamic>))
           .toList(),
-      memberBalances: rawBalances
-          .map((b) => StoryMemberBalance.fromJson(b as Map<String, dynamic>))
-          .toList(),
+      memberBalances: parsedBalances,
       settlements: rawSettlements
           .map((s) => StorySettlement.fromJson(s as Map<String, dynamic>))
           .toList(),
     );
+  }
+
+  /// Deduplicates a list of story members ensuring no user ID or normalized name is duplicated in the same story.
+  static List<StoryMember> deduplicateMembers(
+    List<StoryMember> inputMembers, {
+    String? creatorId,
+  }) {
+    final List<StoryMember> result = [];
+    final Set<String> seenUserIds = {};
+    final Set<String> seenNames = {};
+
+    for (final member in inputMembers) {
+      final rawName = member.name.trim();
+      final cleanName = rawName.toLowerCase();
+      final userId = member.userId.trim();
+
+      if (cleanName.isEmpty && userId.isEmpty) continue;
+
+      // 1. Check if user is already present in result
+      final existingIndex = result.indexWhere((m) {
+        final exClean = m.name.toLowerCase().trim();
+        final exId = m.userId.trim();
+
+        // A. Match by real User ID (when not empty and not generic guest)
+        if (userId.isNotEmpty &&
+            exId.isNotEmpty &&
+            !userId.startsWith('user_guest') &&
+            userId == exId) {
+          return true;
+        }
+
+        // B. Match by normalized name
+        if (cleanName.isNotEmpty && exClean == cleanName) {
+          return true;
+        }
+
+        // C. Match 'You' to creator
+        if (cleanName == 'you' &&
+            (m.role == 'creator' ||
+                (creatorId != null && m.userId == creatorId))) {
+          return true;
+        }
+        if (exClean == 'you' &&
+            (member.role == 'creator' ||
+                (creatorId != null && member.userId == creatorId))) {
+          return true;
+        }
+
+        // D. Match first name and full name (e.g. "Roshan" and "Roshan Badwaik")
+        final exFirst = exClean.split(' ').first;
+        final curFirst = cleanName.split(' ').first;
+        if (exFirst == curFirst &&
+            exFirst.length > 2 &&
+            (exClean.length == exFirst.length ||
+                cleanName.length == curFirst.length)) {
+          return true;
+        }
+
+        // E. Match manual generated ID (e.g. user_roshan matches Roshan)
+        if (exId == 'user_${cleanName.replaceAll(' ', '_')}' ||
+            userId == 'user_${exClean.replaceAll(' ', '_')}') {
+          return true;
+        }
+
+        return false;
+      });
+
+      if (existingIndex != -1) {
+        final existing = result[existingIndex];
+        final betterName = (rawName.length > existing.name.length &&
+                cleanName != 'you')
+            ? rawName
+            : (existing.name.toLowerCase() == 'you' ? rawName : existing.name);
+        final betterAvatar = member.avatar ?? existing.avatar;
+        final betterRole = member.role == 'creator' || member.role == 'admin'
+            ? member.role
+            : existing.role;
+        final betterId = userId.isNotEmpty && !userId.startsWith('user_')
+            ? userId
+            : (existing.userId.isNotEmpty ? existing.userId : userId);
+
+        result[existingIndex] = StoryMember(
+          userId: betterId,
+          name: betterName,
+          avatar: betterAvatar,
+          role: betterRole,
+          joinedAt: existing.joinedAt.isNotEmpty
+              ? existing.joinedAt
+              : member.joinedAt,
+        );
+        if (betterId.isNotEmpty) seenUserIds.add(betterId);
+        if (betterName.isNotEmpty)
+          seenNames.add(betterName.toLowerCase().trim());
+        continue;
+      }
+
+      if (userId.isNotEmpty) seenUserIds.add(userId);
+      if (cleanName.isNotEmpty) seenNames.add(cleanName);
+      result.add(member);
+    }
+
+    return result;
+  }
+
+  /// Deduplicates member balances so each member has exactly one balance entry.
+  static List<StoryMemberBalance> deduplicateBalances(
+    List<StoryMemberBalance> inputBalances,
+  ) {
+    final List<StoryMemberBalance> result = [];
+
+    for (final b in inputBalances) {
+      final bName = b.name.trim();
+      final cleanName = bName.toLowerCase();
+      final userId = b.userId.trim();
+
+      if (cleanName.isEmpty && userId.isEmpty) continue;
+
+      final existingIndex = result.indexWhere((ex) {
+        final exClean = ex.name.toLowerCase().trim();
+        final exId = ex.userId.trim();
+
+        // 1. Same user ID
+        if (userId.isNotEmpty &&
+            exId.isNotEmpty &&
+            !userId.startsWith('user_guest') &&
+            userId == exId) {
+          return true;
+        }
+
+        // 2. Same normalized name
+        if (cleanName.isNotEmpty && exClean == cleanName) {
+          return true;
+        }
+
+        // 3. First name matches full name (e.g. "Roshan" and "Roshan Badwaik")
+        final exFirst = exClean.split(' ').first;
+        final curFirst = cleanName.split(' ').first;
+        if (exFirst == curFirst &&
+            exFirst.length > 2 &&
+            (exClean.length == exFirst.length ||
+                cleanName.length == curFirst.length)) {
+          return true;
+        }
+
+        // 4. Manual user ID match: e.g. user_roshan matches Roshan
+        if (exId == 'user_${cleanName.replaceAll(' ', '_')}' ||
+            userId == 'user_${exClean.replaceAll(' ', '_')}') {
+          return true;
+        }
+
+        return false;
+      });
+
+      if (existingIndex != -1) {
+        final existing = result[existingIndex];
+        final betterId = userId.isNotEmpty && !userId.startsWith('user_')
+            ? userId
+            : (existing.userId.isNotEmpty ? existing.userId : userId);
+        final betterName = (bName.length > existing.name.length &&
+                cleanName != 'you')
+            ? bName
+            : (existing.name.toLowerCase() == 'you' ? bName : existing.name);
+
+        final totalPaid = existing.totalPaid + b.totalPaid;
+        final totalShare = existing.totalShare + b.totalShare;
+        final netBalance = totalPaid - totalShare;
+
+        result[existingIndex] = StoryMemberBalance(
+          userId: betterId,
+          name: betterName,
+          totalPaid: totalPaid,
+          totalShare: totalShare,
+          netBalance: netBalance,
+          status: netBalance.abs() < 0.01
+              ? 'settled'
+              : (netBalance > 0 ? 'owed' : 'owe'),
+        );
+      } else {
+        result.add(b);
+      }
+    }
+    return result;
   }
 
   Map<String, dynamic> toJson() => {
@@ -337,6 +532,7 @@ class Story {
         'cover_emoji': coverEmoji,
         'currency': currency,
         'status': status,
+        'split_method': splitMethod,
         'created_by': createdBy,
         'created_at': createdAt,
         if (startDate != null) 'start_date': startDate,
@@ -358,6 +554,7 @@ class Story {
     String coverEmoji = '🌴',
     String currency = 'INR',
     String status = 'active',
+    String splitMethod = 'equal',
     required String createdBy,
     String? createdAt,
     String? startDate,
@@ -374,6 +571,7 @@ class Story {
       coverEmoji: coverEmoji,
       currency: currency,
       status: status,
+      splitMethod: splitMethod,
       createdBy: createdBy,
       createdAt: nowIso,
       startDate: startDate,
@@ -394,6 +592,7 @@ class Story {
       coverEmoji: coverEmoji,
       currency: currency,
       status: status,
+      splitMethod: splitMethod,
       createdBy: createdBy,
       createdAt: createdAt,
       startDate: startDate,
@@ -411,6 +610,7 @@ class Story {
     String? coverEmoji,
     String? currency,
     String? status,
+    String? splitMethod,
     String? createdBy,
     String? createdAt,
     String? startDate,
@@ -421,6 +621,14 @@ class Story {
     List<StoryMemberBalance>? memberBalances,
     List<StorySettlement>? settlements,
   }) {
+    final creator = createdBy ?? this.createdBy;
+    final resolvedMembers = members != null
+        ? deduplicateMembers(members, creatorId: creator)
+        : this.members;
+    final resolvedBalances = memberBalances != null
+        ? deduplicateBalances(memberBalances)
+        : this.memberBalances;
+
     return Story(
       storyId: storyId ?? this.storyId,
       title: title ?? this.title,
@@ -428,14 +636,18 @@ class Story {
       coverEmoji: coverEmoji ?? this.coverEmoji,
       currency: currency ?? this.currency,
       status: status ?? this.status,
-      createdBy: createdBy ?? this.createdBy,
+      splitMethod: splitMethod ?? this.splitMethod,
+      createdBy: creator,
       createdAt: createdAt ?? this.createdAt,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
-      members: members ?? this.members,
-      summary: summary ?? this.summary,
+      members: resolvedMembers,
+      summary: summary ??
+          (members != null
+              ? this.summary.copyWith(memberCount: resolvedMembers.length)
+              : this.summary),
       expenses: expenses ?? this.expenses,
-      memberBalances: memberBalances ?? this.memberBalances,
+      memberBalances: resolvedBalances,
       settlements: settlements ?? this.settlements,
     );
   }
@@ -452,6 +664,7 @@ class Story {
     required String createdAt,
     String? startDate,
     String? endDate,
+    String splitMethod = 'equal',
     required List<StoryMember> members,
     required List<StoryExpense> expenses,
     List<StorySettlement>? existingSettlements,
@@ -575,6 +788,7 @@ class Story {
       coverEmoji: coverEmoji,
       currency: currency,
       status: status,
+      splitMethod: splitMethod,
       createdBy: createdBy,
       createdAt: createdAt,
       startDate: startDate,

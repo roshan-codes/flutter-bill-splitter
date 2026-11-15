@@ -27,10 +27,22 @@ class Group {
 
   factory Group.fromJson(Map<String, dynamic> json) => Group(
         name: json['name'] as String? ?? '',
-        members: (json['members'] as List<dynamic>? ?? [])
+        members: deduplicateFriends((json['members'] as List<dynamic>? ?? [])
             .map((m) => Friend.fromJson(Map<String, dynamic>.from(m as Map)))
-            .toList(),
+            .toList()),
       );
+
+  static List<Friend> deduplicateFriends(List<Friend> list) {
+    final List<Friend> result = [];
+    final Set<String> seen = {};
+    for (final f in list) {
+      final key = f.name.toLowerCase().trim();
+      if (key.isNotEmpty && seen.add(key)) {
+        result.add(f);
+      }
+    }
+    return result;
+  }
 
   @override
   bool operator ==(Object other) =>

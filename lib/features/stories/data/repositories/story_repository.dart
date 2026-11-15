@@ -88,102 +88,185 @@ class StoryRepository extends ChangeNotifier {
     }
   }
 
+  static final Set<String> _joiningStoryIds = {};
+
   /// Adds the current authenticated user to an existing story via an invite link.
   Future<Story?> joinStoryWithCurrentUser(String storyId) async {
-    // 1. Fetch story by ID (either from local repository or Supabase)
-    var story = getStoryById(storyId);
-    if (story == null) {
-      story = await SupabaseService.fetchStoryById(storyId);
-      if (story != null) {
-        _stories.insert(0, story);
+    if (_joiningStoryIds.contains(storyId)) {
+      return getStoryById(storyId);
+    }
+    _joiningStoryIds.add(storyId);
+
+    try {
+      // 1. Fetch story by ID (prefer freshest remote copy from Supabase, fallback to local)
+      var story = await SupabaseService.fetchStoryById(storyId);
+      story ??= getStoryById(storyId);
+      if (story == null) return null;
+
+      final userId = SupabaseService.currentUser?.id ?? 'user_guest';
+      final userName = SupabaseService.userDisplayName ??
+          await StorageService.instance.getString('user_profile_name') ??
+          'Friend';
+      final userAvatar = SupabaseService.resolvedUserAvatar;
+
+      final cleanUser = userName.toLowerCase().trim();
+      final uFirst = cleanUser.split(' ').first;
+
+      // Check if user is already a member (or matches an existing manual member slot)
+      final existingIndex = story.members.indexWhere((m) {
+        final cleanM = m.name.toLowerCase().trim();
+        final mId = m.userId.trim();
+
+        // 1. Authenticated user ID matches
+        if (userId != 'user_guest' &&
+            userId.isNotEmpty &&
+            mId.isNotEmpty &&
+            mId == userId) {
+          return true;
+        }
+
+        // 2. Exact normalized name matches
+        if (cleanUser.isNotEmpty && cleanM == cleanUser) return true;
+
+        // 3. 'You' matches ONLY if current user is the story creator
+        if (cleanM == 'you' &&
+            (story!.createdBy == userId ||
+                story.createdBy == 'user_guest' ||
+                story.createdBy.isEmpty)) {
+          return true;
+        }
+
+        // 4. First name matches full name (e.g. "Roshan" and "Roshan Badwaik")
+        final mFirst = cleanM.split(' ').first;
+        if (mFirst == uFirst && mFirst.length > 2) return true;
+
+        // 5. Manual generated ID matches: user_roshan matches Roshan
+        if (mId == 'user_${cleanUser.replaceAll(' ', '_')}') return true;
+
+        return false;
+      });
+
+      if (existingIndex != -1) {
+        // User is already a member or has a pre-existing manual member slot.
+        // Claim and upgrade their existing slot with real authenticated userId and avatar.
+        final existing = story.members[existingIndex];
+        final updatedMember = StoryMember(
+          userId: (userId != 'user_guest' && userId.isNotEmpty)
+              ? userId
+              : (existing.userId.isNotEmpty ? existing.userId : userId),
+          name: (existing.name.toLowerCase().trim() == 'you' ||
+                  cleanUser.length > existing.name.length)
+              ? userName
+              : existing.name,
+          avatar: userAvatar ?? existing.avatar,
+          role: existing.role,
+          joinedAt: existing.joinedAt.isNotEmpty
+              ? existing.joinedAt
+              : DateTime.now().toIso8601String(),
+        );
+
+        final updatedMembers = List<StoryMember>.from(story.members);
+        updatedMembers[existingIndex] = updatedMember;
+
+        final updatedBalances = story.memberBalances.map((b) {
+          final bClean = b.name.toLowerCase().trim();
+          final exClean = existing.name.toLowerCase().trim();
+          if (b.userId == existing.userId ||
+              bClean == exClean ||
+              bClean == cleanUser ||
+              (b.userId.isNotEmpty && b.userId == userId)) {
+            return StoryMemberBalance(
+              userId: updatedMember.userId,
+              name: updatedMember.name,
+              totalPaid: b.totalPaid,
+              totalShare: b.totalShare,
+              netBalance: b.netBalance,
+              status: b.status,
+            );
+          }
+          return b;
+        }).toList();
+
+        final updatedStory = story.copyWith(
+          members: Story.deduplicateMembers(updatedMembers),
+          memberBalances: Story.deduplicateBalances(updatedBalances),
+        );
+
+        await updateStory(updatedStory);
+        await SupabaseService.saveStory(updatedStory);
+        return updatedStory;
       }
-    }
-    if (story == null) return null;
 
-    final userId = SupabaseService.currentUser?.id ?? 'user_guest';
-    final userName = SupabaseService.userDisplayName ??
-        await StorageService.instance.getString('user_profile_name') ??
-        'Friend';
-    final userAvatar = SupabaseService.resolvedUserAvatar;
-
-    // Check if user is already a member
-    final alreadyMember = story.members.any((m) =>
-        m.userId == userId ||
-        (m.userId.isNotEmpty && m.userId == userId) ||
-        m.name.toLowerCase().trim() == userName.toLowerCase().trim());
-
-    if (alreadyMember) {
-      await _persist();
-      notifyListeners();
-      return story;
-    }
-
-    // Add user as a member
-    final now = DateTime.now();
-    final newMember = StoryMember(
-      userId: userId,
-      name: userName,
-      avatar: userAvatar,
-      role: 'member',
-      joinedAt: now.toIso8601String(),
-    );
-
-    final updatedMembers = [...story.members, newMember];
-    final updatedBalances = [
-      ...story.memberBalances,
-      StoryMemberBalance(
+      // Truly new member joining
+      final now = DateTime.now();
+      final newMember = StoryMember(
         userId: userId,
         name: userName,
-        totalPaid: 0.0,
-        totalShare: 0.0,
-        netBalance: 0.0,
-        status: 'settled',
-      ),
-    ];
+        avatar: userAvatar,
+        role: 'member',
+        joinedAt: now.toIso8601String(),
+      );
 
-    final updatedSummary = StorySummary(
-      totalExpenses: story.summary.totalExpenses,
-      totalSettled: story.summary.totalSettled,
-      pendingAmount: story.summary.pendingAmount,
-      memberCount: updatedMembers.length,
-      expenseCount: story.summary.expenseCount,
-    );
+      final updatedMembers =
+          Story.deduplicateMembers([...story.members, newMember]);
+      final updatedBalances = Story.deduplicateBalances([
+        ...story.memberBalances,
+        StoryMemberBalance(
+          userId: userId,
+          name: userName,
+          totalPaid: 0.0,
+          totalShare: 0.0,
+          netBalance: 0.0,
+          status: 'settled',
+        ),
+      ]);
 
-    final updatedStory = Story(
-      storyId: story.storyId,
-      title: story.title,
-      description: story.description,
-      coverEmoji: story.coverEmoji,
-      currency: story.currency,
-      status: story.status,
-      createdBy: story.createdBy,
-      createdAt: story.createdAt,
-      startDate: story.startDate,
-      endDate: story.endDate,
-      members: updatedMembers,
-      expenses: story.expenses,
-      memberBalances: updatedBalances,
-      settlements: story.settlements,
-      summary: updatedSummary,
-    );
+      final updatedSummary = StorySummary(
+        totalExpenses: story.summary.totalExpenses,
+        totalSettled: story.summary.totalSettled,
+        pendingAmount: story.summary.pendingAmount,
+        memberCount: updatedMembers.length,
+        expenseCount: story.summary.expenseCount,
+      );
 
-    await updateStory(updatedStory);
-    await SupabaseService.saveStory(updatedStory);
+      final updatedStory = Story(
+        storyId: story.storyId,
+        title: story.title,
+        description: story.description,
+        coverEmoji: story.coverEmoji,
+        currency: story.currency,
+        status: story.status,
+        createdBy: story.createdBy,
+        createdAt: story.createdAt,
+        startDate: story.startDate,
+        endDate: story.endDate,
+        members: updatedMembers,
+        expenses: story.expenses,
+        memberBalances: updatedBalances,
+        settlements: story.settlements,
+        summary: updatedSummary,
+      );
 
-    // Also add other story members to Friends list
-    for (final m in updatedMembers) {
-      if (m.userId != userId &&
-          m.name.toLowerCase() != userName.toLowerCase()) {
-        final existing = FriendsRepository.instance.friends
-            .any((f) => f.name.toLowerCase() == m.name.toLowerCase());
-        if (!existing) {
-          FriendsRepository.instance
-              .addFriend(Friend(name: m.name, phone: ''));
+      await updateStory(updatedStory);
+      await SupabaseService.saveStory(updatedStory);
+
+      // Also add other story members to Friends list
+      for (final m in updatedMembers) {
+        if (m.userId != userId &&
+            m.name.toLowerCase() != userName.toLowerCase()) {
+          final existing = FriendsRepository.instance.friends
+              .any((f) => f.name.toLowerCase() == m.name.toLowerCase());
+          if (!existing) {
+            FriendsRepository.instance
+                .addFriend(Friend(name: m.name, phone: ''));
+          }
         }
       }
-    }
 
-    return updatedStory;
+      return updatedStory;
+    } finally {
+      _joiningStoryIds.remove(storyId);
+    }
   }
 
   /// Adds a new story and persists it.
@@ -198,9 +281,11 @@ class StoryRepository extends ChangeNotifier {
     final index = _stories.indexWhere((s) => s.storyId == updatedStory.storyId);
     if (index != -1) {
       _stories[index] = updatedStory;
-      notifyListeners();
-      await _persist();
+    } else {
+      _stories.insert(0, updatedStory);
     }
+    notifyListeners();
+    await _persist();
   }
 
   /// Adds an expense to an existing story, automatically recalculating summary, balances, and settlements.

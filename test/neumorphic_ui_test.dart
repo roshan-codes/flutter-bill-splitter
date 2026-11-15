@@ -561,15 +561,9 @@ void main() {
     testWidgets(
         'ActivityTab renders high-fidelity empty state and filter chips when no data is available',
         (tester) async {
-      bool createStoryTapped = false;
-
       await tester.pumpWidget(
-        MaterialApp(
-          home: ActivityTab(
-            onCreateStory: () {
-              createStoryTapped = true;
-            },
-          ),
+        const MaterialApp(
+          home: ActivityTab(),
         ),
       );
       await tester.pumpAndSettle();
@@ -590,12 +584,8 @@ void main() {
             'Your expenses, settlements and\nmember updates will appear here\nonce you create a story.'),
         findsOneWidget,
       );
-      expect(find.text('Create Story'), findsOneWidget);
-
-      // Tap Create Story
-      await tester.tap(find.text('Create Story'));
-      await tester.pumpAndSettle();
-      expect(createStoryTapped, isTrue);
+      // Verify Create Story button is removed from Activity tab
+      expect(find.text('Create Story'), findsNothing);
     });
   });
 }

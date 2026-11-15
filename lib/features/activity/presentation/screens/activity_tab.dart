@@ -1,14 +1,11 @@
-import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/animations/app_motion.dart';
-import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/activity_display_item.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_section_card.dart';
-import 'package:flutter_bill_splitter/features/stories/presentation/screens/create_story_screen.dart';
 import 'package:flutter_bill_splitter/shared/widgets/empty_state_illustration.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
@@ -103,20 +100,6 @@ class _ActivityTabState extends State<ActivityTab> {
     'Settlements',
     'Members',
   ];
-
-  void _navigateToCreateStory() {
-    if (widget.onCreateStory != null) {
-      widget.onCreateStory!();
-      return;
-    }
-    Navigator.of(context).push(
-      AppTransitions.sharedAxisRoute(
-        type: SharedAxisTransitionType.vertical,
-        duration: AppMotion.medium,
-        builder: (context) => const CreateStoryScreen(),
-      ),
-    );
-  }
 
   void _showFilterSheet(BuildContext context) {
     HapticFeedback.lightImpact();
@@ -450,14 +433,6 @@ class _ActivityTabState extends State<ActivityTab> {
             fontWeight: FontWeight.w400,
             color: AppColors.textSecondary,
             height: 1.45,
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // Black Pill Action Button: + Create Story
-        Center(
-          child: EmptyStateCreateStoryButton(
-            onPressed: _navigateToCreateStory,
           ),
         ),
       ],

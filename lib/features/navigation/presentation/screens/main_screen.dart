@@ -44,7 +44,11 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
+  bool _checkedInvite = false;
+
   Future<void> _checkPendingInvite() async {
+    if (_checkedInvite) return;
+    _checkedInvite = true;
     final storyId = widget.pendingInviteStoryId ??
         await InviteService.getPendingInvite() ??
         InviteService.getInviteStoryIdFromUri();

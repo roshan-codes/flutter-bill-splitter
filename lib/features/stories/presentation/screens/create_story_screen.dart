@@ -149,6 +149,29 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
     }
   }
 
+  bool _isMemberAlreadySelected(String name) {
+    final clean = name.trim().toLowerCase();
+    if (clean.isEmpty) return true;
+    if (clean == 'you' || clean == _creatorName.toLowerCase().trim()) {
+      return true;
+    }
+    return _selectedMembers.any((m) {
+      final cleanM = m.toLowerCase().trim();
+      if (cleanM == clean) return true;
+      if (cleanM == 'you' && clean == _creatorName.toLowerCase().trim()) {
+        return true;
+      }
+      final mFirst = cleanM.split(' ').first;
+      final cFirst = clean.split(' ').first;
+      if (mFirst == cFirst &&
+          mFirst.length > 2 &&
+          (cleanM.length == mFirst.length || clean.length == cFirst.length)) {
+        return true;
+      }
+      return false;
+    });
+  }
+
   void _openContactsPicker([BuildContext? modalContext]) {
     if (modalContext != null && Navigator.of(modalContext).canPop()) {
       Navigator.of(modalContext).pop();
@@ -160,7 +183,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         setState(() {
           for (final c in imported) {
             final name = c.name.trim();
-            if (name.isNotEmpty && !_selectedMembers.contains(name)) {
+            if (name.isNotEmpty && !_isMemberAlreadySelected(name)) {
               _selectedMembers.add(name);
             }
             if (!FriendsRepository.instance.friends
@@ -428,7 +451,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                           onSubmitted: (val) {
                             final name = val.trim();
                             if (name.isNotEmpty &&
-                                !_selectedMembers.contains(name)) {
+                                !_isMemberAlreadySelected(name)) {
                               setState(() {
                                 _selectedMembers.add(name);
                               });
@@ -459,7 +482,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                         onPressed: () {
                           final name = textController.text.trim();
                           if (name.isNotEmpty &&
-                              !_selectedMembers.contains(name)) {
+                              !_isMemberAlreadySelected(name)) {
                             setState(() {
                               _selectedMembers.add(name);
                             });
@@ -497,7 +520,8 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: friends.map((f) {
-                        final isSelected = _selectedMembers.contains(f.name);
+                        final isSelected = _selectedMembers.any(
+                            (m) => m.toLowerCase().trim() == f.name.toLowerCase().trim());
                         return FilterChip(
                           label: Text(f.name),
                           selected: isSelected,
@@ -512,15 +536,19 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                           ),
                           onSelected: (selected) {
                             if (!selected &&
-                                f.name.toLowerCase() ==
-                                    _creatorName.toLowerCase()) {
+                                f.name.toLowerCase().trim() ==
+                                    _creatorName.toLowerCase().trim()) {
                               return;
                             }
                             setState(() {
                               if (selected) {
-                                _selectedMembers.add(f.name);
+                                if (!_isMemberAlreadySelected(f.name)) {
+                                  _selectedMembers.add(f.name);
+                                }
                               } else {
-                                _selectedMembers.remove(f.name);
+                                _selectedMembers.removeWhere((m) =>
+                                    m.toLowerCase().trim() ==
+                                    f.name.toLowerCase().trim());
                               }
                             });
                             setModalState(() {});
@@ -554,13 +582,14 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         '${_endDate.year}-${_endDate.month.toString().padLeft(2, '0')}-${_endDate.day.toString().padLeft(2, '0')}';
 
     final currentUserId = SupabaseService.currentUser?.id ?? 'user_creator';
-    final currentUserName = _creatorName;
+    final currentUserName =
+        _creatorName.trim().isNotEmpty ? _creatorName.trim() : 'You';
 
     // Build member list: creator is guaranteed to be Member #1 with role 'creator'
-    final List<StoryMember> membersList = [];
+    final List<StoryMember> rawMembers = [];
 
     // 1. Add Creator (You)
-    membersList.add(
+    rawMembers.add(
       StoryMember(
         userId: currentUserId,
         name: currentUserName,
@@ -570,20 +599,39 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
       ),
     );
 
-    // 2. Add other selected members
-    for (final mName in _selectedMembers) {
-      if (mName.trim().toLowerCase() == currentUserName.trim().toLowerCase()) {
-        continue; // Already added as creator
-      }
-      membersList.add(
+    // 2. Add other selected members with strict deduplication
+    final cleanCreator = currentUserName.toLowerCase();
+    final Set<String> seenNames = {cleanCreator, 'you'};
+    final Set<String> seenUserIds = {currentUserId};
+
+    for (final rawName in _selectedMembers) {
+      final mName = rawName.trim();
+      final clean = mName.toLowerCase();
+      if (clean.isEmpty) continue;
+      if (seenNames.contains(clean)) continue;
+
+      final mFirst = clean.split(' ').first;
+      final cFirst = cleanCreator.split(' ').first;
+      if (mFirst == cFirst && mFirst.length > 2) continue;
+
+      final generatedId = 'user_${clean.replaceAll(' ', '_')}';
+      if (seenUserIds.contains(generatedId)) continue;
+
+      seenNames.add(clean);
+      seenUserIds.add(generatedId);
+
+      rawMembers.add(
         StoryMember(
-          userId: 'user_${mName.toLowerCase().replaceAll(' ', '_')}',
+          userId: generatedId,
           name: mName,
           role: 'member',
           joinedAt: now.toIso8601String(),
         ),
       );
     }
+
+    final membersList =
+        Story.deduplicateMembers(rawMembers, creatorId: currentUserId);
 
     final balances = membersList.map((m) {
       return StoryMemberBalance(

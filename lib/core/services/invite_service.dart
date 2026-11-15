@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
+import 'package:flutter_bill_splitter/core/services/url_strategy_helper.dart'
+    if (dart.library.html) 'package:flutter_bill_splitter/core/services/url_strategy_helper_web.dart';
 
 /// Centralized service for handling Story Invite Links and deep-linking.
 class InviteService {
   static const String _pendingInviteKey = 'pending_invite_story_id';
+  static final Set<String> _handledStoryIds = {};
 
   /// Extracts an invited story ID from the current browser URI or deep-link.
   static String? getInviteStoryIdFromUri() {
@@ -14,7 +17,10 @@ class InviteService {
       if (uri.queryParameters.containsKey('story_id')) {
         final id = uri.queryParameters['story_id'];
         if (id != null && id.trim().isNotEmpty) {
-          return id.trim();
+          final trimmed = id.trim();
+          if (!_handledStoryIds.contains(trimmed)) {
+            return trimmed;
+          }
         }
       }
 
@@ -28,7 +34,10 @@ class InviteService {
           if (params.containsKey('story_id')) {
             final id = params['story_id'];
             if (id != null && id.trim().isNotEmpty) {
-              return id.trim();
+              final trimmed = id.trim();
+              if (!_handledStoryIds.contains(trimmed)) {
+                return trimmed;
+              }
             }
           }
         }
@@ -46,12 +55,21 @@ class InviteService {
 
   /// Retrieves any stored pending story invite ID.
   static Future<String?> getPendingInvite() async {
-    return await StorageService.instance.getString(_pendingInviteKey);
+    final stored = await StorageService.instance.getString(_pendingInviteKey);
+    if (stored != null && _handledStoryIds.contains(stored)) {
+      await StorageService.instance.remove(_pendingInviteKey);
+      return null;
+    }
+    return stored;
   }
 
-  /// Clears any pending invite ID after joining.
-  static Future<void> clearPendingInvite() async {
+  /// Clears any pending invite ID after joining or declining.
+  static Future<void> clearPendingInvite([String? storyId]) async {
+    if (storyId != null && storyId.isNotEmpty) {
+      _handledStoryIds.add(storyId);
+    }
     await StorageService.instance.remove(_pendingInviteKey);
+    clearWebUrlQuery();
   }
 
   /// Builds a shareable invite link for a given story ID.

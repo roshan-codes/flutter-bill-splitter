@@ -292,38 +292,32 @@ class _HomeTabState extends State<HomeTab> {
             ],
           ),
           const SizedBox(height: 12),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: stories.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 14),
-            itemBuilder: (context, index) {
-              final story = stories[index];
-              return AppTransitions.openContainer(
-                context: context,
-                borderRadius: BorderRadius.circular(24),
-                openColor:
-                    isIOS ? AppColors.iosBackground : AppColors.background,
-                duration: AppMotion.medium,
-                closedBuilder: (context, openContainer) {
-                  return ActiveStoryCard(
-                    story: story,
-                    onTap: openContainer,
-                  );
-                },
-                openBuilder: (context, closeContainer) {
-                  return SplitDetailScreen(
-                    groupName: story.title,
-                    members: story.members
-                        .map((m) => Friend(name: m.name, phone: ''))
-                        .toList(),
-                    story: story,
-                  );
-                },
-              );
-            },
-          ),
-          const SizedBox(height: 24),
+          for (int index = 0; index < stories.length; index++) ...[
+            AppTransitions.openContainer(
+              context: context,
+              borderRadius: BorderRadius.circular(24),
+              openColor:
+                  isIOS ? AppColors.iosBackground : AppColors.background,
+              duration: AppMotion.medium,
+              closedBuilder: (context, openContainer) {
+                return ActiveStoryCard(
+                  story: stories[index],
+                  onTap: openContainer,
+                );
+              },
+              openBuilder: (context, closeContainer) {
+                return SplitDetailScreen(
+                  groupName: stories[index].title,
+                  members: stories[index]
+                      .members
+                      .map((m) => Friend(name: m.name, phone: ''))
+                      .toList(),
+                  story: stories[index],
+                );
+              },
+            ),
+            if (index < stories.length - 1) const SizedBox(height: 14),
+          ],
         ],
 
         // Recent Expenses Card
