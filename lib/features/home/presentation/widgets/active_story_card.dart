@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/utils/currency_formatter.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
 import 'package:flutter_bill_splitter/shared/widgets/app_avatar.dart';
 
@@ -21,20 +22,7 @@ class ActiveStoryCard extends StatelessWidget {
     required this.onTap,
   });
 
-  String _formatAmount(num value) {
-    final integerPart = value.toInt();
-    final str = integerPart.abs().toString();
-    if (str.length <= 3) {
-      return (value < 0 ? '-' : '') + str;
-    }
-    final lastThree = str.substring(str.length - 3);
-    final otherDigits = str.substring(0, str.length - 3);
-    final formattedOther = otherDigits.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d\d)+$)'),
-      (m) => '${m[1]},',
-    );
-    return '${value < 0 ? '-' : ''}$formattedOther,$lastThree';
-  }
+  String _formatAmount(num value) => CurrencyFormatter.format(value);
 
   String _formatDateSubtitle() {
     final sDate = story.startDate;

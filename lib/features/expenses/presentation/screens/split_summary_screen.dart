@@ -5,6 +5,7 @@ import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
+import 'package:flutter_bill_splitter/core/utils/currency_formatter.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/expenses/domain/models/settlement_transaction.dart';
@@ -34,16 +35,7 @@ class SplitSummaryScreen extends StatelessWidget {
     required this.memberExpenses,
   });
 
-  String _formatAmount(double amount) {
-    if (amount.truncateToDouble() == amount) {
-      final parts = amount.toInt().toString().replaceAllMapped(
-            RegExp(r'(\d+?)(?=(\d{3})+(?!\d))'),
-            (Match m) => '${m[1]},',
-          );
-      return parts;
-    }
-    return amount.toStringAsFixed(0);
-  }
+  String _formatAmount(double amount) => CurrencyFormatter.format(amount);
 
   @override
   Widget build(BuildContext context) {
@@ -749,16 +741,11 @@ class SplitSummaryScreen extends StatelessWidget {
     final paid = memberExpenses[member.name] ?? 0.0;
     final net = paid - sharePerPerson;
     final currentUserName = SupabaseService.userDisplayName ??
-        StorageService.instance.getStringSync('user_profile_name') ??
-        'Roshan';
+        StorageService.instance.getStringSync('user_profile_name');
     final cleanM = member.name.toLowerCase().trim();
-    final cleanUser = currentUserName.toLowerCase().trim();
-    final isCurrentUser = cleanM == cleanUser ||
-        (cleanUser.isNotEmpty &&
-            (cleanM.contains(cleanUser) || cleanUser.contains(cleanM))) ||
-        cleanM == 'roshan' ||
-        cleanM == 'roshan badwaik' ||
-        cleanM == 'you';
+    final cleanUser = currentUserName?.toLowerCase().trim() ?? '';
+    final isCurrentUser = cleanM == 'you' ||
+        (cleanUser.isNotEmpty && cleanM == cleanUser);
     final displayName = isCurrentUser ? '${member.name} (You)' : member.name;
 
     // Status pill

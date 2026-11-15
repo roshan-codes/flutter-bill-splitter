@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
-/// Centralized typography styles following design.md Section 3 (Manrope typeface).
+/// Centralized typography styles following TTMM visual design system (Manrope typeface).
 class AppTextStyles {
   AppTextStyles._();
 
@@ -75,6 +75,35 @@ class AppTextStyles {
 
   /// Field label: 14 px, SemiBold (600)
   static TextStyle get fieldLabel => GoogleFonts.manrope(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+      );
+
+  /// Button text: 15 px, Bold (700)
+  static TextStyle get button => GoogleFonts.manrope(
+        fontSize: 15,
+        fontWeight: FontWeight.w700,
+        color: Colors.white,
+      );
+
+  /// Currency large: 32 px, ExtraBold (800)
+  static TextStyle get currencyLarge => GoogleFonts.manrope(
+        fontSize: 32,
+        fontWeight: FontWeight.w800,
+        color: AppColors.textPrimary,
+        letterSpacing: -0.5,
+      );
+
+  /// Currency medium: 20 px, Bold (700)
+  static TextStyle get currencyMedium => GoogleFonts.manrope(
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimary,
+      );
+
+  /// Currency small: 14 px, SemiBold (600)
+  static TextStyle get currencySmall => GoogleFonts.manrope(
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,

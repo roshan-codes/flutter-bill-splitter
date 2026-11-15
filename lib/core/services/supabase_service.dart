@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_bill_splitter/core/config/app_config.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
@@ -9,16 +10,9 @@ import 'package:flutter_bill_splitter/features/activity/domain/models/split_acti
 /// Centralized Supabase backend service for TTMM.
 /// Handles Authentication, Database sync, and Cloud Storage for stories, expenses, and files.
 class SupabaseService {
-  static const String supabaseUrl = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: 'https://hqfdwqrhtertpvlmwvsk.supabase.co',
-  );
-  static const String supabasePublishableKey = String.fromEnvironment(
-    'SUPABASE_ANON_KEY',
-    defaultValue: 'sb_publishable_E55yVbk-WsMaVFFi6BP50g_VCIXQOez',
-  );
-
-  static const String storageBucket = 'app_data';
+  static const String supabaseUrl = AppConfig.supabaseUrl;
+  static const String supabasePublishableKey = AppConfig.supabasePublishableKey;
+  static const String storageBucket = AppConfig.storageBucket;
 
   static bool _initialized = false;
   static bool get isInitialized => _initialized;
@@ -361,16 +355,20 @@ class SupabaseService {
 
     // 1. Save to Supabase Database Table ('stories')
     try {
-      final userId = currentUser?.id ?? 'anonymous';
+      final effectiveUserId = (story.createdBy.isNotEmpty &&
+              story.createdBy != 'user_guest' &&
+              story.createdBy != 'anonymous')
+          ? story.createdBy
+          : (currentUser?.id ?? 'anonymous');
       await cli.from('stories').upsert({
         'story_id': story.storyId,
-        'user_id': userId,
+        'user_id': effectiveUserId,
         'title': story.title,
         'description': story.description,
         'cover_emoji': story.coverEmoji,
         'currency': story.currency,
         'status': story.status,
-        'created_by': story.createdBy,
+        'created_by': effectiveUserId,
         'created_at': story.createdAt,
         'data': story.toJson(),
       });
@@ -470,20 +468,40 @@ class SupabaseService {
     // 1. Try querying Database table
     try {
       final userId = currentUser?.id;
-      var query = cli.from('stories').select();
-      if (userId != null) {
-        query = query.or('user_id.eq.$userId,created_by.eq.$userId');
-      }
-      final response = await query.order('created_at', ascending: false);
+      final currentUserName = userDisplayName ??
+          StorageService.instance.getStringSync('user_profile_name') ??
+          '';
+      final cleanUser = currentUserName.toLowerCase().trim();
+
+      final response = await cli
+          .from('stories')
+          .select()
+          .order('created_at', ascending: false);
 
       final List<Story> results = [];
       for (final item in response as List) {
         if (item is Map<String, dynamic> && item['data'] != null) {
           final data = item['data'];
+          Story? parsed;
           if (data is Map<String, dynamic>) {
-            results.add(Story.fromJson(data));
+            parsed = Story.fromJson(data);
           } else if (data is String) {
-            results.add(Story.fromJson(jsonDecode(data)));
+            parsed = Story.fromJson(jsonDecode(data));
+          }
+          if (parsed != null) {
+            if (userId == null && cleanUser.isEmpty) {
+              results.add(parsed);
+            } else {
+              final isCreator = (userId != null &&
+                  (parsed.createdBy == userId || item['user_id'] == userId));
+              final isMember = parsed.members.any((m) =>
+                  (userId != null && m.userId == userId) ||
+                  (cleanUser.isNotEmpty &&
+                      m.name.toLowerCase().trim() == cleanUser));
+              if (isCreator || isMember) {
+                results.add(parsed);
+              }
+            }
           }
         }
       }

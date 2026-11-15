@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
+import 'package:flutter_bill_splitter/core/utils/currency_formatter.dart';
 import 'package:flutter_bill_splitter/features/home/domain/models/recent_expense.dart';
 
 /// Single item row displaying a recent expense.
@@ -16,16 +17,8 @@ class RecentExpenseItem extends StatelessWidget {
     this.onTap,
   });
 
-  String _formatAmount(double amount) {
-    if (amount.truncateToDouble() == amount) {
-      final parts = amount.toInt().toString().replaceAllMapped(
-            RegExp(r'(\d+?)(?=(\d{3})+(?!\d))'),
-            (Match m) => '${m[1]},',
-          );
-      return '₹$parts';
-    }
-    return '₹${amount.toStringAsFixed(2)}';
-  }
+  String _formatAmount(double amount) =>
+      CurrencyFormatter.format(amount, includeSymbol: true);
 
   @override
   Widget build(BuildContext context) {

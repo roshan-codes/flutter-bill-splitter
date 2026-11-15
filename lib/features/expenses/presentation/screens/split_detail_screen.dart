@@ -3,14 +3,19 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_bill_splitter/core/animations/app_motion.dart';
 import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
-import 'package:flutter_bill_splitter/core/services/invite_service.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
+import 'package:flutter_bill_splitter/core/utils/currency_formatter.dart';
+import 'package:flutter_bill_splitter/core/utils/date_formatter.dart';
+import 'package:flutter_bill_splitter/core/constants/expense_categories.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
+import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/edit_story_bottom_sheet.dart';
+import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/share_story_invite_sheet.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_summary_screen.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
@@ -49,12 +54,108 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
   final Map<String, double> _memberPercentages = {};
   final Map<String, double> _memberExactShares = {};
   final Map<String, double> _memberSharesRatio = {};
+  RealtimeChannel? _realtimeChannel;
 
   @override
   void initState() {
     super.initState();
     _memberExpenses = {};
     _initStoryData();
+    StoryRepository.instance.addListener(_onRepositoryChanged);
+    _initRealtimeSubscription();
+    _fetchLatestStoryFromCloud();
+  }
+
+  @override
+  void dispose() {
+    StoryRepository.instance.removeListener(_onRepositoryChanged);
+    _disposeRealtimeSubscription();
+    super.dispose();
+  }
+
+  void _onRepositoryChanged() {
+    final updated = StoryRepository.instance.getStoryById(_story.storyId);
+    if (updated != null && mounted) {
+      if (updated.expenses.length != _story.expenses.length ||
+          updated.members.length != _story.members.length ||
+          updated.summary.totalExpenses != _story.summary.totalExpenses) {
+        setState(() {
+          _story = updated;
+          _splitMethod = updated.splitMethod;
+          _memberExpenses.clear();
+          for (final exp in _story.expenses) {
+            final payerMember = _story.members.firstWhere(
+              (m) =>
+                  m.userId == exp.paidBy ||
+                  m.name.toLowerCase() == exp.paidBy.toLowerCase(),
+              orElse: () => StoryMember(
+                  userId: exp.paidBy, name: exp.paidBy, joinedAt: ''),
+            );
+            _memberExpenses[payerMember.name] =
+                (_memberExpenses[payerMember.name] ?? 0.0) + exp.amount;
+          }
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchLatestStoryFromCloud() async {
+    try {
+      final fresh =
+          await StoryRepository.instance.refreshStory(_story.storyId);
+      if (fresh != null && mounted) {
+        setState(() {
+          _story = fresh;
+          _splitMethod = fresh.splitMethod;
+          _memberExpenses.clear();
+          for (final exp in _story.expenses) {
+            final payerMember = _story.members.firstWhere(
+              (m) =>
+                  m.userId == exp.paidBy ||
+                  m.name.toLowerCase() == exp.paidBy.toLowerCase(),
+              orElse: () => StoryMember(
+                  userId: exp.paidBy, name: exp.paidBy, joinedAt: ''),
+            );
+            _memberExpenses[payerMember.name] =
+                (_memberExpenses[payerMember.name] ?? 0.0) + exp.amount;
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching latest story from cloud: $e');
+    }
+  }
+
+  void _initRealtimeSubscription() {
+    try {
+      final client = SupabaseService.client;
+      if (client == null) return;
+      _realtimeChannel = client.channel('story_${_story.storyId}')
+        ..onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'stories',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'story_id',
+            value: _story.storyId,
+          ),
+          callback: (payload) {
+            _fetchLatestStoryFromCloud();
+          },
+        ).subscribe();
+    } catch (e) {
+      debugPrint('Supabase realtime channel note: $e');
+    }
+  }
+
+  void _disposeRealtimeSubscription() {
+    try {
+      if (_realtimeChannel != null) {
+        SupabaseService.client?.removeChannel(_realtimeChannel!);
+        _realtimeChannel = null;
+      }
+    } catch (_) {}
   }
 
   void _initStoryData() {
@@ -151,67 +252,10 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     _splitMethod = _story.splitMethod;
   }
 
-  String _formatAmount(num value) {
-    final integerPart = value.toInt();
-    final str = integerPart.abs().toString();
-    if (str.length <= 3) {
-      return (value < 0 ? '-' : '') + str;
-    }
-    // Indian number format: last 3 digits, then pairs of 2
-    final lastThree = str.substring(str.length - 3);
-    final otherDigits = str.substring(0, str.length - 3);
-    final formattedOther = otherDigits.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d\d)+$)'),
-      (m) => '${m[1]},',
-    );
-    return '${value < 0 ? '-' : ''}$formattedOther,$lastThree';
-  }
+  String _formatAmount(num value) => CurrencyFormatter.format(value);
 
-  String _getDateSubtitle(int memberCount) {
-    final memberSuffix = memberCount == 1 ? '1 member' : '$memberCount members';
-    if (_story.startDate == '2026-11-15' && _story.endDate == '2026-11-18') {
-      return '$memberSuffix · Nov 15 – 18';
-    }
-    if (_story.startDate == '2026-11-12' && _story.endDate == '2026-11-16') {
-      return '$memberSuffix · Nov 12 – 16';
-    }
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    try {
-      final sDate = _story.startDate;
-      if (sDate != null && sDate.isNotEmpty) {
-        final start = DateTime.tryParse(sDate);
-        if (start != null) {
-          final monthName = months[start.month - 1];
-          final eDate = _story.endDate;
-          if (eDate != null && eDate.isNotEmpty && eDate != sDate) {
-            final end = DateTime.tryParse(eDate);
-            if (end != null) {
-              if (start.month == end.month) {
-                return '$memberSuffix · $monthName ${start.day} – ${end.day}';
-              }
-              final endMonth = months[end.month - 1];
-              return '$memberSuffix · $monthName ${start.day} – $endMonth ${end.day}';
-            }
-          }
-          return '$memberSuffix · $monthName ${start.day}';
-        }
-      }
-    } catch (_) {}
-    return memberSuffix;
-  }
+  String _getDateSubtitle(int memberCount) =>
+      DateFormatter.formatStoryDateSubtitle(memberCount, _story.startDate, _story.endDate);
 
   void _recalculateBalances() {
     final total = _story.expenses.fold<double>(0.0, (sum, e) => sum + e.amount);
@@ -257,9 +301,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
         memberBalances: updatedBalances,
       );
     });
-    if (StoryRepository.instance.getStoryById(_story.storyId) != null) {
-      StoryRepository.instance.updateStory(_story);
-    }
+    StoryRepository.instance.updateStory(_story);
+    SupabaseService.saveStory(_story);
   }
 
   void _showAddExpenseDialog(Friend friend) {
@@ -780,20 +823,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     Navigator.of(context).pop();
   }
 
-  IconData _getCategoryIcon(String category) {
-    switch (category.toLowerCase()) {
-      case 'accommodation':
-        return Icons.hotel_outlined;
-      case 'food':
-        return Icons.restaurant_outlined;
-      case 'transport':
-        return Icons.local_gas_station_outlined;
-      case 'activities':
-        return Icons.waves_rounded;
-      default:
-        return Icons.receipt_long_outlined;
-    }
-  }
+  IconData _getCategoryIcon(String category) =>
+      ExpenseCategories.getCategoryIcon(category);
 
   String _formatExpenseDate(String dateStr) {
     try {
@@ -1332,11 +1363,15 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     final isSampleGoaTrip =
         _story.title.toLowerCase().contains('goa') || widget.members.isEmpty;
 
-    return SingleChildScrollView(
-      key: const ValueKey('overview_tab'),
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-      child: Column(
+    return RefreshIndicator(
+      onRefresh: _fetchLatestStoryFromCloud,
+      color: AppColors.primary,
+      child: SingleChildScrollView(
+        key: const ValueKey('overview_tab'),
+        physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics()),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 1. Clean White Hero Summary Card (Total expenses & Per person)
@@ -1515,17 +1550,18 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
           _buildRecentExpenseCard(),
         ],
       ),
+    ),
     );
   }
 
   Widget _buildNetBalanceBanner(double totalExpenses, double perPersonAmount) {
-    final roshanBalance = _story.memberBalances.firstWhere(
-      (b) => b.name.toLowerCase().contains('roshan'),
+    final myBalance = _story.memberBalances.firstWhere(
+      (b) => _isCurrentUser(b.name, b.userId),
       orElse: () => _story.memberBalances.isNotEmpty
-          ? _story.memberBalances.last
+          ? _story.memberBalances.first
           : const StoryMemberBalance(
-              userId: 'user_roshan',
-              name: 'Roshan',
+              userId: '',
+              name: 'You',
               totalPaid: 0,
               totalShare: 0,
               netBalance: 0,
@@ -1533,11 +1569,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
             ),
     );
 
-    final isDelhi = _story.title.toLowerCase().contains('delhi');
-    final getsBack = isDelhi || roshanBalance.netBalance >= 0;
-    final displayAmount = isDelhi
-        ? '₹3,500'
-        : '₹${_formatAmount(roshanBalance.netBalance.abs())}';
+    final getsBack = myBalance.netBalance >= 0;
+    final displayAmount = '₹${_formatAmount(myBalance.netBalance.abs())}';
 
     final bgColor =
         getsBack ? const Color(0xFFEAF8ED) : const Color(0xFFFDE8E8);
@@ -1611,21 +1644,30 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
   }
 
   bool _isCurrentUser(String name, [String? userId]) {
-    final currentName = SupabaseService.userDisplayName ??
-        StorageService.instance.getStringSync('user_profile_name') ??
-        'Roshan';
     final currentId = SupabaseService.currentUser?.id;
-    if (userId != null && currentId != null && userId == currentId) {
+    if (userId != null &&
+        userId.isNotEmpty &&
+        currentId != null &&
+        currentId.isNotEmpty &&
+        userId == currentId) {
       return true;
     }
+
     final clean = name.toLowerCase().trim();
-    final myClean = currentName.toLowerCase().trim();
-    return clean == myClean ||
-        clean.contains(myClean) ||
-        myClean.contains(clean) ||
-        clean == 'roshan' ||
-        clean == 'roshan badwaik' ||
-        clean == 'you';
+    if (clean == 'you') return true;
+
+    final currentName = SupabaseService.userDisplayName ??
+        StorageService.instance.getStringSync('user_profile_name');
+    if (currentName != null && currentName.trim().isNotEmpty) {
+      final myClean = currentName.toLowerCase().trim();
+      if (clean == myClean) return true;
+      if (userId != null &&
+          userId.isNotEmpty &&
+          userId == 'user_${myClean.replaceAll(' ', '_')}') {
+        return true;
+      }
+    }
+    return false;
   }
 
   Widget _buildGroupSummaryMemberRow(
@@ -1906,11 +1948,15 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
 
   // TAB 1: EXPENSES (Matching Screen 3)
   Widget _buildExpensesTab(double totalExpenses) {
-    return SingleChildScrollView(
-      key: const ValueKey('expenses_tab'),
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 90),
-      child: Column(
+    return RefreshIndicator(
+      onRefresh: _fetchLatestStoryFromCloud,
+      color: AppColors.primary,
+      child: SingleChildScrollView(
+        key: const ValueKey('expenses_tab'),
+        physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics()),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 90),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Sub-header: "₹10,500 total · 3 expenses"
@@ -2069,16 +2115,21 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
             ),
         ],
       ),
+    ),
     );
   }
 
   // TAB 2: MEMBERS (Matching Screen 4)
   Widget _buildMembersTab(double totalExpenses, double perPersonAmount) {
-    return SingleChildScrollView(
-      key: const ValueKey('members_tab'),
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 36),
-      child: Column(
+    return RefreshIndicator(
+      onRefresh: _fetchLatestStoryFromCloud,
+      color: AppColors.primary,
+      child: SingleChildScrollView(
+        key: const ValueKey('members_tab'),
+        physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics()),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 36),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header: Members (3) on left, + Add on right
@@ -2188,6 +2239,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -2517,143 +2569,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
   }
 
   void _showShareInviteSheet(BuildContext context) {
-    HapticFeedback.lightImpact();
-    final inviteUrl = InviteService.buildInviteUrl(_story.storyId);
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE5E7EB),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEEEDFA),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.group_add_rounded,
-                          color: Color(0xFF5B4DFF), size: 24),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Invite to ${_story.title}',
-                          style: GoogleFonts.manrope(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Friends join after Google sign-in',
-                          style: GoogleFonts.manrope(
-                            fontSize: 12.5,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF9FAFB),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.link_rounded,
-                        size: 20, color: Color(0xFF6B7280)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        inviteUrl,
-                        style: GoogleFonts.manrope(
-                          fontSize: 13,
-                          color: const Color(0xFF374151),
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF111111),
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(70, 36),
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: inviteUrl));
-                        Navigator.of(ctx).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Invite link copied to clipboard! Share it with friends.',
-                              style:
-                                  GoogleFonts.manrope(fontWeight: FontWeight.w600),
-                            ),
-                            backgroundColor: const Color(0xFF111111),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      },
-                      child: const Text('Copy'),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'When your friend clicks this link and signs in with Google, they will automatically be added to this story.',
-                style: GoogleFonts.manrope(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    ShareStoryInviteSheet.show(context, _story);
   }
 
   String _getSplitMethodDisplayName() {
@@ -2705,346 +2621,10 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
   }
 
   void _showEditStorySheet(BuildContext context) {
-    HapticFeedback.lightImpact();
-    final titleController = TextEditingController(text: _story.title);
-    final descController = TextEditingController(text: _story.description);
-    String selectedEmoji =
-        _story.coverEmoji.isNotEmpty ? _story.coverEmoji : '🌴';
-    DateTime? startDate = _story.startDate != null
-        ? DateTime.tryParse(_story.startDate!)
-        : null;
-    DateTime? endDate = _story.endDate != null
-        ? DateTime.tryParse(_story.endDate!)
-        : null;
-
-    final popularEmojis = [
-      '🌴',
-      '🏖️',
-      '✈️',
-      '🍕',
-      '🏔️',
-      '🚗',
-      '🎉',
-      '☕',
-      '🍔',
-      '🍿',
-      '🏨',
-      '🧾',
-      '🛍️',
-      '⛺',
-      '🚂',
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetCtx) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            final bottomPadding = MediaQuery.of(sheetCtx).viewInsets.bottom;
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 12,
-                bottom: bottomPadding + 20,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 36,
-                        height: 4,
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE5E7EB),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Edit Story',
-                          style: GoogleFonts.manrope(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded,
-                              size: 20, color: AppColors.textSecondary),
-                          onPressed: () => Navigator.of(sheetCtx).pop(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Cover emoji selector
-                    Text(
-                      'Cover Icon',
-                      style: GoogleFonts.manrope(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 48,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: popularEmojis.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
-                        itemBuilder: (context, index) {
-                          final emoji = popularEmojis[index];
-                          final isSelected = emoji == selectedEmoji;
-                          return GestureDetector(
-                            onTap: () {
-                              setSheetState(() => selectedEmoji = emoji);
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 180),
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? const Color(0xFFE8EEFF)
-                                    : const Color(0xFFF4F4F5),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: isSelected
-                                      ? const Color(0xFF5B4DFF)
-                                      : Colors.transparent,
-                                  width: 2,
-                                ),
-                              ),
-                              child: Center(
-                                child: Text(emoji,
-                                    style: const TextStyle(fontSize: 20)),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Story Name
-                    Text(
-                      'Story Name',
-                      style: GoogleFonts.manrope(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: titleController,
-                      style: GoogleFonts.manrope(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Goa Trip, Dinner with Friends',
-                        prefixIcon: const Icon(Icons.edit_note_rounded,
-                            color: AppColors.textSecondary),
-                        filled: true,
-                        fillColor: const Color(0xFFF9FAFB),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: AppColors.border),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: AppColors.border),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(
-                              color: Color(0xFF1F2937), width: 1.5),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Description
-                    Text(
-                      'Description',
-                      style: GoogleFonts.manrope(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: descController,
-                      maxLines: 2,
-                      style: GoogleFonts.manrope(
-                        fontSize: 14,
-                        color: AppColors.textPrimary,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Trip, stay, food, travel etc.',
-                        filled: true,
-                        fillColor: const Color(0xFFF9FAFB),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: AppColors.border),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: AppColors.border),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(
-                              color: Color(0xFF1F2937), width: 1.5),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Trip Dates
-                    Text(
-                      'Trip Dates',
-                      style: GoogleFonts.manrope(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    InkWell(
-                      onTap: () async {
-                        final picked = await showDateRangePicker(
-                          context: context,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2035),
-                          initialDateRange: startDate != null && endDate != null
-                              ? DateTimeRange(start: startDate!, end: endDate!)
-                              : null,
-                        );
-                        if (picked != null) {
-                          setSheetState(() {
-                            startDate = picked.start;
-                            endDate = picked.end;
-                          });
-                        }
-                      },
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF9FAFB),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.calendar_today_outlined,
-                                size: 18, color: AppColors.textSecondary),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                startDate != null && endDate != null
-                                    ? '${startDate!.day}/${startDate!.month}/${startDate!.year} – ${endDate!.day}/${endDate!.month}/${endDate!.year}'
-                                    : 'Tap to select dates',
-                                style: GoogleFonts.manrope(
-                                  fontSize: 14,
-                                  color: startDate != null
-                                      ? AppColors.textPrimary
-                                      : AppColors.textSecondary,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Save Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1F2937),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 0,
-                        ),
-                        onPressed: () async {
-                          final newTitle = titleController.text.trim();
-                          if (newTitle.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Please enter a story title')),
-                            );
-                            return;
-                          }
-                          final startStr = startDate != null
-                              ? '${startDate!.year}-${startDate!.month.toString().padLeft(2, '0')}-${startDate!.day.toString().padLeft(2, '0')}'
-                              : _story.startDate;
-                          final endStr = endDate != null
-                              ? '${endDate!.year}-${endDate!.month.toString().padLeft(2, '0')}-${endDate!.day.toString().padLeft(2, '0')}'
-                              : _story.endDate;
-
-                          final updated = _story.copyWith(
-                            title: newTitle,
-                            description: descController.text.trim(),
-                            coverEmoji: selectedEmoji,
-                            startDate: startStr,
-                            endDate: endStr,
-                          );
-
-                          final navigator = Navigator.of(sheetCtx);
-                          final messenger = ScaffoldMessenger.of(context);
-
-                          await _persistStoryChanges(updated);
-
-                          navigator.pop();
-                          messenger.showSnackBar(
-                            const SnackBar(
-                              content:
-                                  Text('Story details updated successfully'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          'Save Changes',
-                          style: GoogleFonts.manrope(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+    EditStoryBottomSheet.show(
+      context,
+      story: _story,
+      onSave: (updated) => _persistStoryChanges(updated),
     );
   }
 

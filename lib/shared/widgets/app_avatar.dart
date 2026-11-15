@@ -50,15 +50,9 @@ class AppAvatar extends StatelessWidget {
         StorageService.instance.getStringSync('user_profile_name');
     if (currentName != null && currentName.trim().isNotEmpty) {
       final myClean = currentName.toLowerCase().trim();
-      if (clean == myClean ||
-          clean.contains(myClean) ||
-          myClean.contains(clean)) {
+      if (clean == myClean) {
         return true;
       }
-    }
-
-    if (clean == 'roshan' || clean == 'roshan badwaik') {
-      return true;
     }
     return false;
   }

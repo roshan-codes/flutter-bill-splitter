@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_bill_splitter/core/constants/app_constants.dart';
 import 'package:flutter_bill_splitter/core/services/invite_service.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
@@ -53,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _checkNavigation() async {
     final hasCompletedOnboarding =
-        await StorageService.instance.getBool('has_completed_onboarding') ??
+        await StorageService.instance.getBool(AppConstants.keyHasCompletedOnboarding) ??
             false;
     final isSupabaseSignedIn = SupabaseService.isSignedIn;
 
@@ -183,7 +184,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
                     // Full form tag: The Trusted Money Management Club
                     Text(
-                      'The Trusted Money Management Club',
+                      AppConstants.appFullName,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.manrope(
                         fontSize: 13.5,
@@ -196,7 +197,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
                     // Subtitle: SPLIT · TRACK · SETTLE
                     Text(
-                      'SPLIT · TRACK · SETTLE',
+                      AppConstants.appTagline,
                       style: GoogleFonts.manrope(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,

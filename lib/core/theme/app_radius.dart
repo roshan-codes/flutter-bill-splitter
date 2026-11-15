@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 
-/// Centralized corner radius tokens following design.md Section 4.
+/// Centralized corner radius tokens following TTMM design specifications.
 class AppRadius {
   AppRadius._();
+
+  // Semantic size aliases
+  static const double sm = 8.0;
+  static const double md = 12.0;
+  static const double lg = 16.0;
+  static const double xl = 20.0;
+  static const double xxl = 24.0;
+  static const double modal = 24.0;
 
   /// Large feature card: 24 px
   static const double cardLarge = 24.0;
@@ -29,7 +37,7 @@ class AppRadius {
   static const BorderRadius borderButtonSecondary =
       BorderRadius.all(Radius.circular(16.0));
 
-  /// Small icon container / squircle: 12–14 px (default 14 px)
+  /// Small icon container / squircle: 14 px
   static const double iconContainer = 14.0;
   static const BorderRadius borderIconContainer =
       BorderRadius.all(Radius.circular(14.0));
@@ -38,4 +46,9 @@ class AppRadius {
   static const double pill = 999.0;
   static const BorderRadius borderPill =
       BorderRadius.all(Radius.circular(999.0));
+
+  /// Modal bottom sheet: 24 px top corners
+  static const BorderRadius borderModalTop = BorderRadius.vertical(
+    top: Radius.circular(24.0),
+  );
 }

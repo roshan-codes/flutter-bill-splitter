@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_bill_splitter/core/constants/app_constants.dart';
 import 'package:flutter_bill_splitter/core/services/invite_service.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
@@ -84,8 +85,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (SupabaseService.isSignedIn) {
       await SupabaseService.syncLocalUserData();
     }
-    await StorageService.instance.setBool('has_completed_onboarding', true);
-    await StorageService.instance.setBool('is_logged_in_with_google', true);
+    await StorageService.instance.setBool(AppConstants.keyHasCompletedOnboarding, true);
+    await StorageService.instance.setBool(AppConstants.keyIsLoggedInWithGoogle, true);
 
     // Check if user was invited to join a story
     final pendingInvite =
@@ -151,10 +152,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Future<void> _skipLoginForTesting(BuildContext context) async {
     HapticFeedback.lightImpact();
-    await StorageService.instance.setBool('has_completed_onboarding', true);
-    await StorageService.instance.setBool('is_logged_in_with_google', true);
-    await StorageService.instance.setString('user_profile_name', 'Test User');
-    await StorageService.instance.setString('user_profile_email', 'test.user@ttmm.club');
+    await StorageService.instance.setBool(AppConstants.keyHasCompletedOnboarding, true);
+    await StorageService.instance.setBool(AppConstants.keyIsLoggedInWithGoogle, true);
+    await StorageService.instance.setString(AppConstants.keyUserProfileName, 'Test User');
+    await StorageService.instance.setString(AppConstants.keyUserProfileEmail, 'test.user@ttmm.club');
 
     final pendingInvite =
         widget.inviteStoryId ?? await InviteService.getPendingInvite();

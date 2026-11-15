@@ -59,6 +59,32 @@ class StoryRepository extends ChangeNotifier {
           if (idx == -1) {
             _stories.add(r);
             changed = true;
+          } else {
+            final local = _stories[idx];
+            final hasNewerMembers = r.members.length > local.members.length;
+            final hasNewerExpenses = r.expenses.length > local.expenses.length;
+            final hasDifferentExpenses =
+                r.summary.totalExpenses != local.summary.totalExpenses;
+            if (hasNewerMembers || hasNewerExpenses || hasDifferentExpenses) {
+              final mergedMembers =
+                  Story.deduplicateMembers([...local.members, ...r.members]);
+              final existingExpIds =
+                  local.expenses.map((e) => e.expenseId).toSet();
+              final mergedExpenses = List<StoryExpense>.from(local.expenses);
+              for (final remExp in r.expenses) {
+                if (!existingExpIds.contains(remExp.expenseId)) {
+                  mergedExpenses.add(remExp);
+                  existingExpIds.add(remExp.expenseId);
+                }
+              }
+              _stories[idx] = r.copyWith(
+                members: mergedMembers,
+                expenses: mergedExpenses.isNotEmpty
+                    ? mergedExpenses
+                    : r.expenses,
+              );
+              changed = true;
+            }
           }
         }
         final currentAvatar = SupabaseService.resolvedUserAvatar;
@@ -86,6 +112,57 @@ class StoryRepository extends ChangeNotifier {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Public sync method for refreshing all stories from Supabase.
+  Future<void> syncAllFromSupabase() async {
+    await _syncFromSupabase();
+  }
+
+  /// Pulls the latest version of a specific story from Supabase and updates local cache.
+  Future<Story?> refreshStory(String storyId) async {
+    try {
+      final remote = await SupabaseService.fetchStoryById(storyId);
+      if (remote != null) {
+        final idx = _stories.indexWhere((s) => s.storyId == storyId);
+        if (idx != -1) {
+          final local = _stories[idx];
+          final mergedMembers =
+              Story.deduplicateMembers([...local.members, ...remote.members]);
+          final existingExpIds =
+              local.expenses.map((e) => e.expenseId).toSet();
+          final mergedExpenses = List<StoryExpense>.from(local.expenses);
+          for (final remExp in remote.expenses) {
+            if (!existingExpIds.contains(remExp.expenseId)) {
+              mergedExpenses.add(remExp);
+              existingExpIds.add(remExp.expenseId);
+            }
+          }
+          final updated = remote.copyWith(
+            members: mergedMembers,
+            expenses: mergedExpenses.isNotEmpty
+                ? mergedExpenses
+                : remote.expenses,
+          );
+          _stories[idx] = updated;
+          notifyListeners();
+          final jsonStrings =
+              _stories.map((s) => jsonEncode(s.toJson())).toList();
+          await _storageService.setStringList(_storageKey, jsonStrings);
+          return updated;
+        } else {
+          _stories.add(remote);
+          notifyListeners();
+          final jsonStrings =
+              _stories.map((s) => jsonEncode(s.toJson())).toList();
+          await _storageService.setStringList(_storageKey, jsonStrings);
+          return remote;
+        }
+      }
+    } catch (e) {
+      debugPrint('StoryRepository refreshStory error: $e');
+    }
+    return getStoryById(storyId);
   }
 
   static final Set<String> _joiningStoryIds = {};

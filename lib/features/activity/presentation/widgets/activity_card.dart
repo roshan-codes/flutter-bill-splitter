@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
+import 'package:flutter_bill_splitter/core/utils/currency_formatter.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_detail_sheet.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
@@ -16,12 +17,8 @@ class ActivityCard extends StatelessWidget {
     required this.activity,
   });
 
-  String _formatAmount(double amount) {
-    if (amount.truncateToDouble() == amount) {
-      return '₹${amount.toInt()}';
-    }
-    return '₹${amount.toStringAsFixed(2)}';
-  }
+  String _formatAmount(double amount) =>
+      CurrencyFormatter.format(amount, includeSymbol: true);
 
   String _formatTimestamp(DateTime dt) {
     final now = DateTime.now();

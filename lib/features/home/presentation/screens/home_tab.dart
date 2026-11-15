@@ -113,12 +113,14 @@ class _HomeTabState extends State<HomeTab> {
       backgroundColor: isIOS ? AppColors.iosBackground : AppColors.background,
       body: SafeArea(
         bottom: false,
-        child: SingleChildScrollView(
-          physics: isIOS
-              ? const BouncingScrollPhysics()
-              : const ClampingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
-          child: Column(
+        child: RefreshIndicator(
+          onRefresh: () => StoryRepository.instance.syncAllFromSupabase(),
+          color: AppColors.primary,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics()),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header: Greeting, user name, waving hand, and circular bell icon button
@@ -161,6 +163,7 @@ class _HomeTabState extends State<HomeTab> {
           ),
         ),
       ),
+    ),
     );
   }
 

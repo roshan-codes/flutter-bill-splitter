@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bill_splitter/core/utils/currency_formatter.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
@@ -18,16 +19,8 @@ class BalanceCard extends StatelessWidget {
     this.onTap,
   });
 
-  String _formatAmount(double amount) {
-    if (amount.truncateToDouble() == amount) {
-      final parts = amount.toInt().toString().replaceAllMapped(
-            RegExp(r'(\d+?)(?=(\d{3})+(?!\d))'),
-            (Match m) => '${m[1]},',
-          );
-      return '₹$parts';
-    }
-    return '₹${amount.toStringAsFixed(2)}';
-  }
+  String _formatAmount(double amount) =>
+      CurrencyFormatter.format(amount, includeSymbol: true);
 
   @override
   Widget build(BuildContext context) {

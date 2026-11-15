@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
+import 'package:flutter_bill_splitter/core/utils/currency_formatter.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
@@ -20,16 +21,8 @@ class MemberBreakdownTable extends StatelessWidget {
     required this.sharePerPerson,
   });
 
-  String _formatAmount(double amount) {
-    if (amount.truncateToDouble() == amount) {
-      final parts = amount.toInt().toString().replaceAllMapped(
-            RegExp(r'(\d+?)(?=(\d{3})+(?!\d))'),
-            (Match m) => '${m[1]},',
-          );
-      return '₹$parts';
-    }
-    return '₹${amount.toStringAsFixed(0)}';
-  }
+  String _formatAmount(double amount) =>
+      CurrencyFormatter.format(amount, includeSymbol: true);
 
   @override
   Widget build(BuildContext context) {

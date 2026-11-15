@@ -1,11 +1,13 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_bill_splitter/core/config/app_config.dart';
+import 'package:flutter_bill_splitter/core/constants/app_constants.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/url_strategy_helper.dart'
     if (dart.library.html) 'package:flutter_bill_splitter/core/services/url_strategy_helper_web.dart';
 
 /// Centralized service for handling Story Invite Links and deep-linking.
 class InviteService {
-  static const String _pendingInviteKey = 'pending_invite_story_id';
+  static const String _pendingInviteKey = AppConstants.keyPendingInviteStoryId;
   static final Set<String> _handledStoryIds = {};
 
   /// Extracts an invited story ID from the current browser URI or deep-link.
@@ -78,6 +80,6 @@ class InviteService {
       final origin = Uri.base.origin;
       return '$origin/?story_id=$storyId';
     }
-    return 'https://flutter-bill-splitter.onrender.com/?story_id=$storyId';
+    return '${AppConfig.webHostedUrl}/?story_id=$storyId';
   }
 }
