@@ -6,6 +6,7 @@ import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/screens/profile_tab.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/memo_avatar_picker_sheet.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_avatar.dart';
+import 'package:flutter_bill_splitter/shared/widgets/app_avatar.dart';
 
 void main() {
   setUp(() async {
@@ -93,5 +94,50 @@ void main() {
     final savedIndex =
         await StorageService.instance.getInt('user_profile_avatar_index');
     expect(savedIndex, equals(2));
+  });
+
+  testWidgets('AppAvatar renders memo avatar asset when avatarIndex is provided',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: AppAvatar(
+            size: 40,
+            avatarIndex: 5,
+            name: 'Pooja',
+          ),
+        ),
+      ),
+    );
+
+    // Finding Image with memo_6.png asset path
+    final imageFinder = find.byType(Image);
+    expect(imageFinder, findsOneWidget);
+    final image = tester.widget<Image>(imageFinder);
+    expect((image.image as AssetImage).assetName,
+        equals('assets/avatars/memo_6.png'));
+  });
+
+  testWidgets('AppAvatar resolves user memo avatar automatically when isCurrentUser is true',
+      (tester) async {
+    await StorageService.instance.setInt('user_profile_avatar_index', 11);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: AppAvatar(
+            size: 40,
+            name: 'Roshan',
+            isCurrentUser: true,
+          ),
+        ),
+      ),
+    );
+
+    final imageFinder = find.byType(Image);
+    expect(imageFinder, findsOneWidget);
+    final image = tester.widget<Image>(imageFinder);
+    expect((image.image as AssetImage).assetName,
+        equals('assets/avatars/memo_12.png'));
   });
 }

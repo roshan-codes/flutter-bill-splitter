@@ -15,6 +15,7 @@ import 'package:flutter_bill_splitter/features/profile/presentation/widgets/prof
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_header.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_logout_button.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_menu_card.dart';
+import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Profile Tab screen matching platform design (Material on Android, Cupertino on iOS).
@@ -147,10 +148,16 @@ class _ProfileTabState extends State<ProfileTab> {
       initialIndex: _avatarIndex,
       onAvatarSelected: (newIndex) async {
         setState(() => _avatarIndex = newIndex);
+        final memoPath = 'assets/avatars/memo_${(newIndex % 35) + 1}.png';
         await StorageService.instance
             .setInt('user_profile_avatar_index', newIndex);
-        final success =
-            await SupabaseService.updateUserAvatarInDb(avatarIndex: newIndex);
+        await StorageService.instance
+            .setString('user_profile_avatar_url', memoPath);
+        await StoryRepository.instance.updateCurrentUserAvatar(memoPath);
+        final success = await SupabaseService.updateUserAvatarInDb(
+          avatarIndex: newIndex,
+          avatarUrl: memoPath,
+        );
         if (context.mounted) {
           _showNotice(
             context,
@@ -259,6 +266,67 @@ class _ProfileTabState extends State<ProfileTab> {
                 validator: (val) => val == null || val.trim().isEmpty
                     ? 'Please enter your name'
                     : null,
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Email Address',
+                    style: GoogleFonts.manrope(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      const Icon(Icons.lock_outline_rounded,
+                          size: 13, color: AppColors.textTertiary),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Not editable',
+                        style: GoogleFonts.manrope(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(AppRadius.input),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.mail_outline_rounded,
+                        size: 18, color: AppColors.textTertiary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _userEmail.isNotEmpty ? _userEmail : 'Not connected',
+                        style: GoogleFonts.manrope(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const Icon(Icons.lock_rounded,
+                        size: 16, color: Color(0xFF9CA3AF)),
+                  ],
+                ),
               ),
               const SizedBox(height: 14),
               Text(

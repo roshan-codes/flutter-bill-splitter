@@ -8,6 +8,7 @@ import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart
 import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
+import 'package:flutter_bill_splitter/features/stories/presentation/widgets/join_story_dialog.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -102,6 +103,63 @@ void main() {
       // Verify special invite badge is displayed on the auth screen
       expect(find.text('Join Story Invite • Sign in to accept'), findsOneWidget);
       expect(find.text('Continue with Google'), findsOneWidget);
+    });
+
+    testWidgets(
+        'JoinStoryDialog shows accept and decline popup when user is not a member',
+        (tester) async {
+      final story = Story.sampleDelhiTrip();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: JoinStoryDialog(
+              story: story,
+              isAlreadyMember: false,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify title & question
+      expect(find.text('Join Story'), findsOneWidget);
+      expect(find.text('Do you really want to join this story?'), findsOneWidget);
+      expect(find.text(story.title), findsOneWidget);
+
+      // Verify Accept and Decline buttons
+      expect(find.text('Accept'), findsOneWidget);
+      expect(find.text('Decline'), findsOneWidget);
+    });
+
+    testWidgets(
+        'JoinStoryDialog shows already member message and View Story button when user is already a member',
+        (tester) async {
+      final story = Story.sampleDelhiTrip();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: JoinStoryDialog(
+              story: story,
+              isAlreadyMember: true,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify Already a Member title and copy
+      expect(find.text('Already a Member'), findsOneWidget);
+      expect(
+        find.text('You are already a member of "${story.title}".'),
+        findsOneWidget,
+      );
+      expect(find.text(story.title), findsOneWidget);
+
+      // Verify View Story and Dismiss buttons
+      expect(find.text('View Story'), findsOneWidget);
+      expect(find.text('Dismiss'), findsOneWidget);
     });
   });
 }

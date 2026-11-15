@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_bill_splitter/core/services/storage_service.dart';
+import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
+import 'package:flutter_bill_splitter/shared/widgets/app_avatar.dart';
 
 /// Active Story Card matching the design mockup in media_1794634584098_6679ad51.png:
 /// - Rounded card with squircle emoji badge, title, and date subtitle
@@ -77,44 +79,27 @@ class ActiveStoryCard extends StatelessWidget {
   }
 
   Widget _buildAvatar(StoryMember member) {
-    final hasNetworkAvatar = member.avatar != null &&
-        member.avatar!.isNotEmpty &&
-        (member.avatar!.startsWith('http://') ||
-            member.avatar!.startsWith('https://'));
+    final currentUserId = SupabaseService.currentUser?.id;
+    final currentUserName = SupabaseService.userDisplayName ??
+        StorageService.instance.getStringSync('user_profile_name') ??
+        'Roshan';
+    final clean = member.name.toLowerCase().trim();
+    final cleanCurrent = currentUserName.toLowerCase().trim();
 
-    if (hasNetworkAvatar) {
-      return Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 2.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: ClipOval(
-          child: Image.network(
-            member.avatar!,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) =>
-                _buildFallbackInitialAvatar(member.name),
-          ),
-        ),
-      );
-    }
+    final isMe = (currentUserId != null &&
+            member.userId.isNotEmpty &&
+            member.userId == currentUserId) ||
+        clean == cleanCurrent ||
+        (cleanCurrent.isNotEmpty &&
+            (clean.contains(cleanCurrent) || cleanCurrent.contains(clean))) ||
+        clean == 'roshan' ||
+        clean == 'roshan badwaik' ||
+        member.role == 'creator' ||
+        clean == 'you';
 
     return Container(
-      width: 32,
-      height: 32,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: const Color(0xFF24272D),
-        border: Border.all(color: Colors.white, width: 2.0),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
@@ -123,31 +108,15 @@ class ActiveStoryCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Center(
-        child: Text(
-          StringUtils.getSingleInitial(member.name),
-          style: GoogleFonts.manrope(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFallbackInitialAvatar(String name) {
-    return Container(
-      color: const Color(0xFF24272D),
-      child: Center(
-        child: Text(
-          StringUtils.getSingleInitial(name),
-          style: GoogleFonts.manrope(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
+      child: AppAvatar(
+        size: 32,
+        avatarUrl: member.avatar,
+        name: member.name,
+        isCurrentUser: isMe,
+        border: Border.all(color: Colors.white, width: 2.0),
+        backgroundColor: const Color(0xFF24272D),
+        textColor: Colors.white,
+        fontSize: 12,
       ),
     );
   }

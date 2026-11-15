@@ -4,19 +4,16 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/services/invite_service.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
-import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
-import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/navigation/presentation/screens/main_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/onboarding_illustrations.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/onboarding_page_indicator.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/splash_wave_painter.dart';
-import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 
 /// Onboarding Screen matching the TTMM Club 5-screen flow:
 /// - Screen 1: "Split expenses with friends" (Floating receipt with ₹2,400, ₹6,000, ₹2,100, purple group badge)
 /// - Screen 2: "Keep everyone in sync" (3 friend avatars with dashed ring, purple checkmark badge)
 /// - Screen 3: "Settle up easily" ("Settlement Complete!" card with green checkmark, S -> R pill)
-/// - Screen 4: Welcome & Auth ("Continue with Google", "Continue with Phone", terms disclaimer)
+/// - Screen 4: Welcome & Auth ("Continue with Google", "Skip Login (Testing)", terms disclaimer)
 /// - Saves 'has_completed_onboarding' = true so it only appears for first-time users.
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback? onGetStarted;
@@ -93,39 +90,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     // Check if user was invited to join a story
     final pendingInvite =
         widget.inviteStoryId ?? await InviteService.getPendingInvite();
-    if (pendingInvite != null && pendingInvite.isNotEmpty) {
-      final joinedStory = await StoryRepository.instance
-          .joinStoryWithCurrentUser(pendingInvite);
-      await InviteService.clearPendingInvite();
-
-      if (context.mounted && joinedStory != null) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => SplitDetailScreen(
-              groupName: joinedStory.title,
-              members: joinedStory.members
-                  .map((m) => Friend(name: m.name, phone: ''))
-                  .toList(),
-              story: joinedStory,
-            ),
-            transitionsBuilder: (_, animation, __, child) =>
-                FadeTransition(opacity: animation, child: child),
-            transitionDuration: const Duration(milliseconds: 500),
-          ),
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '🎉 You successfully joined "${joinedStory.title}"!',
-              style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
-            ),
-            backgroundColor: const Color(0xFF111111),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
-    }
 
     if (widget.onGetStarted != null) {
       widget.onGetStarted!();
@@ -135,7 +99,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (!context.mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const MainScreen(),
+        pageBuilder: (_, __, ___) =>
+            MainScreen(pendingInviteStoryId: pendingInvite),
         transitionsBuilder: (_, animation, __, child) =>
             FadeTransition(opacity: animation, child: child),
         transitionDuration: const Duration(milliseconds: 500),
@@ -184,228 +149,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
-  void _showPhoneSignInDialog(BuildContext context) {
+  Future<void> _skipLoginForTesting(BuildContext context) async {
     HapticFeedback.lightImpact();
-    final phoneController = TextEditingController(text: '+91 ');
-    final otpController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-    bool otpSent = false;
-    bool isLoading = false;
-    String? statusMessage;
-    bool isError = false;
+    await StorageService.instance.setBool('has_completed_onboarding', true);
+    await StorageService.instance.setBool('is_logged_in_with_google', true);
+    await StorageService.instance.setString('user_profile_name', 'Test User');
+    await StorageService.instance.setString('user_profile_email', 'test.user@ttmm.club');
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Container(
-          padding: EdgeInsets.fromLTRB(
-              24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE5E7EB),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  otpSent ? 'Enter OTP Code' : 'Enter Phone Number',
-                  style: GoogleFonts.manrope(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF111111),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  otpSent
-                      ? 'Enter the 6-digit verification code sent to your phone.'
-                      : 'We\'ll verify your identity with Supabase to keep your data secure.',
-                  style: GoogleFonts.manrope(
-                    fontSize: 13,
-                    color: const Color(0xFF6B7280),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                if (!otpSent)
-                  TextFormField(
-                    controller: phoneController,
-                    keyboardType: TextInputType.phone,
-                    autofocus: true,
-                    style: GoogleFonts.manrope(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF111111),
-                    ),
-                    decoration: InputDecoration(
-                      labelText: 'Mobile Number (with country code)',
-                      hintText: '+91 9876543210',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    validator: (val) {
-                      if (val == null || val.trim().length < 8) {
-                        return 'Please enter a valid phone number';
-                      }
-                      return null;
-                    },
-                  )
-                else
-                  TextFormField(
-                    controller: otpController,
-                    keyboardType: TextInputType.number,
-                    autofocus: true,
-                    maxLength: 6,
-                    style: GoogleFonts.manrope(
-                      fontSize: 20,
-                      letterSpacing: 4,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF111111),
-                    ),
-                    decoration: InputDecoration(
-                      labelText: '6-digit OTP',
-                      counterText: '',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    validator: (val) {
-                      if (val == null || val.trim().length < 6) {
-                        return 'Please enter 6-digit OTP code';
-                      }
-                      return null;
-                    },
-                  ),
-                if (statusMessage != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    statusMessage!,
-                    style: GoogleFonts.manrope(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: isError
-                          ? const Color(0xFFE53935)
-                          : const Color(0xFF16A34A),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF111111),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                    ),
-                    onPressed: isLoading
-                        ? null
-                        : () async {
-                            if (!(formKey.currentState?.validate() ?? false)) {
-                              return;
-                            }
-                            setModalState(() {
-                              isLoading = true;
-                              statusMessage = null;
-                            });
+    final pendingInvite =
+        widget.inviteStoryId ?? await InviteService.getPendingInvite();
 
-                            if (!otpSent) {
-                              final phone = phoneController.text.trim();
-                              try {
-                                await SupabaseService.signInWithPhoneOtp(phone);
-                                setModalState(() {
-                                  otpSent = true;
-                                  isLoading = false;
-                                  statusMessage =
-                                      'OTP sent! Please enter the code received.';
-                                  isError = false;
-                                });
-                              } catch (e) {
-                                setModalState(() {
-                                  isLoading = false;
-                                  isError = true;
-                                  statusMessage =
-                                      'Phone authentication is not configured on this Supabase project. Please use "Continue with Google" to sign in.';
-                                });
-                              }
-                            } else {
-                              final phone = phoneController.text.trim();
-                              final code = otpController.text.trim();
-                              try {
-                                final verified =
-                                    await SupabaseService.verifyPhoneOtp(
-                                  phone: phone,
-                                  token: code,
-                                );
-                                if (verified) {
-                                  await StorageService.instance.setString(
-                                      'user_profile_phone', phone);
-                                  if (!ctx.mounted) return;
-                                  Navigator.of(ctx).pop();
-                                  if (!context.mounted) return;
-                                  await _completeLoginAndNavigate(context);
-                                } else {
-                                  setModalState(() {
-                                    isLoading = false;
-                                    isError = true;
-                                    statusMessage =
-                                        'Invalid OTP. Please check the code and try again.';
-                                  });
-                                }
-                              } catch (e) {
-                                setModalState(() {
-                                  isLoading = false;
-                                  isError = true;
-                                  statusMessage = 'Verification failed: $e';
-                                });
-                              }
-                            }
-                          },
-                    child: isLoading
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Text(
-                            otpSent
-                                ? 'Verify & Continue'
-                                : 'Send Verification Code',
-                            style: GoogleFonts.manrope(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+    if (widget.onGetStarted != null) {
+      widget.onGetStarted!();
+      return;
+    }
+
+    if (!context.mounted) return;
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) =>
+            MainScreen(pendingInviteStoryId: pendingInvite),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
+        transitionDuration: const Duration(milliseconds: 500),
       ),
     );
   }
@@ -769,36 +535,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Button 2: Continue with Phone
+              // Button 2: Skip Login (Testing)
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     backgroundColor: Colors.white.withOpacity(0.9),
-                    foregroundColor: const Color(0xFF111111),
+                    foregroundColor: const Color(0xFF4B5563),
                     side: const BorderSide(
                         color: Color(0xFFE5E7EB), width: 1.2),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(28),
                     ),
                   ),
-                  onPressed: () => _showPhoneSignInDialog(context),
+                  onPressed: () => _skipLoginForTesting(context),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Icon(
-                        Icons.phone_rounded,
-                        color: Color(0xFF111111),
+                        Icons.fast_forward_rounded,
+                        color: Color(0xFF4B5563),
                         size: 18,
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        'Continue with Phone',
+                        'Skip Login (Testing)',
                         style: GoogleFonts.manrope(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF111111),
+                          color: const Color(0xFF4B5563),
                         ),
                       ),
                     ],

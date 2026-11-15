@@ -96,6 +96,7 @@ class ProfileAvatar extends StatelessWidget {
         ],
       );
     } else if (avatarUrl != null && avatarUrl!.isNotEmpty) {
+      final isAsset = avatarUrl!.startsWith('assets/');
       avatarWidget = Stack(
         alignment: Alignment.center,
         children: [
@@ -108,27 +109,49 @@ class ProfileAvatar extends StatelessWidget {
               border: Border.all(color: AppColors.border, width: 1.5),
             ),
             child: ClipOval(
-              child: Image.network(
-                avatarUrl!,
-                width: 84,
-                height: 84,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: const Color(0xFF22262E),
-                    child: Center(
-                      child: Text(
-                        initial,
-                        style: GoogleFonts.manrope(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
+              child: isAsset
+                  ? Image.asset(
+                      avatarUrl!,
+                      width: 84,
+                      height: 84,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: const Color(0xFF22262E),
+                          child: Center(
+                            child: Text(
+                              initial,
+                              style: GoogleFonts.manrope(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  : Image.network(
+                      avatarUrl!,
+                      width: 84,
+                      height: 84,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: const Color(0xFF22262E),
+                          child: Center(
+                            child: Text(
+                              initial,
+                              style: GoogleFonts.manrope(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ),
           // Camera edit indicator badge

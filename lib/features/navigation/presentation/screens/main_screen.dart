@@ -5,6 +5,7 @@ import 'package:animations/animations.dart';
 import 'package:floating_pill_navbar/floating_pill_navbar.dart';
 import 'package:flutter_bill_splitter/core/animations/app_motion.dart';
 import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
+import 'package:flutter_bill_splitter/core/services/invite_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/screens/activity_tab.dart';
@@ -12,11 +13,14 @@ import 'package:flutter_bill_splitter/features/friends/data/repositories/friends
 import 'package:flutter_bill_splitter/features/home/presentation/screens/home_tab.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/screens/profile_tab.dart';
 import 'package:flutter_bill_splitter/features/stories/presentation/screens/create_story_screen.dart';
+import 'package:flutter_bill_splitter/features/stories/presentation/widgets/join_story_dialog.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Main scaffold with platform-adaptive navigation bar (Material for Android, Cupertino for iOS).
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final String? pendingInviteStoryId;
+
+  const MainScreen({super.key, this.pendingInviteStoryId});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -35,6 +39,18 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     FriendsRepository.instance.addListener(_onFriendsRepoChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkPendingInvite();
+    });
+  }
+
+  Future<void> _checkPendingInvite() async {
+    final storyId = widget.pendingInviteStoryId ??
+        await InviteService.getPendingInvite() ??
+        InviteService.getInviteStoryIdFromUri();
+    if (storyId != null && storyId.isNotEmpty && mounted) {
+      JoinStoryDialog.show(context, storyId: storyId);
+    }
   }
 
   @override

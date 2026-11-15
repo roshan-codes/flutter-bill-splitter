@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/animations/app_motion.dart';
 import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
 import 'package:flutter_bill_splitter/core/services/invite_service.dart';
+import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
@@ -14,6 +15,7 @@ import 'package:flutter_bill_splitter/features/expenses/presentation/screens/spl
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
+import 'package:flutter_bill_splitter/shared/widgets/app_avatar.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Screen where users review group split with members, matching the design mockup:
@@ -1632,14 +1634,21 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
   }
 
   bool _isCurrentUser(String name, [String? userId]) {
-    final currentName = SupabaseService.userDisplayName ?? 'Roshan';
+    final currentName = SupabaseService.userDisplayName ??
+        StorageService.instance.getStringSync('user_profile_name') ??
+        'Roshan';
     final currentId = SupabaseService.currentUser?.id;
     if (userId != null && currentId != null && userId == currentId) {
       return true;
     }
     final clean = name.toLowerCase().trim();
     final myClean = currentName.toLowerCase().trim();
-    return clean == myClean || clean.contains(myClean) || clean == 'roshan';
+    return clean == myClean ||
+        clean.contains(myClean) ||
+        myClean.contains(clean) ||
+        clean == 'roshan' ||
+        clean == 'roshan badwaik' ||
+        clean == 'you';
   }
 
   Widget _buildGroupSummaryMemberRow(
@@ -1655,8 +1664,6 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     final paid = balance.totalPaid;
     final share = perPersonAmount;
     final net = paid - share;
-
-    final initial = balance.name.isNotEmpty ? balance.name[0] : '?';
 
     Widget statusWidget;
 
@@ -1759,43 +1766,21 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
-          // Circular Avatar (Image for user or dark circle with white initial)
-          Container(
-            width: 42,
-            height: 42,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(0xFF1E1E1E),
-            ),
-            child: ClipOval(
-              child: isMe
-                  ? Image.asset(
-                      'assets/avatars/user_roshan.png',
-                      width: 42,
-                      height: 42,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Center(
-                        child: Text(
-                          initial,
-                          style: GoogleFonts.manrope(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Center(
-                      child: Text(
-                        initial,
-                        style: GoogleFonts.manrope(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-            ),
+          // Circular Avatar (Memo avatar, user photo, or dark circle with initial)
+          AppAvatar(
+            size: 42,
+            name: balance.name,
+            avatarUrl: _story.members
+                .where((m) =>
+                    m.userId == balance.userId ||
+                    m.name.toLowerCase().trim() ==
+                        balance.name.toLowerCase().trim())
+                .firstOrNull
+                ?.avatar,
+            isCurrentUser: isMe,
+            backgroundColor: const Color(0xFF1E1E1E),
+            textColor: Colors.white,
+            fontSize: 16,
           ),
           const SizedBox(width: 14),
 
@@ -2230,7 +2215,6 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
   ) {
     final isMe = _isCurrentUser(balance.name, balance.userId);
     final displayName = isMe ? '${balance.name} (You)' : balance.name;
-    final initial = balance.name.isNotEmpty ? balance.name[0] : '?';
     final paid = balance.totalPaid;
     final share = perPersonAmount;
     final net = paid - share;
@@ -2261,43 +2245,21 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
-          // Circular Avatar
-          Container(
-            width: 42,
-            height: 42,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(0xFF1E1E1E),
-            ),
-            child: ClipOval(
-              child: isMe
-                  ? Image.asset(
-                      'assets/avatars/user_roshan.png',
-                      width: 42,
-                      height: 42,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Center(
-                        child: Text(
-                          initial,
-                          style: GoogleFonts.manrope(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Center(
-                      child: Text(
-                        initial,
-                        style: GoogleFonts.manrope(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-            ),
+          // Circular Avatar (Memo avatar, user photo, or dark circle with initial)
+          AppAvatar(
+            size: 42,
+            name: balance.name,
+            avatarUrl: _story.members
+                .where((m) =>
+                    m.userId == balance.userId ||
+                    m.name.toLowerCase().trim() ==
+                        balance.name.toLowerCase().trim())
+                .firstOrNull
+                ?.avatar,
+            isCurrentUser: isMe,
+            backgroundColor: const Color(0xFF1E1E1E),
+            textColor: Colors.white,
+            fontSize: 16,
           ),
           const SizedBox(width: 14),
 

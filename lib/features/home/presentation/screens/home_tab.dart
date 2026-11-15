@@ -168,7 +168,7 @@ class _HomeTabState extends State<HomeTab> {
   Widget _buildEmptyState(BuildContext context) {
     return Column(
       children: [
-        const SizedBox(height: 38),
+        const SizedBox(height: 24),
 
         // Illustration Box with squircle + purple group icon + sparkle rays
         const Center(

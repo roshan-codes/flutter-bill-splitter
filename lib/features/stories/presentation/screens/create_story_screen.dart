@@ -13,6 +13,7 @@ import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart
 import 'package:flutter_bill_splitter/features/friends/presentation/widgets/import_contacts_sheet.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
+import 'package:flutter_bill_splitter/shared/widgets/app_avatar.dart';
 
 /// Screen 1 from design: High-fidelity "Create Story" form matching the mockup
 /// - Header: Back button `<` + Title "Create Story"
@@ -564,7 +565,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         userId: currentUserId,
         name: currentUserName,
         role: 'creator',
-        avatar: SupabaseService.userAvatarUrl,
+        avatar: SupabaseService.resolvedUserAvatar,
         joinedAt: now.toIso8601String(),
       ),
     );
@@ -1101,81 +1102,17 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
   }
 
   Widget _buildMemberAvatarChip(String name) {
-    final isMe = name.toLowerCase().contains(_creatorName.toLowerCase()) ||
-        name.toLowerCase().contains('roshan');
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
+    final isMe = name.toLowerCase().trim() == _creatorName.toLowerCase().trim() ||
+        name.trim() == 'You';
 
-    if (isMe) {
-      final avatarUrl = SupabaseService.userAvatarUrl;
-      return Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: const Color(0xFF111111),
-          border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
-        ),
-        child: ClipOval(
-          child: (avatarUrl != null && avatarUrl.isNotEmpty)
-              ? Image.network(
-                  avatarUrl,
-                  width: 40,
-                  height: 40,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Image.asset(
-                    'assets/avatars/user_roshan.png',
-                    width: 40,
-                    height: 40,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Center(
-                      child: Text(
-                        initial,
-                        style: GoogleFonts.manrope(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  ),
-                )
-              : Image.asset(
-                  'assets/avatars/user_roshan.png',
-                  width: 40,
-                  height: 40,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Center(
-                    child: Text(
-                      initial,
-                      style: GoogleFonts.manrope(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ),
-                ),
-        ),
-      );
-    }
-
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: Color(0xFF111111),
-      ),
-      child: Center(
-        child: Text(
-          initial,
-          style: GoogleFonts.manrope(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-            fontSize: 15,
-          ),
-        ),
-      ),
+    return AppAvatar(
+      size: 40,
+      name: name,
+      isCurrentUser: isMe,
+      border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+      backgroundColor: const Color(0xFF111111),
+      textColor: Colors.white,
+      fontSize: 15,
     );
   }
 }

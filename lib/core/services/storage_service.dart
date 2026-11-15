@@ -35,6 +35,11 @@ class StorageService {
     }
   }
 
+  /// Retrieves a string value synchronously from in-memory cache or initialized prefs.
+  String? getStringSync(String key) {
+    return _prefs?.getString(key) ?? (_memoryCache[key] as String?);
+  }
+
   /// Retrieves a string value.
   Future<String?> getString(String key) async {
     try {
@@ -56,6 +61,11 @@ class StorageService {
       }
     } catch (_) {}
     return true;
+  }
+
+  /// Retrieves an integer value synchronously from in-memory cache or initialized prefs.
+  int? getIntSync(String key) {
+    return _prefs?.getInt(key) ?? (_memoryCache[key] as int?);
   }
 
   /// Retrieves an integer value.

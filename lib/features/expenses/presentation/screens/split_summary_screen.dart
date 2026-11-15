@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_bill_splitter/core/services/storage_service.dart';
+import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
@@ -10,6 +12,7 @@ import 'package:flutter_bill_splitter/features/expenses/domain/services/expense_
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
+import 'package:flutter_bill_splitter/shared/widgets/app_avatar.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Screen displaying the final settlement summary matching the updated design mockup:
@@ -745,9 +748,18 @@ class SplitSummaryScreen extends StatelessWidget {
   Widget _buildMemberBreakdownRow(Friend member, double sharePerPerson) {
     final paid = memberExpenses[member.name] ?? 0.0;
     final net = paid - sharePerPerson;
-    final isRoshan = member.name.toLowerCase() == 'roshan';
-    final displayName = isRoshan ? '${member.name} (You)' : member.name;
-    final initial = member.name.isNotEmpty ? member.name[0] : '?';
+    final currentUserName = SupabaseService.userDisplayName ??
+        StorageService.instance.getStringSync('user_profile_name') ??
+        'Roshan';
+    final cleanM = member.name.toLowerCase().trim();
+    final cleanUser = currentUserName.toLowerCase().trim();
+    final isCurrentUser = cleanM == cleanUser ||
+        (cleanUser.isNotEmpty &&
+            (cleanM.contains(cleanUser) || cleanUser.contains(cleanM))) ||
+        cleanM == 'roshan' ||
+        cleanM == 'roshan badwaik' ||
+        cleanM == 'you';
+    final displayName = isCurrentUser ? '${member.name} (You)' : member.name;
 
     // Status pill
     Color pillBg;
@@ -779,48 +791,18 @@ class SplitSummaryScreen extends StatelessWidget {
           flex: 5,
           child: Row(
             children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: net >= 0
-                      ? const Color(0xFFE8F8EE)
-                      : const Color(0xFFFEECEB),
-                  shape: BoxShape.circle,
-                ),
-                child: ClipOval(
-                  child: isRoshan
-                      ? Image.asset(
-                          'assets/avatars/user_roshan.png',
-                          width: 28,
-                          height: 28,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Center(
-                            child: Text(
-                              initial,
-                              style: GoogleFonts.manrope(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: net >= 0
-                                    ? const Color(0xFF16A34A)
-                                    : const Color(0xFFE53935),
-                              ),
-                            ),
-                          ),
-                        )
-                      : Center(
-                          child: Text(
-                            initial,
-                            style: GoogleFonts.manrope(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: net >= 0
-                                  ? const Color(0xFF16A34A)
-                                  : const Color(0xFFE53935),
-                            ),
-                          ),
-                        ),
-                ),
+              AppAvatar(
+                size: 28,
+                name: member.name,
+                avatarUrl: member.avatarUrl,
+                isCurrentUser: isCurrentUser,
+                backgroundColor: net >= 0
+                    ? const Color(0xFFE8F8EE)
+                    : const Color(0xFFFEECEB),
+                textColor: net >= 0
+                    ? const Color(0xFF16A34A)
+                    : const Color(0xFFE53935),
+                fontSize: 12,
               ),
               const SizedBox(width: 8),
               Expanded(

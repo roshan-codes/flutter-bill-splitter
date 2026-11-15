@@ -36,6 +36,10 @@ class StoryRepository extends ChangeNotifier {
           }
         }
       }
+      final currentAvatar = SupabaseService.resolvedUserAvatar;
+      if (currentAvatar != null) {
+        _applyAvatarToUserMembers(currentAvatar);
+      }
       notifyListeners();
 
       // Sync stories with Supabase Cloud
@@ -54,6 +58,12 @@ class StoryRepository extends ChangeNotifier {
           final idx = _stories.indexWhere((s) => s.storyId == r.storyId);
           if (idx == -1) {
             _stories.add(r);
+            changed = true;
+          }
+        }
+        final currentAvatar = SupabaseService.resolvedUserAvatar;
+        if (currentAvatar != null) {
+          if (_applyAvatarToUserMembers(currentAvatar)) {
             changed = true;
           }
         }
@@ -94,7 +104,7 @@ class StoryRepository extends ChangeNotifier {
     final userName = SupabaseService.userDisplayName ??
         await StorageService.instance.getString('user_profile_name') ??
         'Friend';
-    final userAvatar = SupabaseService.userAvatarUrl;
+    final userAvatar = SupabaseService.resolvedUserAvatar;
 
     // Check if user is already a member
     final alreadyMember = story.members.any((m) =>
@@ -280,6 +290,78 @@ class StoryRepository extends ChangeNotifier {
     notifyListeners();
     await _persist();
     SupabaseService.deleteStory(storyId).ignore();
+  }
+
+  /// Updates the current user's avatar across all their stories.
+  Future<void> updateCurrentUserAvatar(String avatar) async {
+    final changed = _applyAvatarToUserMembers(avatar);
+    if (changed) {
+      notifyListeners();
+      await _persist();
+    }
+  }
+
+  bool _isMemberCurrentUser(StoryMember m) {
+    final currentUserId = SupabaseService.currentUser?.id;
+    final currentUserName = SupabaseService.userDisplayName ??
+        _storageService.getStringSync('user_profile_name') ??
+        'Roshan';
+
+    if (currentUserId != null &&
+        m.userId.isNotEmpty &&
+        m.userId == currentUserId) {
+      return true;
+    }
+    final cleanM = m.name.toLowerCase().trim();
+    final cleanUser = currentUserName.toLowerCase().trim();
+    if (cleanM == 'you' || cleanM == cleanUser) return true;
+    if (cleanUser.isNotEmpty &&
+        (cleanM.contains(cleanUser) || cleanUser.contains(cleanM))) {
+      return true;
+    }
+    if (cleanM == 'roshan' || cleanM == 'roshan badwaik') return true;
+    if (m.role == 'creator') return true;
+    return false;
+  }
+
+  bool _applyAvatarToUserMembers(String avatar) {
+    bool changed = false;
+    for (int i = 0; i < _stories.length; i++) {
+      final story = _stories[i];
+      final memberIndex = story.members.indexWhere(_isMemberCurrentUser);
+      if (memberIndex != -1) {
+        final currentMember = story.members[memberIndex];
+        if (currentMember.avatar != avatar) {
+          final updatedMembers = List<StoryMember>.from(story.members);
+          updatedMembers[memberIndex] = StoryMember(
+            userId: currentMember.userId,
+            name: currentMember.name,
+            avatar: avatar,
+            role: currentMember.role,
+            joinedAt: currentMember.joinedAt,
+          );
+          _stories[i] = Story(
+            storyId: story.storyId,
+            title: story.title,
+            description: story.description,
+            coverEmoji: story.coverEmoji,
+            currency: story.currency,
+            status: story.status,
+            createdBy: story.createdBy,
+            createdAt: story.createdAt,
+            startDate: story.startDate,
+            endDate: story.endDate,
+            members: updatedMembers,
+            summary: story.summary,
+            expenses: story.expenses,
+            memberBalances: story.memberBalances,
+            settlements: story.settlements,
+          );
+          changed = true;
+        }
+      }
+    }
+    return changed;
   }
 
   /// Clears all stories (for tests or resets).

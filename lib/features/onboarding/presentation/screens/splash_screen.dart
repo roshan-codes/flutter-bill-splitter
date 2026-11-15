@@ -5,9 +5,7 @@ import 'package:flutter_bill_splitter/core/services/invite_service.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
-import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
-import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/features/navigation/presentation/screens/main_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/onboarding_screen.dart';
@@ -70,35 +68,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // Strict authentication gate: do not allow entering app without active Supabase authentication
     if (hasCompletedOnboarding && isSupabaseSignedIn) {
-      // If invited to a story, automatically join and open story detail
-      if (pendingInvite != null) {
-        final joinedStory =
-            await StoryRepository.instance.joinStoryWithCurrentUser(pendingInvite);
-        await InviteService.clearPendingInvite();
-        if (mounted && joinedStory != null) {
-          Navigator.of(context).pushReplacement(
-            PageRouteBuilder(
-              pageBuilder: (_, __, ___) => SplitDetailScreen(
-                groupName: joinedStory.title,
-                members: joinedStory.members
-                    .map((m) => Friend(name: m.name, phone: ''))
-                    .toList(),
-                story: joinedStory,
-              ),
-              transitionsBuilder: (_, animation, __, child) =>
-                  FadeTransition(opacity: animation, child: child),
-              transitionDuration: const Duration(milliseconds: 500),
-            ),
-          );
-          return;
-        }
-      }
-
       // Authenticated user who has completed onboarding -> directly enter app
+      // Any pending invite will be prompted in MainScreen via JoinStoryDialog
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const MainScreen(),
+          pageBuilder: (_, __, ___) => MainScreen(pendingInviteStoryId: pendingInvite),
           transitionsBuilder: (_, animation, __, child) =>
               FadeTransition(opacity: animation, child: child),
           transitionDuration: const Duration(milliseconds: 500),
@@ -206,14 +181,27 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                     const SizedBox(height: 8),
 
+                    // Full form tag: The Trusted Money Management Club
+                    Text(
+                      'The Trusted Money Management Club',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.manrope(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
+                        color: const Color(0xFF4B5563),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
                     // Subtitle: SPLIT · TRACK · SETTLE
                     Text(
                       'SPLIT · TRACK · SETTLE',
                       style: GoogleFonts.manrope(
-                        fontSize: 11.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 2.4,
-                        color: const Color(0xFF555555),
+                        letterSpacing: 2.2,
+                        color: const Color(0xFF9CA3AF),
                       ),
                     ),
 

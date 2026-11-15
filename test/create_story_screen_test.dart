@@ -45,7 +45,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('R'), findsOneWidget); // Rashmi
+      expect(find.text('R'), findsWidgets); // Rashmi & Roshan
       expect(find.text('S'), findsOneWidget); // Shubham
       expect(find.byIcon(Icons.add_rounded), findsOneWidget); // + button
     });

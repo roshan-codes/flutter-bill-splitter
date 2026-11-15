@@ -126,6 +126,28 @@ class SupabaseService {
     return null;
   }
 
+  /// Returns the current user's active avatar:
+  /// - Memo avatar asset path ('assets/avatars/memo_X.png') if selected.
+  /// - Or Google OAuth avatar URL.
+  /// - Or null if unauthenticated / no avatar.
+  static String? get resolvedUserAvatar {
+    final memoIndex =
+        StorageService.instance.getIntSync('user_profile_avatar_index') ??
+            userAvatarIndex;
+    if (memoIndex != null) {
+      return 'assets/avatars/memo_${(memoIndex % 35) + 1}.png';
+    }
+
+    final savedUrl =
+        StorageService.instance.getStringSync('user_profile_avatar_url');
+    final netUrl = userAvatarUrl ?? savedUrl;
+    if (netUrl != null && netUrl.trim().isNotEmpty) {
+      return netUrl.trim();
+    }
+
+    return null;
+  }
+
   /// Retrieves the authenticated user's email.
   static String? get userEmail => currentUser?.email;
 
@@ -134,6 +156,20 @@ class SupabaseService {
     int? avatarIndex,
     String? avatarUrl,
   }) async {
+    final memoPath = avatarIndex != null
+        ? 'assets/avatars/memo_${(avatarIndex % 35) + 1}.png'
+        : null;
+    final effectiveUrl = avatarUrl ?? memoPath;
+
+    if (avatarIndex != null) {
+      await StorageService.instance
+          .setInt('user_profile_avatar_index', avatarIndex);
+    }
+    if (effectiveUrl != null) {
+      await StorageService.instance
+          .setString('user_profile_avatar_url', effectiveUrl);
+    }
+
     final u = currentUser;
     final cli = client;
     if (u == null || cli == null) {
@@ -145,7 +181,10 @@ class SupabaseService {
       // 1. Update in Supabase Auth User Metadata (persisted in Supabase auth.users DB)
       final metadata = <String, dynamic>{};
       if (avatarIndex != null) metadata['avatar_index'] = avatarIndex;
-      if (avatarUrl != null) metadata['avatar_url'] = avatarUrl;
+      if (effectiveUrl != null) {
+        metadata['avatar_url'] = effectiveUrl;
+        metadata['picture'] = effectiveUrl;
+      }
 
       await cli.auth.updateUser(
         UserAttributes(data: metadata),
@@ -159,7 +198,7 @@ class SupabaseService {
           'email': u.email,
           'full_name': userDisplayName,
           if (avatarIndex != null) 'avatar_index': avatarIndex,
-          if (avatarUrl != null) 'avatar_url': avatarUrl,
+          if (effectiveUrl != null) 'avatar_url': effectiveUrl,
           'updated_at': DateTime.now().toIso8601String(),
         });
         debugPrint('Updated avatar in Supabase "profiles" table.');
@@ -202,6 +241,7 @@ class SupabaseService {
     final name = userDisplayName;
     final contact = userContactInfo;
     final avatar = userAvatarUrl;
+    final avatarIdx = userAvatarIndex;
     final u = currentUser;
 
     if (name != null && name.isNotEmpty) {
@@ -213,8 +253,21 @@ class SupabaseService {
     if (u?.email != null && u!.email!.isNotEmpty) {
       await StorageService.instance.setString('user_profile_email', u.email!);
     }
-    if (avatar != null && avatar.isNotEmpty) {
-      await StorageService.instance.setString('user_profile_avatar_url', avatar);
+
+    // Preserve selected memo avatar over Google OAuth profile image
+    if (avatarIdx != null) {
+      await StorageService.instance
+          .setInt('user_profile_avatar_index', avatarIdx);
+      final memoPath = 'assets/avatars/memo_${(avatarIdx % 35) + 1}.png';
+      await StorageService.instance
+          .setString('user_profile_avatar_url', memoPath);
+    } else {
+      final localMemo =
+          StorageService.instance.getIntSync('user_profile_avatar_index');
+      if (localMemo == null && avatar != null && avatar.isNotEmpty) {
+        await StorageService.instance
+            .setString('user_profile_avatar_url', avatar);
+      }
     }
 
     await syncUserProfileToDb();
