@@ -7,9 +7,7 @@ import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
-import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
-import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/home/domain/models/recent_expense.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/active_story_card.dart';
@@ -17,6 +15,7 @@ import 'package:flutter_bill_splitter/features/home/presentation/widgets/home_he
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/recent_expenses_card.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
+import 'package:flutter_bill_splitter/features/stories/presentation/screens/create_story_screen.dart';
 import 'package:flutter_bill_splitter/shared/widgets/empty_state_illustration.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
@@ -24,6 +23,7 @@ import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 /// Displays a high-fidelity empty state matching the UI mock when no stories or expenses exist,
 /// or active stories and recent expenses when data is available.
 class HomeTab extends StatefulWidget {
+  final VoidCallback? onCreateStory;
   final VoidCallback? onAddExpense;
   final void Function(String? title)? onAddExpenseWithTitle;
   final VoidCallback? onScanBill;
@@ -35,6 +35,7 @@ class HomeTab extends StatefulWidget {
 
   const HomeTab({
     super.key,
+    this.onCreateStory,
     this.onAddExpense,
     this.onAddExpenseWithTitle,
     this.onScanBill,
@@ -73,6 +74,10 @@ class _HomeTabState extends State<HomeTab> {
       widget.onAddExpenseWithTitle!(initialTitle);
       return;
     }
+    if (widget.onCreateStory != null) {
+      widget.onCreateStory!();
+      return;
+    }
     if (widget.onAddExpense != null) {
       widget.onAddExpense!();
       return;
@@ -81,9 +86,7 @@ class _HomeTabState extends State<HomeTab> {
       AppTransitions.sharedAxisRoute(
         type: SharedAxisTransitionType.vertical,
         duration: AppMotion.medium,
-        builder: (context) => AddExpenseScreen(
-          friends: FriendsRepository.instance.friends,
-          groups: FriendsRepository.instance.groups,
+        builder: (context) => CreateStoryScreen(
           initialTitle: initialTitle,
         ),
       ),

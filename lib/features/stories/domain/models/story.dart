@@ -659,33 +659,33 @@ class Story {
           },
           {
             "expense_id": "exp_delhi_002",
-            "title": "Cab & Sightseeing",
+            "title": "Dinner",
+            "category": "food",
+            "amount": 2400,
+            "paid_by": "user_shubham",
+            "split_type": "equal",
+            "participants": ["user_rashmi", "user_shubham", "user_roshan"],
+            "shares": [
+              {"user_id": "user_rashmi", "amount": 800},
+              {"user_id": "user_shubham", "amount": 800},
+              {"user_id": "user_roshan", "amount": 800}
+            ],
+            "date": "2026-11-12T20:45:00Z"
+          },
+          {
+            "expense_id": "exp_delhi_003",
+            "title": "Fuel",
             "category": "transport",
-            "amount": 4000,
+            "amount": 2100,
             "paid_by": "user_roshan",
             "split_type": "equal",
             "participants": ["user_rashmi", "user_shubham", "user_roshan"],
             "shares": [
-              {"user_id": "user_rashmi", "amount": 1333.33},
-              {"user_id": "user_shubham", "amount": 1333.33},
-              {"user_id": "user_roshan", "amount": 1333.34}
+              {"user_id": "user_rashmi", "amount": 700},
+              {"user_id": "user_shubham", "amount": 700},
+              {"user_id": "user_roshan", "amount": 700}
             ],
-            "date": "2026-11-13T14:00:00Z"
-          },
-          {
-            "expense_id": "exp_delhi_003",
-            "title": "Café & Breakfast",
-            "category": "food",
-            "amount": 500,
-            "paid_by": "user_rashmi",
-            "split_type": "equal",
-            "participants": ["user_rashmi", "user_shubham", "user_roshan"],
-            "shares": [
-              {"user_id": "user_rashmi", "amount": 166.67},
-              {"user_id": "user_shubham", "amount": 166.67},
-              {"user_id": "user_roshan", "amount": 166.66}
-            ],
-            "date": "2026-11-14T09:30:00Z"
+            "date": "2026-11-12T19:10:00Z"
           }
         ],
         "member_balances": [

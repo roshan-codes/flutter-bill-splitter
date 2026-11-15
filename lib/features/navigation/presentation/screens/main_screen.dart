@@ -12,6 +12,7 @@ import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/screens/home_tab.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/screens/profile_tab.dart';
+import 'package:flutter_bill_splitter/features/stories/presentation/screens/create_story_screen.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Main scaffold with platform-adaptive navigation bar (Material for Android, Cupertino for iOS).
@@ -56,15 +57,28 @@ class _MainScreenState extends State<MainScreen> {
 
   late final List<Widget> _tabs = [
     HomeTab(
+      onCreateStory: () => _openCreateStoryScreen(),
       onAddExpense: () => _openAddExpenseScreen(),
       onAddExpenseWithTitle: (title) =>
           _openAddExpenseScreen(initialTitle: title),
     ),
     ActivityTab(
-      onCreateStory: () => _openAddExpenseScreen(),
+      onCreateStory: () => _openCreateStoryScreen(),
     ),
     const ProfileTab(),
   ];
+
+  void _openCreateStoryScreen({String? initialTitle}) {
+    Navigator.of(context).push(
+      AppTransitions.sharedAxisRoute(
+        type: SharedAxisTransitionType.vertical,
+        duration: AppMotion.medium,
+        builder: (context) => CreateStoryScreen(
+          initialTitle: initialTitle,
+        ),
+      ),
+    );
+  }
 
   void _openAddExpenseScreen({String? initialTitle}) {
     Navigator.of(context).push(

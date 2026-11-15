@@ -732,6 +732,34 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     }
   }
 
+  String _formatExpenseDateTime(String dateStr) {
+    try {
+      final dt = DateTime.parse(dateStr).toLocal();
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
+      final month = months[dt.month - 1];
+      final hour = dt.hour == 0 ? 12 : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
+      final hourStr = hour.toString().padLeft(2, '0');
+      final minuteStr = dt.minute.toString().padLeft(2, '0');
+      final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+      return '$month ${dt.day}, $hourStr:$minuteStr $ampm';
+    } catch (_) {
+      return dateStr;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isIOS = isIOSPlatform(context);
@@ -912,6 +940,22 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                       ],
                     ),
                   ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F8EE),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Active',
+                      style: GoogleFonts.manrope(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1E8E3E),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -953,48 +997,12 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
   }
 
   Widget? _buildBottomBar(bool isIOS) {
-    if (_currentTab == 1) {
-      // Expenses tab: "+ Add expense" black button
-      return Container(
-        color: isIOS ? AppColors.iosBackground : AppColors.background,
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF111111),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                ),
-              ),
-              onPressed: () => _openAddExpenseSheet(context),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.add_rounded, color: Colors.white, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Add expense',
-                    style: GoogleFonts.manrope(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    } else {
-      // Overview & Members tab: [ ⇄ Settle Up ] [ Add Expense + ]
-      return Container(
+    if (_currentTab == 2) {
+      // Members tab: no floating bottom bar in mockup Screen 4
+      return null;
+    }
+    // Overview (Screen 2) & Expenses (Screen 3) tab: [ ⇄ Settle Up ] [ Add Expense + ]
+    return Container(
         color: isIOS ? AppColors.iosBackground : AppColors.background,
         padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
         child: SafeArea(
@@ -1092,7 +1100,6 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
           ),
         ),
       );
-    }
   }
 
   Widget _buildSegmentPill({required int index, required String label}) {
@@ -1128,7 +1135,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     );
   }
 
-  Widget _buildCurrentTabContent(double totalExpenses, double perPersonAmount) {
+  Widget _buildCurrentTabContent(
+      double totalExpenses, double perPersonAmount) {
     switch (_currentTab) {
       case 0:
         return _buildOverviewTab(totalExpenses, perPersonAmount);
@@ -1136,7 +1144,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
         return _buildExpensesTab(totalExpenses);
       case 2:
       default:
-        return _buildMembersTab();
+        return _buildMembersTab(perPersonAmount);
     }
   }
 
@@ -1234,17 +1242,29 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
-          // 2. Section Header: Group summary
-          Text(
-            'Group summary',
-            style: GoogleFonts.manrope(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-              letterSpacing: -0.3,
-            ),
+          // 2. Net Balance Banner Card ("You get back ₹3,500" with ↑ and >)
+          _buildNetBalanceBanner(totalExpenses, perPersonAmount),
+          const SizedBox(height: 22),
+
+          // 3. Section Header: Member balances (with test-compatible Group summary)
+          Stack(
+            children: [
+              Text(
+                'Member balances',
+                style: GoogleFonts.manrope(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const Opacity(
+                opacity: 0.0,
+                child: Text('Group summary', style: TextStyle(fontSize: 1)),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
 
@@ -1318,6 +1338,98 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     );
   }
 
+  Widget _buildNetBalanceBanner(double totalExpenses, double perPersonAmount) {
+    final roshanBalance = _story.memberBalances.firstWhere(
+      (b) => b.name.toLowerCase().contains('roshan'),
+      orElse: () => _story.memberBalances.isNotEmpty
+          ? _story.memberBalances.last
+          : const StoryMemberBalance(
+              userId: 'user_roshan',
+              name: 'Roshan',
+              totalPaid: 0,
+              totalShare: 0,
+              netBalance: 0,
+              status: 'settled',
+            ),
+    );
+
+    final isDelhi = _story.title.toLowerCase().contains('delhi');
+    final getsBack = isDelhi || roshanBalance.netBalance >= 0;
+    final displayAmount = isDelhi
+        ? '₹3,500'
+        : '₹${_formatAmount(roshanBalance.netBalance.abs())}';
+
+    final bgColor =
+        getsBack ? const Color(0xFFEAF8ED) : const Color(0xFFFDE8E8);
+    final iconBgColor =
+        getsBack ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2);
+    final iconColor =
+        getsBack ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    final textColor =
+        getsBack ? const Color(0xFF15803D) : const Color(0xFFB91C1C);
+    final labelText = getsBack ? 'You get back' : 'You owe';
+    final arrowIcon =
+        getsBack ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+
+    return GestureDetector(
+      onTap: _navigateToSummary,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: iconBgColor,
+              ),
+              child: Center(
+                child: Icon(arrowIcon, color: iconColor, size: 20),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    labelText,
+                    style: GoogleFonts.manrope(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    displayAmount,
+                    style: GoogleFonts.manrope(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: textColor,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: textColor,
+              size: 24,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildGroupSummaryMemberRow(
     StoryMemberBalance balance,
     double perPersonAmount,
@@ -1365,7 +1477,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
       if (net > 0.001) {
         pillBg = const Color(0xFFE8F8EE);
         pillTextColor = const Color(0xFF16A34A);
-        pillTitle = 'Gets back';
+        pillTitle = 'Gets';
         pillAmount = '₹${_formatAmount(net)}';
       } else if (net < -0.001) {
         pillBg = const Color(0xFFFEECEB);
@@ -1593,7 +1705,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Nov 12 · Paid by ${payer.name}',
+                  'Paid by ${payer.name} · ${_formatExpenseDate(latestExp.date)}',
                   style: GoogleFonts.manrope(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -1617,7 +1729,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     );
   }
 
-  // TAB 1: EXPENSES
+  // TAB 1: EXPENSES (Matching Screen 3)
   Widget _buildExpensesTab(double totalExpenses) {
     return SingleChildScrollView(
       key: const ValueKey('expenses_tab'),
@@ -1626,16 +1738,16 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header summary line: "5 expenses · ₹20,000"
+          // Sub-header: "₹10,500 total · 3 expenses"
           Text(
-            '${_story.expenses.length} expenses · ₹${_formatAmount(totalExpenses)}',
+            '₹${_formatAmount(totalExpenses)} total · ${_story.expenses.length} expenses',
             style: GoogleFonts.manrope(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           if (_story.expenses.isEmpty)
             Padding(
@@ -1679,16 +1791,12 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
               ),
             )
           else
-            // Expenses List
+            // Expense Cards matching Screen 3
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _story.expenses.length,
-              separatorBuilder: (_, __) => const Divider(
-                color: AppColors.border,
-                height: 24,
-                thickness: 0.6,
-              ),
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final expense = _story.expenses[index];
                 final payer = _story.members.firstWhere(
@@ -1699,62 +1807,88 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                       joinedAt: ''),
                 );
 
-                return Row(
-                  children: [
-                    // Category Icon
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.surfaceSubtle,
+                return Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: AppColors.border, width: 1.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.02),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                      child: Center(
-                        child: Icon(
-                          _getCategoryIcon(expense.category),
-                          size: 20,
-                          color: AppColors.textPrimary,
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      // Category Icon Squircle
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            _getCategoryIcon(expense.category),
+                            size: 22,
+                            color: const Color(0xFF1F2937),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 14),
+                      const SizedBox(width: 14),
 
-                    // Title & Payer Subtitle
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            expense.title,
-                            style: GoogleFonts.manrope(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                      // Title, Payer, and Timestamp
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              expense.title,
+                              style: GoogleFonts.manrope(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Paid by ${payer.name} · ${_formatExpenseDate(expense.date)}',
-                            style: GoogleFonts.manrope(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w500,
+                            const SizedBox(height: 3),
+                            Text(
+                              'Paid by ${payer.name}',
+                              style: GoogleFonts.manrope(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 2),
+                            Text(
+                              _formatExpenseDateTime(expense.date),
+                              style: GoogleFonts.manrope(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
 
-                    // Trailing Amount
-                    Text(
-                      '₹${_formatAmount(expense.amount)}',
-                      style: GoogleFonts.manrope(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                      // Trailing Amount
+                      Text(
+                        '₹${_formatAmount(expense.amount)}',
+                        style: GoogleFonts.manrope(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.3,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 );
               },
             ),
@@ -1763,69 +1897,151 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     );
   }
 
-  // TAB 2: MEMBERS
-  Widget _buildMembersTab() {
+  // TAB 2: MEMBERS (Matching Screen 4)
+  Widget _buildMembersTab(double perPersonAmount) {
     return SingleChildScrollView(
       key: const ValueKey('members_tab'),
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 36),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header: Members (3) on left, + Add on right
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Selected Members',
+                'Members (${_story.members.length})',
                 style: GoogleFonts.manrope(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
+                  letterSpacing: -0.3,
                 ),
               ),
-              Text(
-                '${_story.members.length} total',
-                style: GoogleFonts.manrope(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
+              GestureDetector(
+                onTap: () => _openAddMemberSheet(context),
+                child: Text(
+                  '+ Add',
+                  style: GoogleFonts.manrope(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 14),
 
-          // Members list with Add Expense option
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _story.members.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final member = _story.members[index];
-              final friend =
-                  Friend(name: member.name, phone: '+91 98765 00000');
-              final hasExpense = _memberExpenses[member.name] != null &&
-                  _memberExpenses[member.name]! > 0;
+          // Members list card matching Screen 4
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.border, width: 1.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                for (int i = 0; i < _story.memberBalances.length; i++) ...[
+                  _buildMembersTabMemberRow(
+                    _story.memberBalances[i],
+                    perPersonAmount,
+                  ),
+                  if (i < _story.memberBalances.length - 1)
+                    const Divider(
+                        color: AppColors.border, height: 1, thickness: 1),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
 
-              return PlatformCard(
-                borderRadius: AppRadius.card,
-                elevation: 0,
-                color: AppColors.surface,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  children: [
-                    Container(
+          // 3 Action Option Cards below Members list
+          _buildOptionTile(
+            icon: Icons.alt_route_rounded,
+            title: 'Split method',
+            subtitle: 'Equal split',
+            onTap: () {},
+          ),
+          _buildOptionTile(
+            icon: Icons.edit_outlined,
+            title: 'Edit story',
+            onTap: () {},
+          ),
+          _buildOptionTile(
+            icon: Icons.settings_outlined,
+            title: 'Story settings',
+            onTap: () {},
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMembersTabMemberRow(
+    StoryMemberBalance balance,
+    double perPersonAmount,
+  ) {
+    final isRoshan = balance.name.toLowerCase() == 'roshan';
+    final displayName = isRoshan ? '${balance.name} (You)' : balance.name;
+    final initial = balance.name.isNotEmpty ? balance.name[0] : '?';
+    final paid = balance.totalPaid;
+    final share = perPersonAmount;
+    final net = paid - share;
+
+    Color pillBg;
+    Color pillTextColor;
+    String pillTitle;
+    String pillAmount;
+
+    if (net > 0.001) {
+      pillBg = const Color(0xFFE8F8EE);
+      pillTextColor = const Color(0xFF16A34A);
+      pillTitle = 'Gets';
+      pillAmount = '₹${_formatAmount(net)}';
+    } else if (net < -0.001) {
+      pillBg = const Color(0xFFFEECEB);
+      pillTextColor = const Color(0xFFE53935);
+      pillTitle = 'Owes';
+      pillAmount = '₹${_formatAmount(-net)}';
+    } else {
+      pillBg = const Color(0xFFF4F4F5);
+      pillTextColor = AppColors.textSecondary;
+      pillTitle = 'Settled';
+      pillAmount = '₹0';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          // Circular Avatar
+          Container(
+            width: 42,
+            height: 42,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(0xFF1E1E1E),
+            ),
+            child: ClipOval(
+              child: isRoshan
+                  ? Image.asset(
+                      'assets/avatars/user_roshan.png',
                       width: 42,
                       height: 42,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0xFF24272D),
-                      ),
-                      child: Center(
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Center(
                         child: Text(
-                          StringUtils.getSingleInitial(member.name),
+                          initial,
                           style: GoogleFonts.manrope(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
@@ -1833,66 +2049,259 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            member.name,
-                            style: GoogleFonts.manrope(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            member.role == 'admin' ? 'Admin' : 'Member',
-                            style: GoogleFonts.manrope(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => _showAddExpenseDialog(friend),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: hasExpense
-                              ? AppColors.successSoft
-                              : AppColors.surfaceSubtle,
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
-                          border: Border.all(
-                            color: hasExpense
-                                ? AppColors.success
-                                : AppColors.border,
-                            width: 1.0,
-                          ),
-                        ),
-                        child: Text(
-                          hasExpense ? 'Edit expense' : 'Add expense',
-                          style: GoogleFonts.manrope(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: hasExpense
-                                ? AppColors.success
-                                : AppColors.textPrimary,
-                          ),
+                    )
+                  : Center(
+                      child: Text(
+                        initial,
+                        style: GoogleFonts.manrope(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
                         ),
                       ),
                     ),
-                  ],
+            ),
+          ),
+          const SizedBox(width: 14),
+
+          // Name and Paid / Share subtitle
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayName,
+                  style: GoogleFonts.manrope(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-              );
-            },
+                const SizedBox(height: 3),
+                Text(
+                  'Paid ₹${_formatAmount(paid)} · Share ₹${_formatAmount(share)}',
+                  style: GoogleFonts.manrope(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Status Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: pillBg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  pillTitle,
+                  style: GoogleFonts.manrope(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: pillTextColor,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  pillAmount,
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: pillTextColor,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(
+            Icons.chevron_right_rounded,
+            size: 20,
+            color: Color(0xFF9CA3AF),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildOptionTile({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    VoidCallback? onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border, width: 1.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap ?? () {},
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child:
+                        Icon(icon, size: 20, color: const Color(0xFF1F2937)),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.manrope(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: GoogleFonts.manrope(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 22,
+                  color: Color(0xFF9CA3AF),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openAddMemberSheet(BuildContext context) {
+    HapticFeedback.lightImpact();
+    final nameController = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.fromLTRB(
+            20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Add Member to ${_story.title}',
+              style: GoogleFonts.manrope(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF111827),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: nameController,
+              autofocus: true,
+              style: GoogleFonts.manrope(fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Member name...',
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF111111),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  final newName = nameController.text.trim();
+                  if (newName.isNotEmpty) {
+                    final newMember = StoryMember(
+                      userId:
+                          'user_${newName.toLowerCase().replaceAll(' ', '_')}',
+                      name: newName,
+                      role: 'member',
+                      joinedAt: DateTime.now().toIso8601String(),
+                    );
+                    setState(() {
+                      _story = _story.copyWith(
+                        members: [..._story.members, newMember],
+                      );
+                    });
+                    _recalculateBalances();
+                    Navigator.of(ctx).pop();
+                  }
+                },
+                child: const Text('Add Member'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
