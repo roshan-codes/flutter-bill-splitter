@@ -260,8 +260,7 @@ class _JoinStoryDialogState extends State<JoinStoryDialog> {
                     elevation: 0,
                   ),
                   onPressed: () async {
-                    await InviteService.clearPendingInvite(
-                        widget.story.storyId);
+                    await InviteService.clearPendingInvite(widget.story.storyId);
                     if (context.mounted) {
                       Navigator.of(context).pop();
                       _navigateToStoryDetail(context, widget.story);
@@ -282,8 +281,7 @@ class _JoinStoryDialogState extends State<JoinStoryDialog> {
                 height: 42,
                 child: TextButton(
                   onPressed: () async {
-                    await InviteService.clearPendingInvite(
-                        widget.story.storyId);
+                    await InviteService.clearPendingInvite(widget.story.storyId);
                     if (context.mounted) {
                       Navigator.of(context).pop();
                     }

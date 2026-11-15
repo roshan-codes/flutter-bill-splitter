@@ -261,8 +261,7 @@ class Story {
   final String coverEmoji;
   final String currency;
   final String status; // "active", "settled", "archived"
-  final String
-      splitMethod; // "equal", "exact", "percentage", "shares", "adjustment"
+  final String splitMethod; // "equal", "exact", "percentage", "shares", "adjustment"
   final String createdBy;
   final String createdAt;
   final String? startDate;
@@ -410,10 +409,12 @@ class Story {
 
       if (existingIndex != -1) {
         final existing = result[existingIndex];
-        final betterName = (rawName.length > existing.name.length &&
-                cleanName != 'you')
-            ? rawName
-            : (existing.name.toLowerCase() == 'you' ? rawName : existing.name);
+        final betterName =
+            (rawName.length > existing.name.length && cleanName != 'you')
+                ? rawName
+                : (existing.name.toLowerCase() == 'you'
+                    ? rawName
+                    : existing.name);
         final betterAvatar = member.avatar ?? existing.avatar;
         final betterRole = member.role == 'creator' || member.role == 'admin'
             ? member.role
@@ -432,8 +433,7 @@ class Story {
               : member.joinedAt,
         );
         if (betterId.isNotEmpty) seenUserIds.add(betterId);
-        if (betterName.isNotEmpty)
-          seenNames.add(betterName.toLowerCase().trim());
+        if (betterName.isNotEmpty) seenNames.add(betterName.toLowerCase().trim());
         continue;
       }
 
@@ -499,10 +499,12 @@ class Story {
         final betterId = userId.isNotEmpty && !userId.startsWith('user_')
             ? userId
             : (existing.userId.isNotEmpty ? existing.userId : userId);
-        final betterName = (bName.length > existing.name.length &&
-                cleanName != 'you')
-            ? bName
-            : (existing.name.toLowerCase() == 'you' ? bName : existing.name);
+        final betterName =
+            (bName.length > existing.name.length && cleanName != 'you')
+                ? bName
+                : (existing.name.toLowerCase() == 'you'
+                    ? bName
+                    : existing.name);
 
         final totalPaid = existing.totalPaid + b.totalPaid;
         final totalShare = existing.totalShare + b.totalShare;
