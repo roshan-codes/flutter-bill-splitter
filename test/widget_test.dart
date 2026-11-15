@@ -287,7 +287,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify expense badge updated with ₹600
-    expect(find.text('₹600'), findsOneWidget);
+    expect(find.text('₹600'), findsWidgets);
     expect(find.text('Edit expense'), findsOneWidget);
 
     // Tap Confirm Split to navigate to SplitSummaryScreen

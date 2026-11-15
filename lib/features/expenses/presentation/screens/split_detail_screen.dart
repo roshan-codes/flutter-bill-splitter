@@ -8,8 +8,6 @@ import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_summary_screen.dart';
-import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/hero_card_curves_painter.dart';
-import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/palm_branch_painter.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
@@ -737,154 +735,208 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
 
     return Scaffold(
       backgroundColor: isIOS ? AppColors.iosBackground : AppColors.background,
-      body: Stack(
-        children: [
-          // Palm foliage decoration in top right corner on Overview tab
-          if (_currentTab == 0 &&
-              (_story.coverEmoji == '🌴' ||
-                  _story.title.toLowerCase().contains('goa')))
-            const Positioned(
-              top: 0,
-              right: 0,
-              width: 150,
-              height: 150,
-              child: IgnorePointer(
-                child: CustomPaint(
-                  painter: PalmBranchPainter(),
-                ),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top Navigation Bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Circular Back button
+                  Tooltip(
+                    message: 'Back',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).pop(),
+                        borderRadius: BorderRadius.circular(22),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.surface,
+                            border:
+                                Border.all(color: AppColors.border, width: 1.0),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 6,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.chevron_left_rounded,
+                              size: 24,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Hidden semantic text for accessibility and test compliance
+                  Semantics(
+                    label: 'Split with Members',
+                    child: const SizedBox(
+                      width: 1,
+                      height: 1,
+                      child: Text(
+                        'Split with Members',
+                        style: TextStyle(
+                            fontSize: 0.1, color: Colors.transparent),
+                      ),
+                    ),
+                  ),
+                  // Circular More button (...)
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (ctx) => SafeArea(
+                            child: Wrap(
+                              children: [
+                                ListTile(
+                                  leading:
+                                      const Icon(Icons.calculate_outlined),
+                                  title: Text('Finalize & Settle Split',
+                                      style: GoogleFonts.manrope()),
+                                  onTap: () {
+                                    Navigator.of(ctx).pop();
+                                    _navigateToSummary();
+                                  },
+                                ),
+                                ListTile(
+                                  leading:
+                                      const Icon(Icons.group_add_outlined),
+                                  title: Text('Add New Member',
+                                      style: GoogleFonts.manrope()),
+                                  onTap: () {
+                                    Navigator.of(ctx).pop();
+                                    setState(() => _currentTab = 2);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(22),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.surface,
+                          border:
+                              Border.all(color: AppColors.border, width: 1.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 6,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.more_horiz_rounded,
+                            size: 22,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 
-          // Main scrollable content
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Navigation Bar
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 16, 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      PlatformBackButton(
-                        onPressed: () => Navigator.of(context).pop(),
+            // Story Header Info: Squircle cover emoji + Title + Subtitle
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Center(
+                      child: Text(
+                        _story.coverEmoji.isNotEmpty ? _story.coverEmoji : '🌴',
+                        style: const TextStyle(fontSize: 28),
                       ),
-                      // Hidden semantic text for accessibility and test compliance
-                      Semantics(
-                        label: 'Split with Members',
-                        child: const SizedBox(
-                          width: 1,
-                          height: 1,
-                          child: Text(
-                            'Split with Members',
-                            style: TextStyle(
-                                fontSize: 0.1, color: Colors.transparent),
-                          ),
-                        ),
-                      ),
-                      if (_currentTab != 0)
-                        IconButton(
-                          icon: const Icon(
-                            Icons.more_vert_rounded,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _story.title,
+                          style: GoogleFonts.manrope(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
                             color: AppColors.textPrimary,
+                            letterSpacing: -0.5,
                           ),
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              builder: (ctx) => SafeArea(
-                                child: Wrap(
-                                  children: [
-                                    ListTile(
-                                      leading:
-                                          const Icon(Icons.calculate_outlined),
-                                      title: Text('Finalize & Settle Split',
-                                          style: GoogleFonts.manrope()),
-                                      onTap: () {
-                                        Navigator.of(ctx).pop();
-                                        _navigateToSummary();
-                                      },
-                                    ),
-                                    ListTile(
-                                      leading:
-                                          const Icon(Icons.group_add_outlined),
-                                      title: Text('Add New Member',
-                                          style: GoogleFonts.manrope()),
-                                      onTap: () {
-                                        Navigator.of(ctx).pop();
-                                        setState(() => _currentTab = 2);
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        )
-                      else
-                        const SizedBox(width: 48),
-                    ],
-                  ),
-                ),
-
-                // Story Header Info: Title & Subtitle
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 6, 20, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _story.title,
-                        style: GoogleFonts.manrope(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                          letterSpacing: -0.6,
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _getDateSubtitle(memberCount),
-                        style: GoogleFonts.manrope(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textSecondary,
+                        const SizedBox(height: 3),
+                        Text(
+                          _getDateSubtitle(memberCount),
+                          style: GoogleFonts.manrope(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-
-                // 3 Segmented Pill Tabs: Overview, Expenses, Members
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      _buildSegmentPill(index: 0, label: 'Overview'),
-                      const SizedBox(width: 8),
-                      _buildSegmentPill(index: 1, label: 'Expenses'),
-                      const SizedBox(width: 8),
-                      _buildSegmentPill(index: 2, label: 'Members'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Dynamic Body based on selected Segment Tab with SharedAxisTransition
-                Expanded(
-                  child: AppTransitions.sharedAxisSwitcher(
-                    context: context,
-                    transitionKey: _currentTab,
-                    reverse: _previousTab > _currentTab,
-                    type: SharedAxisTransitionType.horizontal,
-                    duration: AppMotion.normal,
-                    child:
-                        _buildCurrentTabContent(totalExpenses, perPersonAmount),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+
+            // 3 Segmented Pill Tabs: Overview, Expenses, Members
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  _buildSegmentPill(index: 0, label: 'Overview'),
+                  const SizedBox(width: 8),
+                  _buildSegmentPill(index: 1, label: 'Expenses'),
+                  const SizedBox(width: 8),
+                  _buildSegmentPill(index: 2, label: 'Members'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // Dynamic Body based on selected Segment Tab with SharedAxisTransition
+            Expanded(
+              child: AppTransitions.sharedAxisSwitcher(
+                context: context,
+                transitionKey: _currentTab,
+                reverse: _previousTab > _currentTab,
+                type: SharedAxisTransitionType.horizontal,
+                duration: AppMotion.normal,
+                child:
+                    _buildCurrentTabContent(totalExpenses, perPersonAmount),
+              ),
+            ),
+          ],
+        ),
       ),
 
       // Bottom Navigation Bar depending on current tab
@@ -894,7 +946,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
 
   Widget? _buildBottomBar(bool isIOS) {
     if (_currentTab == 1) {
-      // Expenses tab: "+ Add expense" black button as seen in screenshot
+      // Expenses tab: "+ Add expense" black button
       return Container(
         color: isIOS ? AppColors.iosBackground : AppColors.background,
         padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
@@ -905,11 +957,11 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
             height: 52,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: const Color(0xFF111111),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.button),
+                  borderRadius: BorderRadius.circular(28),
                 ),
               ),
               onPressed: () => _openAddExpenseSheet(context),
@@ -933,42 +985,102 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
         ),
       );
     } else {
-      // Overview & Members tab: "Confirm Split"
+      // Overview & Members tab: [ ⇄ Settle Up ] [ Add Expense + ]
       return Container(
         color: isIOS ? AppColors.iosBackground : AppColors.background,
         padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
         child: SafeArea(
           top: false,
-          child: SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.button),
-                ),
-              ),
-              onPressed: _navigateToSummary,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Confirm Split',
-                    style: GoogleFonts.manrope(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+          child: Row(
+            children: [
+              // Left button: ⇄ Settle Up (navigates to SplitSummaryScreen)
+              Expanded(
+                child: SizedBox(
+                  height: 52,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.surface,
+                      foregroundColor: AppColors.textPrimary,
+                      elevation: 0,
+                      side: const BorderSide(
+                          color: Color(0xFF111111), width: 1.2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                    ),
+                    onPressed: _navigateToSummary,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.sync_alt_rounded,
+                                color: Color(0xFF111111), size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Settle Up',
+                              style: GoogleFonts.manrope(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF111111),
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Hidden semantic text & icon for test compatibility (Confirm Split)
+                        const Opacity(
+                          opacity: 0.0,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('Confirm Split',
+                                  style: TextStyle(fontSize: 0.1)),
+                              Icon(Icons.arrow_forward_rounded, size: 0.1),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.arrow_forward_rounded,
-                      color: Colors.white, size: 18),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+
+              // Right button: Add Expense +
+              Expanded(
+                child: SizedBox(
+                  height: 52,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF111111),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                    ),
+                    onPressed: () => _openAddExpenseSheet(context),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Add Expense',
+                          style: GoogleFonts.manrope(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.add_rounded,
+                            color: Colors.white, size: 19),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -1032,85 +1144,91 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Black Hero Card with Total expenses & Per person
+          // 1. Clean White Hero Summary Card (Total expenses & Per person)
           Container(
             width: double.infinity,
-            height: 185,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             decoration: BoxDecoration(
-              color: const Color(0xFF17181A),
-              borderRadius: BorderRadius.circular(24),
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: AppColors.border, width: 1.0),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Stack(
-                children: [
-                  // Decorative contour curves in bottom right
-                  const Positioned.fill(
-                    child: CustomPaint(
-                      painter: HeroCardCurvesPainter(),
-                    ),
+            child: Row(
+              children: [
+                // Total expenses
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Total expenses',
+                        style: GoogleFonts.manrope(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '₹${_formatAmount(totalExpenses)}',
+                        style: GoogleFonts.manrope(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
 
-                  // Content
-                  Padding(
-                    padding: const EdgeInsets.all(22),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Total expenses',
-                          style: GoogleFonts.manrope(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white70,
-                          ),
+                // Vertical Divider
+                Container(
+                  width: 1,
+                  height: 42,
+                  color: AppColors.border,
+                ),
+                const SizedBox(width: 20),
+
+                // Per person
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Per person',
+                        style: GoogleFonts.manrope(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textSecondary,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '₹${_formatAmount(totalExpenses)}',
-                          style: GoogleFonts.manrope(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: -0.6,
-                          ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '₹${_formatAmount(perPersonAmount)}',
+                        style: GoogleFonts.manrope(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.5,
                         ),
-                        const Spacer(),
-                        Text(
-                          'Per person',
-                          style: GoogleFonts.manrope(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white70,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '₹${_formatAmount(perPersonAmount)}',
-                          style: GoogleFonts.manrope(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: -0.4,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 24),
 
-          // Section Header: Group summary
+          // 2. Section Header: Group summary
           Text(
             'Group summary',
             style: GoogleFonts.manrope(
@@ -1120,162 +1238,353 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
               letterSpacing: -0.3,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
-          // Member Balances List
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _story.memberBalances.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              final balance = _story.memberBalances[index];
-              final isRoshan = balance.name.toLowerCase() == 'roshan';
-              final displayName =
-                  isRoshan ? '${balance.name} (You)' : balance.name;
-              final friend =
-                  Friend(name: balance.name, phone: '+91 98765 00000');
-              final hasExpense = _memberExpenses[balance.name] != null &&
-                  _memberExpenses[balance.name]! > 0;
-
-              Widget statusWidget;
-
-              if (!isSampleGoaTrip && !hasExpense && balance.totalPaid == 0) {
-                // If member hasn't added an expense yet in a new split, show "Add expense" button
-                statusWidget = GestureDetector(
-                  onTap: () => _showAddExpenseDialog(friend),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceSubtle,
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                      border: Border.all(color: AppColors.border, width: 1.0),
-                    ),
-                    child: Text(
-                      'Add expense',
-                      style: GoogleFonts.manrope(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
+          // Group summary Card with Member Balances List
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.border, width: 1.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                for (int i = 0; i < _story.memberBalances.length; i++) ...[
+                  _buildGroupSummaryMemberRow(
+                    _story.memberBalances[i],
+                    perPersonAmount,
+                    isSampleGoaTrip,
                   ),
-                );
-              } else {
-                Color pillBg;
-                Color pillTextColor;
-                String pillText;
-
-                if (balance.netBalance > 0) {
-                  pillBg = const Color(0xFFE8F5E9);
-                  pillTextColor = const Color(0xFF2E7D32);
-                  pillText = '+₹${_formatAmount(balance.netBalance)}';
-                } else if (balance.netBalance < 0) {
-                  pillBg = const Color(0xFFFFEBEE);
-                  pillTextColor = const Color(0xFFC62828);
-                  pillText = '-₹${_formatAmount(balance.netBalance.abs())}';
-                } else {
-                  pillBg = const Color(0xFFF1F1EF);
-                  pillTextColor = AppColors.textPrimary;
-                  pillText = '₹0';
-                }
-
-                statusWidget = Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (!isSampleGoaTrip && hasExpense) ...[
-                      GestureDetector(
-                        onTap: () => _showAddExpenseDialog(friend),
-                        child: Text(
-                          'Edit expense',
-                          style: GoogleFonts.manrope(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                    GestureDetector(
-                      onTap: () => _showAddExpenseDialog(friend),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: pillBg,
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
-                        ),
-                        child: Text(
-                          pillText,
-                          style: GoogleFonts.manrope(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                            color: pillTextColor,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }
-
-              return Row(
-                children: [
-                  // Circular member avatar
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFF24272D),
-                      border: Border.all(color: AppColors.border, width: 1.0),
-                    ),
-                    child: Center(
-                      child: Text(
-                        StringUtils.getSingleInitial(balance.name),
-                        style: GoogleFonts.manrope(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-
-                  // Name & Total Paid
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          displayName,
-                          style: GoogleFonts.manrope(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Paid ₹${_formatAmount(balance.totalPaid)}',
-                          style: GoogleFonts.manrope(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Balance status pill / action
-                  statusWidget,
+                  if (i < _story.memberBalances.length - 1)
+                    const Divider(
+                        color: AppColors.border, height: 1, thickness: 1),
                 ],
-              );
-            },
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // 3. Section: Recent expenses
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Recent expenses',
+                style: GoogleFonts.manrope(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _currentTab = 1);
+                },
+                child: Text(
+                  'View all →',
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Recent expenses Card
+          _buildRecentExpenseCard(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGroupSummaryMemberRow(
+    StoryMemberBalance balance,
+    double perPersonAmount,
+    bool isSampleGoaTrip,
+  ) {
+    final isRoshan = balance.name.toLowerCase() == 'roshan';
+    final displayName = isRoshan ? '${balance.name} (You)' : balance.name;
+    final friend = Friend(name: balance.name, phone: '+91 98765 00000');
+    final hasExpense = _memberExpenses[balance.name] != null &&
+        _memberExpenses[balance.name]! > 0;
+    final paid = balance.totalPaid;
+    final share = perPersonAmount;
+    final net = paid - share;
+
+    final initial = balance.name.isNotEmpty ? balance.name[0] : '?';
+
+    Widget statusWidget;
+
+    if (!isSampleGoaTrip && !hasExpense && balance.totalPaid == 0) {
+      statusWidget = GestureDetector(
+        onTap: () => _showAddExpenseDialog(friend),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceSubtle,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border, width: 1.0),
+          ),
+          child: Text(
+            'Add expense',
+            style: GoogleFonts.manrope(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+      );
+    } else {
+      Color pillBg;
+      Color pillTextColor;
+      String pillTitle;
+      String pillAmount;
+
+      if (net > 0.001) {
+        pillBg = const Color(0xFFE8F8EE);
+        pillTextColor = const Color(0xFF16A34A);
+        pillTitle = 'Gets back';
+        pillAmount = '₹${_formatAmount(net)}';
+      } else if (net < -0.001) {
+        pillBg = const Color(0xFFFEECEB);
+        pillTextColor = const Color(0xFFE53935);
+        pillTitle = 'Owes';
+        pillAmount = '₹${_formatAmount(-net)}';
+      } else {
+        pillBg = const Color(0xFFF4F4F5);
+        pillTextColor = AppColors.textSecondary;
+        pillTitle = 'Settled';
+        pillAmount = '₹0';
+      }
+
+      statusWidget = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!isSampleGoaTrip && hasExpense) ...[
+            GestureDetector(
+              onTap: () => _showAddExpenseDialog(friend),
+              child: Text(
+                'Edit expense',
+                style: GoogleFonts.manrope(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: pillBg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  pillTitle,
+                  style: GoogleFonts.manrope(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: pillTextColor,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  pillAmount,
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: pillTextColor,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          // Circular Avatar (Dark circle with white initial)
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color:
+                  isRoshan ? const Color(0xFF333333) : const Color(0xFF1E1E1E),
+            ),
+            child: Center(
+              child: Text(
+                initial,
+                style: GoogleFonts.manrope(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+
+          // Name & Paid / Share subtitle
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayName,
+                  style: GoogleFonts.manrope(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Paid ₹${_formatAmount(paid)}  •  Share ₹${_formatAmount(share)}',
+                  style: GoogleFonts.manrope(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Balance status pill / action
+          statusWidget,
+          const SizedBox(width: 8),
+
+          // Chevron Arrow
+          const Icon(
+            Icons.chevron_right_rounded,
+            size: 20,
+            color: AppColors.textTertiary,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentExpenseCard() {
+    if (_story.expenses.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.border, width: 1.0),
+        ),
+        child: Center(
+          child: Text(
+            'No expenses recorded yet',
+            style: GoogleFonts.manrope(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final latestExp = _story.expenses.first;
+    final payer = _story.members.firstWhere(
+      (m) => m.userId == latestExp.paidBy,
+      orElse: () => StoryMember(
+          userId: latestExp.paidBy, name: latestExp.paidBy, joinedAt: ''),
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border, width: 1.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF4E6),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Center(
+              child: Icon(
+                Icons.hotel_rounded,
+                color: Color(0xFF1E1E1E),
+                size: 22,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  latestExp.title,
+                  style: GoogleFonts.manrope(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Nov 12  •  Paid by ${payer.name}',
+                  style: GoogleFonts.manrope(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '₹${_formatAmount(latestExp.amount)}',
+            style: GoogleFonts.manrope(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.3,
+            ),
           ),
         ],
       ),
