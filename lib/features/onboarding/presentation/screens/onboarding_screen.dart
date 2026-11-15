@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
+import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/features/navigation/presentation/screens/main_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/onboarding_page_indicator.dart';
@@ -51,8 +52,46 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _navigateToMain(BuildContext context) {
+  Future<void> _handleGetStarted(BuildContext context) async {
     HapticFeedback.lightImpact();
+    if (widget.onGetStarted != null) {
+      widget.onGetStarted!();
+      return;
+    }
+
+    // Google Sign-In is strictly required before accessing app
+    final isLoggedIn = (await StorageService.instance
+            .getBool('is_logged_in_with_google') ??
+        false) || SupabaseService.isSignedIn;
+
+    if (!isLoggedIn) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Please sign in with Google to continue',
+            style: GoogleFonts.manrope(
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: const Color(0xFF1E1E1E),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    if (!context.mounted) return;
+    _completeLoginAndNavigate(context);
+  }
+
+  void _completeLoginAndNavigate(BuildContext context) {
+    StorageService.instance.setBool('is_logged_in_with_google', true);
     StorageService.instance.setBool('has_completed_onboarding', true);
     if (widget.onGetStarted != null) {
       widget.onGetStarted!();
@@ -156,7 +195,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       borderRadius: BorderRadius.circular(25),
                     ),
                   ),
-                  onPressed: () => _navigateToMain(context),
+                  onPressed: () => _handleGetStarted(context),
                   child: Text(
                     'Get Started',
                     style: GoogleFonts.manrope(
@@ -171,13 +210,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
               // Sign in with Google Button
               GoogleSignInButton(
-                onSuccess: () => _navigateToMain(context),
+                onSuccess: () => _completeLoginAndNavigate(context),
               ),
               const SizedBox(height: 6),
 
               // Secondary "I already have an account" button
               TextButton(
-                onPressed: () => _navigateToMain(context),
+                onPressed: () => _handleGetStarted(context),
                 child: Text(
                   'I already have an account',
                   style: GoogleFonts.manrope(

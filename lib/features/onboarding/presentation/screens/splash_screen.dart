@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
+import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
@@ -50,11 +51,15 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkNavigation() async {
-    final hasSeenOnboarding =
-        await StorageService.instance.getBool('has_completed_onboarding') ??
+    // Only allow auto-login if user has signed in with Google
+    final isLoggedInWithGoogle =
+        await StorageService.instance.getBool('is_logged_in_with_google') ??
             false;
+    final isSupabaseSignedIn = SupabaseService.isSignedIn;
+    final canEnterApp = isLoggedInWithGoogle || isSupabaseSignedIn;
+
     if (!mounted) return;
-    if (hasSeenOnboarding) {
+    if (canEnterApp) {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (_, __, ___) => const MainScreen(),

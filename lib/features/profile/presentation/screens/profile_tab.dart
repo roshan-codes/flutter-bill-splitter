@@ -5,9 +5,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/animations/app_motion.dart';
 import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
+import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/friends/presentation/screens/friends_tab.dart';
+import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/memo_avatar_picker_sheet.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_avatar.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_header.dart';
@@ -303,6 +305,20 @@ class _ProfileTabState extends State<ProfileTab> {
     );
   }
 
+  Future<void> _performLogout(BuildContext context) async {
+    await SupabaseService.signOut();
+    await StorageService.instance.remove('is_logged_in_with_google');
+    await StorageService.instance.remove('has_completed_onboarding');
+    if (widget.onLogout != null) {
+      widget.onLogout!();
+    } else if (context.mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+        (route) => false,
+      );
+    }
+  }
+
   void _showLogoutConfirmation(BuildContext context) {
     if (isIOSPlatform(context)) {
       showCupertinoDialog(
@@ -321,11 +337,7 @@ class _ProfileTabState extends State<ProfileTab> {
               isDestructiveAction: true,
               onPressed: () {
                 Navigator.of(ctx).pop();
-                if (widget.onLogout != null) {
-                  widget.onLogout!();
-                } else {
-                  _showNotice(context, 'Logged out successfully');
-                }
+                _performLogout(context);
               },
               child: const Text('Logout'),
             ),
@@ -369,11 +381,7 @@ class _ProfileTabState extends State<ProfileTab> {
               ),
               onPressed: () {
                 Navigator.of(ctx).pop();
-                if (widget.onLogout != null) {
-                  widget.onLogout!();
-                } else {
-                  _showNotice(context, 'Logged out successfully');
-                }
+                _performLogout(context);
               },
               child: Text('Logout',
                   style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
