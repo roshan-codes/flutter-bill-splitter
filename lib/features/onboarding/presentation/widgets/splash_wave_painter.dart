@@ -1,96 +1,75 @@
 import 'package:flutter/material.dart';
 
-/// Custom Painter that renders the bottom and top decorative waves on the Splash screen.
-/// Adheres to design.md Section 2 (restrained neutral accents).
+/// Custom Painter that renders the soft lavender bottom wave on the Splash screen.
 class SplashWavePainter extends CustomPainter {
   const SplashWavePainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Top-left subtle soft grey wave
-    final topPaint = Paint()
-      ..color = const Color(0xFFEAEAE7).withOpacity(0.5)
+    // Back subtle lilac wave
+    final backPaint = Paint()
+      ..color = const Color(0xFFF0ECFC).withOpacity(0.85)
       ..style = PaintingStyle.fill;
 
-    final topPath = Path()
-      ..moveTo(0, size.height * 0.25)
-      ..cubicTo(
-        size.width * 0.35,
-        size.height * 0.22,
-        size.width * 0.25,
-        size.height * 0.05,
-        size.width * 0.6,
-        0,
-      )
-      ..lineTo(0, 0)
-      ..close();
-    canvas.drawPath(topPath, topPaint);
-
-    // Bottom back wave (soft translucent surface-subtle)
-    final backWavePaint = Paint()
-      ..color = const Color(0xFFEAEAE7).withOpacity(0.6)
-      ..style = PaintingStyle.fill;
-
-    final backWavePath = Path()
-      ..moveTo(0, size.height * 0.82)
+    final backPath = Path()
+      ..moveTo(0, size.height * 0.76)
       ..cubicTo(
         size.width * 0.25,
-        size.height * 0.84,
+        size.height * 0.72,
         size.width * 0.45,
-        size.height * 0.76,
-        size.width * 0.75,
         size.height * 0.82,
+        size.width * 0.75,
+        size.height * 0.76,
       )
       ..cubicTo(
-        size.width * 0.88,
-        size.height * 0.85,
-        size.width * 0.95,
-        size.height * 0.88,
+        size.width * 0.90,
+        size.height * 0.73,
+        size.width * 0.96,
+        size.height * 0.78,
         size.width,
-        size.height * 0.85,
+        size.height * 0.80,
       )
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
-    canvas.drawPath(backWavePath, backWavePaint);
+    canvas.drawPath(backPath, backPaint);
 
-    // Bottom front wave (restrained subtle gradient wave)
-    final rect =
+    // Front soft lavender wave
+    final frontRect =
         Rect.fromLTWH(0, size.height * 0.78, size.width, size.height * 0.22);
-    final frontWavePaint = Paint()
+    final frontPaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          Color(0xFFF1F1EF),
-          Color(0xFFEAEAE7),
-          Color(0xFFF7F7F5),
+          Color(0xFFEBE6FB),
+          Color(0xFFDDD5F8),
         ],
-      ).createShader(rect)
+      ).createShader(frontRect)
       ..style = PaintingStyle.fill;
 
-    final frontWavePath = Path()
+    final frontPath = Path()
       ..moveTo(0, size.height * 0.82)
       ..cubicTo(
         size.width * 0.25,
-        size.height * 0.77,
+        size.height * 0.78,
         size.width * 0.55,
-        size.height * 0.84,
+        size.height * 0.86,
         size.width * 0.78,
         size.height * 0.88,
       )
       ..cubicTo(
         size.width * 0.88,
-        size.height * 0.90,
+        size.height * 0.89,
         size.width * 0.95,
         size.height * 0.93,
         size.width,
-        size.height * 0.96,
+        size.height * 0.95,
       )
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
-    canvas.drawPath(frontWavePath, frontWavePaint);
+    canvas.drawPath(frontPath, frontPaint);
   }
 
   @override

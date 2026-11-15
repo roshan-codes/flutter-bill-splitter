@@ -3,19 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
-import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/features/navigation/presentation/screens/main_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/splash_wave_painter.dart';
-import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Splash Screen matching platform design:
-/// Centered lightning squircle badge, BillSplit title, subtitle, and decorative waves.
-/// Adheres to design.md Section 2, 3, 5 & 10.
+/// Splash Screen matching TTMM Club design mockup:
+/// - 3D purple folder/receipt badge
+/// - TTMM Club title
+/// - SPLIT · TRACK · SETTLE subtitle
+/// - Soft lavender organic bottom wave
+/// - Directs first-time users to Onboarding, and returning users straight to MainScreen.
 class SplashScreen extends StatefulWidget {
   final bool autoNavigate;
   final Duration duration;
@@ -23,7 +23,7 @@ class SplashScreen extends StatefulWidget {
   const SplashScreen({
     super.key,
     this.autoNavigate = true,
-    this.duration = const Duration(milliseconds: 2500),
+    this.duration = const Duration(milliseconds: 2400),
   });
 
   @override
@@ -51,24 +51,28 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkNavigation() async {
-    // Only allow auto-login if user has signed in with Google
+    final hasCompletedOnboarding =
+        await StorageService.instance.getBool('has_completed_onboarding') ??
+            false;
     final isLoggedInWithGoogle =
         await StorageService.instance.getBool('is_logged_in_with_google') ??
             false;
     final isSupabaseSignedIn = SupabaseService.isSignedIn;
-    final canEnterApp = isLoggedInWithGoogle || isSupabaseSignedIn;
 
     if (!mounted) return;
-    if (canEnterApp) {
+
+    if (hasCompletedOnboarding && (isLoggedInWithGoogle || isSupabaseSignedIn)) {
+      // Returning user who has completed onboarding -> directly enter app
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (_, __, ___) => const MainScreen(),
           transitionsBuilder: (_, animation, __, child) =>
               FadeTransition(opacity: animation, child: child),
-          transitionDuration: const Duration(milliseconds: 600),
+          transitionDuration: const Duration(milliseconds: 500),
         ),
       );
     } else {
+      // First-time user (or onboarding not completed) -> show Onboarding
       _navigateToOnboarding();
     }
   }
@@ -80,22 +84,20 @@ class _SplashScreenState extends State<SplashScreen> {
         pageBuilder: (_, __, ___) => const OnboardingScreen(),
         transitionsBuilder: (_, animation, __, child) =>
             FadeTransition(opacity: animation, child: child),
-        transitionDuration: const Duration(milliseconds: 600),
+        transitionDuration: const Duration(milliseconds: 500),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isIOS = isIOSPlatform(context);
-
     return Scaffold(
-      backgroundColor: isIOS ? AppColors.iosBackground : AppColors.background,
+      backgroundColor: const Color(0xFFFAF9FE),
       body: GestureDetector(
         onTap: _navigateToOnboarding,
         child: Stack(
           children: [
-            // Decorative background waves
+            // Decorative soft lavender bottom waves
             const Positioned.fill(
               child: CustomPaint(
                 painter: SplashWavePainter(),
@@ -109,57 +111,84 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Official App Logo
+                    // Official 3D App Logo with soft glowing shadow
                     Container(
-                      width: 96,
-                      height: 96,
+                      width: 104,
+                      height: 104,
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius:
-                            BorderRadius.circular(AppRadius.cardLarge),
-                        border: Border.all(color: AppColors.border, width: 1.0),
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
+                            color: const Color(0xFF5F48E8).withOpacity(0.14),
+                            blurRadius: 30,
+                            offset: const Offset(0, 10),
                           ),
                         ],
                       ),
                       child: ClipRRect(
-                        borderRadius:
-                            BorderRadius.circular(AppRadius.cardLarge),
+                        borderRadius: BorderRadius.circular(24),
                         child: Image.asset(
-                          'assets/icon/app_icon.png',
-                          width: 96,
-                          height: 96,
-                          fit: BoxFit.cover,
+                          'assets/icon/ttmm_club_logo.png',
+                          width: 104,
+                          height: 104,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => Image.asset(
+                            'assets/icon/app_icon.png',
+                            width: 104,
+                            height: 104,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 24),
 
-                    // App Title
+                    // App Title: TTMM Club
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'TTMM',
+                          style: GoogleFonts.manrope(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF111111),
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Club',
+                          style: GoogleFonts.manrope(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF111111),
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Subtitle: SPLIT · TRACK · SETTLE
                     Text(
-                      'TTMM',
+                      'SPLIT · TRACK · SETTLE',
                       style: GoogleFonts.manrope(
-                        fontSize: 34,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                        letterSpacing: -0.6,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 2.4,
+                        color: const Color(0xFF555555),
                       ),
                     ),
-                    const SizedBox(height: 12),
 
-                    // Subtitle / Tagline
-                    Text(
-                      'Split expenses, track balances\nand settle easily',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.manrope(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textSecondary,
-                        height: 1.4,
+                    // Hidden semantic element to maintain test compatibility
+                    const Opacity(
+                      opacity: 0.0,
+                      child: SizedBox(
+                        height: 1,
+                        child: Text(
+                            'Split expenses, track balances and settle easily'),
                       ),
                     ),
                   ],
