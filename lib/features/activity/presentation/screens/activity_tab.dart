@@ -1,22 +1,30 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_bill_splitter/core/animations/app_motion.dart';
+import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/activity_display_item.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_section_card.dart';
+import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
+import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
+import 'package:flutter_bill_splitter/shared/widgets/empty_state_illustration.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Activity Tab displaying platform-adaptive activity feed with real activity records or a clean empty state.
-/// Adheres to design.md Section 2, 3, 5, 8 & 9.
-class ActivityTab extends StatelessWidget {
+/// Activity Tab displaying platform-adaptive activity feed with filter tabs,
+/// or a high-fidelity empty state matching the UI mock when no records exist.
+class ActivityTab extends StatefulWidget {
   final ActivityRepository? repository;
   final List<ActivityDisplayItem>? customItems;
+  final VoidCallback? onCreateStory;
 
   const ActivityTab({
     super.key,
     this.repository,
     this.customItems,
+    this.onCreateStory,
   });
 
   /// Sample items available for tests or preview.
@@ -79,8 +87,38 @@ class ActivityTab extends StatelessWidget {
   ];
 
   @override
+  State<ActivityTab> createState() => _ActivityTabState();
+}
+
+class _ActivityTabState extends State<ActivityTab> {
+  int _selectedFilterIndex = 0;
+  final List<String> _filters = const [
+    'All',
+    'Expenses',
+    'Settlements',
+    'Members',
+  ];
+
+  void _navigateToCreateStory() {
+    if (widget.onCreateStory != null) {
+      widget.onCreateStory!();
+      return;
+    }
+    Navigator.of(context).push(
+      AppTransitions.sharedAxisRoute(
+        type: SharedAxisTransitionType.vertical,
+        duration: AppMotion.medium,
+        builder: (context) => AddExpenseScreen(
+          friends: FriendsRepository.instance.friends,
+          groups: FriendsRepository.instance.groups,
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final repo = repository ?? ActivityRepository.instance;
+    final repo = widget.repository ?? ActivityRepository.instance;
     final isIOS = isIOSPlatform(context);
 
     return Scaffold(
@@ -95,7 +133,7 @@ class ActivityTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Screen Header
+              // Screen Header Title
               Text(
                 'Activity',
                 style: GoogleFonts.manrope(
@@ -105,15 +143,23 @@ class ActivityTab extends StatelessWidget {
                   letterSpacing: -0.5,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+
+              // Filter Chips (shown when customItems is not set, matching screenshot mock)
+              if (widget.customItems == null || widget.customItems!.isEmpty) ...[
+                _buildFilterChips(),
+                const SizedBox(height: 20),
+              ],
 
               // Dynamic Activity Content
               AnimatedBuilder(
                 animation: repo,
                 builder: (context, _) {
-                  if (customItems != null && customItems!.isNotEmpty) {
+                  // Custom items passed in tests or previews
+                  if (widget.customItems != null &&
+                      widget.customItems!.isNotEmpty) {
                     final sections = <String, List<ActivityDisplayItem>>{};
-                    for (final item in customItems!) {
+                    for (final item in widget.customItems!) {
                       sections.putIfAbsent(item.section, () => []).add(item);
                     }
                     return Column(
@@ -131,86 +177,54 @@ class ActivityTab extends StatelessWidget {
 
                   final recordedActivities = repo.activities;
 
+                  // Empty State matching the right mockup screen
                   if (recordedActivities.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 40),
-                      child: PlatformCard(
-                        borderRadius: AppRadius.card,
-                        elevation: 0,
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 40,
-                        ),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 64,
-                                height: 64,
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceSubtle,
-                                  borderRadius:
-                                      BorderRadius.circular(AppRadius.card),
-                                ),
-                                child: const Icon(
-                                  Icons.receipt_long_rounded,
-                                  size: 32,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 18),
-                              Text(
-                                'No Activity Yet',
-                                style: GoogleFonts.manrope(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'When you create and settle splits with friends,\nyour activity will appear here.',
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.manrope(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400,
-                                  color: AppColors.textSecondary,
-                                  height: 1.35,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
+                    return _buildEmptyState(context);
                   }
 
-                  final dynamicItems = recordedActivities.map((act) {
-                    final isSettled = act.settlements.isEmpty;
-                    return ActivityDisplayItem(
-                      id: act.id,
-                      title: act.groupName,
-                      memberCount: act.members.length,
-                      totalAmount: act.totalAmount,
-                      statusText: isSettled
-                          ? 'Settled'
-                          : 'You get ₹${act.sharePerPerson.toInt()}',
-                      statusColor: isSettled
-                          ? AppColors.textSecondary
-                          : AppColors.success,
-                      icon: Icons.receipt_long_rounded,
-                      iconBgColor: isSettled
-                          ? AppColors.surfaceSubtle
-                          : AppColors.successSoft,
-                      iconColor:
-                          isSettled ? AppColors.textPrimary : AppColors.success,
-                      section: 'Recent Activity',
-                      isSettlement: isSettled,
-                      splitActivity: act,
-                    );
-                  }).toList();
+                  // Filter recorded activities based on selected chip
+                  final dynamicItems = recordedActivities
+                      .where((act) {
+                        if (_selectedFilterIndex == 1) {
+                          // Expenses only
+                          return act.settlements.isNotEmpty;
+                        } else if (_selectedFilterIndex == 2) {
+                          // Settlements only
+                          return act.settlements.isEmpty;
+                        }
+                        // 0: All, 3: Members
+                        return true;
+                      })
+                      .map((act) {
+                        final isSettled = act.settlements.isEmpty;
+                        return ActivityDisplayItem(
+                          id: act.id,
+                          title: act.groupName,
+                          memberCount: act.members.length,
+                          totalAmount: act.totalAmount,
+                          statusText: isSettled
+                              ? 'Settled'
+                              : 'You get ₹${act.sharePerPerson.toInt()}',
+                          statusColor: isSettled
+                              ? AppColors.textSecondary
+                              : AppColors.success,
+                          icon: Icons.receipt_long_rounded,
+                          iconBgColor: isSettled
+                              ? AppColors.surfaceSubtle
+                              : AppColors.successSoft,
+                          iconColor: isSettled
+                              ? AppColors.textPrimary
+                              : AppColors.success,
+                          section: 'Recent Activity',
+                          isSettlement: isSettled,
+                          splitActivity: act,
+                        );
+                      })
+                      .toList();
+
+                  if (dynamicItems.isEmpty) {
+                    return _buildEmptyState(context);
+                  }
 
                   return ActivitySectionCard(
                     title: 'Recent Activity',
@@ -222,6 +236,105 @@ class ActivityTab extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  /// Segmented filter pill chips (All, Expenses, Settlements, Members)
+  Widget _buildFilterChips() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: List.generate(_filters.length, (index) {
+          final isSelected = _selectedFilterIndex == index;
+          return Padding(
+            padding: EdgeInsets.only(right: index < _filters.length - 1 ? 8 : 0),
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() => _selectedFilterIndex = index);
+              },
+              child: AnimatedContainer(
+                duration: AppMotion.fast,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? const Color(0xFF111111)
+                      : const Color(0xFFF4F4F5),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  _filters[index],
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight:
+                        isSelected ? FontWeight.w700 : FontWeight.w600,
+                    color: isSelected
+                        ? Colors.white
+                        : const Color(0xFF18181B),
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  /// Empty state matching the right mockup screen when no activity records exist.
+  Widget _buildEmptyState(BuildContext context) {
+    return Column(
+      children: [
+        const SizedBox(height: 52),
+
+        // Squircle with Checklist illustration + sparkle rays
+        const Center(
+          child: EmptyStateIllustration(
+            child: ChecklistIllustration(
+              color: Color(0xFF5B4DFF),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Title
+        Text(
+          'No activity yet',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.manrope(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+            letterSpacing: -0.4,
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // Description / Subtitle
+        Text(
+          'Your expenses, settlements and\nmember updates will appear here\nonce you create a story.',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.manrope(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: AppColors.textSecondary,
+            height: 1.45,
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Black Pill Action Button: + Create Story
+        Center(
+          child: EmptyStateCreateStoryButton(
+            onPressed: _navigateToCreateStory,
+          ),
+        ),
+      ],
     );
   }
 }

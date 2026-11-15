@@ -521,5 +521,97 @@ void main() {
       await tester.pumpAndSettle();
       expect(getStartedTapped, isTrue);
     });
+
+    testWidgets(
+        'HomeTab renders high-fidelity empty state when no data is available',
+        (tester) async {
+      bool addExpenseTapped = false;
+      String? tappedCategory;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: HomeTab(
+            onAddExpense: () {
+              addExpenseTapped = true;
+            },
+            onAddExpenseWithTitle: (title) {
+              tappedCategory = title;
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify Header
+      expect(find.textContaining('Good'), findsOneWidget);
+      expect(find.text('Roshan'), findsOneWidget);
+      expect(find.text('👋'), findsOneWidget);
+      expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
+
+      // Verify Empty State Title & Copy
+      expect(find.text('Create your first story'), findsOneWidget);
+      expect(
+        find.text(
+            'Start a trip, group expense or any\nshared spend to track and split easily.'),
+        findsOneWidget,
+      );
+      expect(find.text('Create Story'), findsOneWidget);
+      expect(find.byIcon(Icons.groups_rounded), findsOneWidget);
+
+      // Verify Quick Suggestion Categories
+      expect(find.text('Trip Split'), findsOneWidget);
+      expect(find.text('Group\nExpenses'), findsOneWidget);
+      expect(find.text('Room Rent'), findsOneWidget);
+
+      // Verify Action Button Tap
+      await tester.tap(find.text('Create Story'));
+      await tester.pumpAndSettle();
+      expect(addExpenseTapped, isTrue);
+
+      // Verify Category Tap
+      await tester.tap(find.text('Trip Split'));
+      await tester.pumpAndSettle();
+      expect(tappedCategory, 'Trip Split');
+    });
+
+    testWidgets(
+        'ActivityTab renders high-fidelity empty state and filter chips when no data is available',
+        (tester) async {
+      bool createStoryTapped = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ActivityTab(
+            onCreateStory: () {
+              createStoryTapped = true;
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify Header Title
+      expect(find.text('Activity'), findsOneWidget);
+
+      // Verify Filter Chips
+      expect(find.text('All'), findsOneWidget);
+      expect(find.text('Expenses'), findsOneWidget);
+      expect(find.text('Settlements'), findsOneWidget);
+      expect(find.text('Members'), findsOneWidget);
+
+      // Verify Empty State Title & Copy
+      expect(find.text('No activity yet'), findsOneWidget);
+      expect(
+        find.text(
+            'Your expenses, settlements and\nmember updates will appear here\nonce you create a story.'),
+        findsOneWidget,
+      );
+      expect(find.text('Create Story'), findsOneWidget);
+
+      // Tap Create Story
+      await tester.tap(find.text('Create Story'));
+      await tester.pumpAndSettle();
+      expect(createStoryTapped, isTrue);
+    });
   });
 }

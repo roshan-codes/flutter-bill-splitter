@@ -21,11 +21,13 @@ import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 class AddExpenseScreen extends StatefulWidget {
   final List<Friend> friends;
   final List<Group> groups;
+  final String? initialTitle;
 
   const AddExpenseScreen({
     super.key,
     required this.friends,
     required this.groups,
+    this.initialTitle,
   });
 
   /// Sample friends list for preview or fallback.
@@ -49,6 +51,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final Set<int> _selectedFriendIndices = {};
   int? _selectedGroupIndex;
   String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialTitle != null && widget.initialTitle!.trim().isNotEmpty) {
+      _expenseTitleController.text = widget.initialTitle!.trim();
+    }
+  }
 
   List<Friend> get _effectiveFriends {
     return widget.friends;

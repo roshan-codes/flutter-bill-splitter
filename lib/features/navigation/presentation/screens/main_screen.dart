@@ -55,13 +55,17 @@ class _MainScreenState extends State<MainScreen> {
 
   late final List<Widget> _tabs = [
     HomeTab(
-      onAddExpense: _openAddExpenseScreen,
+      onAddExpense: () => _openAddExpenseScreen(),
+      onAddExpenseWithTitle: (title) =>
+          _openAddExpenseScreen(initialTitle: title),
     ),
-    const ActivityTab(),
+    ActivityTab(
+      onCreateStory: () => _openAddExpenseScreen(),
+    ),
     const ProfileTab(),
   ];
 
-  void _openAddExpenseScreen() {
+  void _openAddExpenseScreen({String? initialTitle}) {
     Navigator.of(context).push(
       AppTransitions.sharedAxisRoute(
         type: SharedAxisTransitionType.vertical,
@@ -69,6 +73,7 @@ class _MainScreenState extends State<MainScreen> {
         builder: (context) => AddExpenseScreen(
           friends: FriendsRepository.instance.friends,
           groups: FriendsRepository.instance.groups,
+          initialTitle: initialTitle,
         ),
       ),
     );
