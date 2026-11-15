@@ -54,15 +54,13 @@ class _SplashScreenState extends State<SplashScreen> {
     final hasCompletedOnboarding =
         await StorageService.instance.getBool('has_completed_onboarding') ??
             false;
-    final isLoggedInWithGoogle =
-        await StorageService.instance.getBool('is_logged_in_with_google') ??
-            false;
     final isSupabaseSignedIn = SupabaseService.isSignedIn;
 
     if (!mounted) return;
 
-    if (hasCompletedOnboarding && (isLoggedInWithGoogle || isSupabaseSignedIn)) {
-      // Returning user who has completed onboarding -> directly enter app
+    // Strict authentication gate: do not allow entering app without active Supabase authentication
+    if (hasCompletedOnboarding && isSupabaseSignedIn) {
+      // Authenticated user who has completed onboarding -> directly enter app
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (_, __, ___) => const MainScreen(),
@@ -72,7 +70,7 @@ class _SplashScreenState extends State<SplashScreen> {
         ),
       );
     } else {
-      // First-time user (or onboarding not completed) -> show Onboarding
+      // First-time or unauthenticated user -> require authentication
       _navigateToOnboarding();
     }
   }

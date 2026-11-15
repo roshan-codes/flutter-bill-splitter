@@ -63,7 +63,7 @@ class _HomeTabState extends State<HomeTab> {
     final googleName = SupabaseService.userDisplayName;
     final savedName =
         await StorageService.instance.getString('user_profile_name');
-    final nameToUse = savedName ?? googleName;
+    final nameToUse = googleName ?? savedName;
     if (mounted && nameToUse != null && nameToUse.trim().isNotEmpty) {
       setState(() => _userName = nameToUse.trim().split(' ').first);
     }

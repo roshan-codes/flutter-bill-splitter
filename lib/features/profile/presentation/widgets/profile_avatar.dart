@@ -8,6 +8,7 @@ import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 class ProfileAvatar extends StatelessWidget {
   final String name;
   final String phone;
+  final String? email;
   final String initial;
   final int? avatarIndex;
   final String? avatarUrl;
@@ -17,6 +18,7 @@ class ProfileAvatar extends StatelessWidget {
     super.key,
     this.name = 'Roshan Badwaik',
     this.phone = '+91 9876543210',
+    this.email,
     this.initial = 'R',
     this.avatarIndex,
     this.avatarUrl,
@@ -224,16 +226,32 @@ class ProfileAvatar extends StatelessWidget {
         ),
         const SizedBox(height: 4),
 
-        // Phone Number
-        Text(
-          phone,
-          textAlign: TextAlign.center,
-          style: GoogleFonts.manrope(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textSecondary,
+        // User Email
+        if (email != null && email!.isNotEmpty) ...[
+          Text(
+            email!,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.manrope(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
           ),
-        ),
+          const SizedBox(height: 2),
+        ],
+
+        // Phone Number
+        if (phone.isNotEmpty && phone != email) ...[
+          Text(
+            phone,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.manrope(
+              fontSize: (email != null && email!.isNotEmpty) ? 12 : 13.5,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
       ],
     );
   }

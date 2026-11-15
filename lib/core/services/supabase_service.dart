@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
@@ -106,6 +107,91 @@ class SupabaseService {
     return null;
   }
 
+  /// Retrieves user avatar index from Supabase user metadata.
+  static int? get userAvatarIndex {
+    final u = currentUser;
+    if (u == null) return null;
+    final meta = u.userMetadata;
+    if (meta != null && meta['avatar_index'] != null) {
+      final val = meta['avatar_index'];
+      if (val is int) return val;
+      if (val is num) return val.toInt();
+      if (val is String) return int.tryParse(val);
+    }
+    return null;
+  }
+
+  /// Retrieves the authenticated user's email.
+  static String? get userEmail => currentUser?.email;
+
+  /// Updates user avatar in Supabase DB (Auth user metadata, profiles table, and Cloud Storage).
+  static Future<bool> updateUserAvatarInDb({
+    int? avatarIndex,
+    String? avatarUrl,
+  }) async {
+    final u = currentUser;
+    final cli = client;
+    if (u == null || cli == null) {
+      debugPrint('No Supabase authenticated user to update avatar.');
+      return false;
+    }
+
+    try {
+      // 1. Update in Supabase Auth User Metadata (persisted in Supabase auth.users DB)
+      final metadata = <String, dynamic>{};
+      if (avatarIndex != null) metadata['avatar_index'] = avatarIndex;
+      if (avatarUrl != null) metadata['avatar_url'] = avatarUrl;
+
+      await cli.auth.updateUser(
+        UserAttributes(data: metadata),
+      );
+      debugPrint('Updated avatar in Supabase auth user_metadata.');
+
+      // 2. Also upsert in 'profiles' table in Supabase Database
+      try {
+        await cli.from('profiles').upsert({
+          'id': u.id,
+          'email': u.email,
+          'full_name': userDisplayName,
+          if (avatarIndex != null) 'avatar_index': avatarIndex,
+          if (avatarUrl != null) 'avatar_url': avatarUrl,
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+        debugPrint('Updated avatar in Supabase "profiles" table.');
+      } catch (dbErr) {
+        debugPrint('Profiles table upsert note: $dbErr');
+      }
+
+      // 3. Upload avatar image binary to Supabase Cloud Storage bucket 'app_data'
+      if (avatarIndex != null) {
+        try {
+          final assetPath = 'assets/avatars/memo_${(avatarIndex % 35) + 1}.png';
+          final byteData = await rootBundle.load(assetPath);
+          final bytes = byteData.buffer.asUint8List();
+          final storagePath = 'avatars/${u.id}/avatar_$avatarIndex.png';
+          await cli.storage.from(storageBucket).uploadBinary(
+            storagePath,
+            bytes,
+            fileOptions:
+                const FileOptions(upsert: true, contentType: 'image/png'),
+          );
+          final publicUrl =
+              cli.storage.from(storageBucket).getPublicUrl(storagePath);
+          await StorageService.instance
+              .setString('user_profile_avatar_url', publicUrl);
+          debugPrint('Avatar uploaded to Supabase Storage: $publicUrl');
+        } catch (storageErr) {
+          debugPrint('Storage avatar upload note: $storageErr');
+        }
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('Error updating avatar in DB: $e');
+      return false;
+    }
+  }
+
   /// Synchronizes user data from Google/Supabase Auth to local storage and DB.
   static Future<void> syncLocalUserData() async {
     final name = userDisplayName;
@@ -164,6 +250,34 @@ class SupabaseService {
       debugPrint('Google Sign-In Error: $e');
       return false;
     }
+  }
+
+  /// Sends an SMS OTP to the provided phone number.
+  static Future<void> signInWithPhoneOtp(String phone) async {
+    final cli = client;
+    if (cli == null) {
+      throw Exception('Supabase connection unavailable.');
+    }
+    await cli.auth.signInWithOtp(phone: phone);
+  }
+
+  /// Verifies the phone SMS OTP code.
+  static Future<bool> verifyPhoneOtp({
+    required String phone,
+    required String token,
+  }) async {
+    final cli = client;
+    if (cli == null) return false;
+    final res = await cli.auth.verifyOTP(
+      phone: phone,
+      token: token,
+      type: OtpType.sms,
+    );
+    if (res.user != null) {
+      await syncLocalUserData();
+      return true;
+    }
+    return false;
   }
 
   /// Sign out current user.

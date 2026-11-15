@@ -57,6 +57,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _completeLoginAndNavigate(BuildContext context) async {
+    if (SupabaseService.isSignedIn) {
+      await SupabaseService.syncLocalUserData();
+    }
     await StorageService.instance.setBool('has_completed_onboarding', true);
     await StorageService.instance.setBool('is_logged_in_with_google', true);
 
@@ -120,108 +123,223 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _showPhoneSignInDialog(BuildContext context) {
     HapticFeedback.lightImpact();
     final phoneController = TextEditingController(text: '+91 ');
+    final otpController = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    bool otpSent = false;
+    bool isLoading = false;
+    String? statusMessage;
+    bool isError = false;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: EdgeInsets.fromLTRB(
-            24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE5E7EB),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Enter Phone Number',
-                style: GoogleFonts.manrope(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF111111),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'We\'ll use this to keep your expenses in sync.',
-                style: GoogleFonts.manrope(
-                  fontSize: 13,
-                  color: const Color(0xFF6B7280),
-                ),
-              ),
-              const SizedBox(height: 18),
-              TextFormField(
-                controller: phoneController,
-                keyboardType: TextInputType.phone,
-                autofocus: true,
-                style: GoogleFonts.manrope(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF111111),
-                ),
-                decoration: InputDecoration(
-                  labelText: 'Mobile Number',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                validator: (val) {
-                  if (val == null || val.trim().length < 8) {
-                    return 'Please enter a valid phone number';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF111111),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
+          padding: EdgeInsets.fromLTRB(
+              24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5E7EB),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  onPressed: () async {
-                    if (formKey.currentState?.validate() ?? false) {
-                      await StorageService.instance.setString(
-                          'user_profile_phone', phoneController.text.trim());
-                      if (!ctx.mounted) return;
-                      Navigator.of(ctx).pop();
-                      if (!context.mounted) return;
-                      await _completeLoginAndNavigate(context);
-                    }
-                  },
-                  child: Text(
-                    'Continue',
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  otpSent ? 'Enter OTP Code' : 'Enter Phone Number',
+                  style: GoogleFonts.manrope(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF111111),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  otpSent
+                      ? 'Enter the 6-digit verification code sent to your phone.'
+                      : 'We\'ll verify your identity with Supabase to keep your data secure.',
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                if (!otpSent)
+                  TextFormField(
+                    controller: phoneController,
+                    keyboardType: TextInputType.phone,
+                    autofocus: true,
                     style: GoogleFonts.manrope(
-                      fontSize: 15,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF111111),
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Mobile Number (with country code)',
+                      hintText: '+91 9876543210',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().length < 8) {
+                        return 'Please enter a valid phone number';
+                      }
+                      return null;
+                    },
+                  )
+                else
+                  TextFormField(
+                    controller: otpController,
+                    keyboardType: TextInputType.number,
+                    autofocus: true,
+                    maxLength: 6,
+                    style: GoogleFonts.manrope(
+                      fontSize: 20,
+                      letterSpacing: 4,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: const Color(0xFF111111),
+                    ),
+                    decoration: InputDecoration(
+                      labelText: '6-digit OTP',
+                      counterText: '',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().length < 6) {
+                        return 'Please enter 6-digit OTP code';
+                      }
+                      return null;
+                    },
+                  ),
+                if (statusMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    statusMessage!,
+                    style: GoogleFonts.manrope(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: isError
+                          ? const Color(0xFFE53935)
+                          : const Color(0xFF16A34A),
                     ),
                   ),
+                ],
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF111111),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                    ),
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            if (!(formKey.currentState?.validate() ?? false)) {
+                              return;
+                            }
+                            setModalState(() {
+                              isLoading = true;
+                              statusMessage = null;
+                            });
+
+                            if (!otpSent) {
+                              final phone = phoneController.text.trim();
+                              try {
+                                await SupabaseService.signInWithPhoneOtp(phone);
+                                setModalState(() {
+                                  otpSent = true;
+                                  isLoading = false;
+                                  statusMessage =
+                                      'OTP sent! Please enter the code received.';
+                                  isError = false;
+                                });
+                              } catch (e) {
+                                setModalState(() {
+                                  isLoading = false;
+                                  isError = true;
+                                  statusMessage =
+                                      'Phone authentication is not configured on this Supabase project. Please use "Continue with Google" to sign in.';
+                                });
+                              }
+                            } else {
+                              final phone = phoneController.text.trim();
+                              final code = otpController.text.trim();
+                              try {
+                                final verified =
+                                    await SupabaseService.verifyPhoneOtp(
+                                  phone: phone,
+                                  token: code,
+                                );
+                                if (verified) {
+                                  await StorageService.instance.setString(
+                                      'user_profile_phone', phone);
+                                  if (!ctx.mounted) return;
+                                  Navigator.of(ctx).pop();
+                                  if (!context.mounted) return;
+                                  await _completeLoginAndNavigate(context);
+                                } else {
+                                  setModalState(() {
+                                    isLoading = false;
+                                    isError = true;
+                                    statusMessage =
+                                        'Invalid OTP. Please check the code and try again.';
+                                  });
+                                }
+                              } catch (e) {
+                                setModalState(() {
+                                  isLoading = false;
+                                  isError = true;
+                                  statusMessage = 'Verification failed: $e';
+                                });
+                              }
+                            }
+                          },
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            otpSent
+                                ? 'Verify & Continue'
+                                : 'Send Verification Code',
+                            style: GoogleFonts.manrope(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -41,6 +41,7 @@ class _ProfileTabState extends State<ProfileTab> {
   int? _avatarIndex;
   String? _avatarUrl;
   String _userName = 'Roshan Badwaik';
+  String _userEmail = '';
   String _userPhone = '+91 9876543210';
 
   @override
@@ -52,13 +53,17 @@ class _ProfileTabState extends State<ProfileTab> {
 
   Future<void> _loadSavedProfile() async {
     final googleName = SupabaseService.userDisplayName;
+    final googleEmail = SupabaseService.userEmail;
     final googleContact = SupabaseService.userContactInfo;
     final googleAvatar = SupabaseService.userAvatarUrl;
+    final dbAvatarIndex = SupabaseService.userAvatarIndex;
 
     final savedAvatar =
         await StorageService.instance.getInt('user_profile_avatar_index');
     final savedName =
         await StorageService.instance.getString('user_profile_name');
+    final savedEmail =
+        await StorageService.instance.getString('user_profile_email');
     final savedPhone =
         await StorageService.instance.getString('user_profile_phone');
     final savedAvatarUrl =
@@ -66,17 +71,20 @@ class _ProfileTabState extends State<ProfileTab> {
 
     if (mounted) {
       setState(() {
-        if (_avatarIndex == null && savedAvatar != null) {
-          _avatarIndex = savedAvatar;
-        }
+        _avatarIndex ??= savedAvatar ?? dbAvatarIndex;
         _avatarUrl = googleAvatar ?? savedAvatarUrl;
 
-        final resolvedName = savedName ?? googleName;
+        final resolvedName = googleName ?? savedName;
         if (resolvedName != null && resolvedName.isNotEmpty) {
           _userName = resolvedName;
         }
 
-        final resolvedContact = savedPhone ?? googleContact;
+        final resolvedEmail = googleEmail ?? savedEmail;
+        if (resolvedEmail != null && resolvedEmail.isNotEmpty) {
+          _userEmail = resolvedEmail;
+        }
+
+        final resolvedContact = googleContact ?? savedPhone;
         if (resolvedContact != null && resolvedContact.isNotEmpty) {
           _userPhone = resolvedContact;
         }
@@ -126,8 +134,15 @@ class _ProfileTabState extends State<ProfileTab> {
         setState(() => _avatarIndex = newIndex);
         await StorageService.instance
             .setInt('user_profile_avatar_index', newIndex);
+        final success =
+            await SupabaseService.updateUserAvatarInDb(avatarIndex: newIndex);
         if (context.mounted) {
-          _showNotice(context, 'Avatar updated successfully!');
+          _showNotice(
+            context,
+            success
+                ? 'Avatar updated and saved to DB!'
+                : 'Avatar updated locally!',
+          );
         }
       },
     );
@@ -429,6 +444,7 @@ class _ProfileTabState extends State<ProfileTab> {
               // Avatar with memo avatar / primary circle, name, and phone
               ProfileAvatar(
                 name: _userName,
+                email: _userEmail.isNotEmpty ? _userEmail : null,
                 phone: _userPhone,
                 initial:
                     _userName.isNotEmpty ? _userName[0].toUpperCase() : 'R',

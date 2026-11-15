@@ -139,9 +139,8 @@ class _MainScreenState extends State<MainScreen> {
             final screenWidth = mediaQuery.size.width;
 
             // Responsive margins ensuring perfect clearance on iPhone 14 / mobile Chrome / Safari
-            final double bottomMargin = bottomPadding > 0
-                ? bottomPadding + 6
-                : (kIsWeb ? 26.0 : 12.0);
+            final double bottomMargin =
+                bottomPadding > 0 ? bottomPadding + 6 : (kIsWeb ? 26.0 : 12.0);
             final double horizontalMargin = screenWidth < 380 ? 12.0 : 16.0;
             final double actionGap = screenWidth < 380 ? 6.0 : 8.0;
 
