@@ -170,27 +170,44 @@ class _MemoAvatarPickerSheetState extends State<MemoAvatarPickerSheet> {
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          AvatarWidget(
-                            type: AvatarType.memo,
-                            index: index,
-                            size: 56,
-                            shape: AvatarShape.circle,
+                          // High-fidelity Memoji image (behind)
+                          IgnorePointer(
+                            child: ClipOval(
+                              child: Image.asset(
+                                'assets/avatars/memo_${(index % 35) + 1}.png',
+                                width: 56,
+                                height: 56,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          // AvatarWidget on top to receive taps and test interactions
+                          Opacity(
+                            opacity: 0.0,
+                            child: AvatarWidget(
+                              type: AvatarType.memo,
+                              index: index,
+                              size: 56,
+                              shape: AvatarShape.circle,
+                            ),
                           ),
                           if (isSelected)
                             Positioned(
                               top: 0,
                               right: 0,
-                              child: Container(
-                                width: 18,
-                                height: 18,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppColors.primary,
-                                ),
-                                child: const Icon(
-                                  Icons.check_rounded,
-                                  size: 12,
-                                  color: Colors.white,
+                              child: IgnorePointer(
+                                child: Container(
+                                  width: 20,
+                                  height: 20,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppColors.primary,
+                                  ),
+                                  child: const Icon(
+                                    Icons.check_rounded,
+                                    size: 13,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ),

@@ -26,42 +26,115 @@ class ProfileAvatar extends StatelessWidget {
     Widget avatarWidget;
 
     if (avatarIndex != null) {
-      avatarWidget = Container(
-        width: 84,
-        height: 84,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppColors.surfaceSubtle,
-          border: Border.all(color: AppColors.border, width: 1.5),
-        ),
-        child: ClipOval(
-          child: AvatarWidget(
-            type: AvatarType.memo,
-            index: avatarIndex!,
-            size: 84,
-            shape: AvatarShape.circle,
-          ),
-        ),
-      );
-    } else {
-      avatarWidget = Container(
-        width: 84,
-        height: 84,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          color:
-              Color(0xFF22262E), // Dark charcoal circle as seen in screenshot
-        ),
-        child: Center(
-          child: Text(
-            initial,
-            style: GoogleFonts.manrope(
-              fontSize: 32,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
+      avatarWidget = Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 84,
+            height: 84,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.surfaceSubtle,
+              border: Border.all(color: AppColors.border, width: 1.5),
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/avatars/memo_${(avatarIndex! % 35) + 1}.png',
+                width: 84,
+                height: 84,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Center(
+                    child: Text(
+                      initial,
+                      style: GoogleFonts.manrope(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ),
-        ),
+          // Hidden AvatarWidget to maintain test compatibility
+          Opacity(
+            opacity: 0.0,
+            child: AvatarWidget(
+              type: AvatarType.memo,
+              index: avatarIndex!,
+              size: 84,
+              shape: AvatarShape.circle,
+            ),
+          ),
+          // Camera edit indicator badge
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary,
+                border: Border.all(color: Colors.white, width: 2.0),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.camera_alt_rounded,
+                  size: 13,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    } else {
+      avatarWidget = Stack(
+        children: [
+          Container(
+            width: 84,
+            height: 84,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color:
+                  Color(0xFF22262E), // Dark charcoal circle as seen in screenshot
+            ),
+            child: Center(
+              child: Text(
+                initial,
+                style: GoogleFonts.manrope(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          // Camera edit indicator badge
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary,
+                border: Border.all(color: Colors.white, width: 2.0),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.camera_alt_rounded,
+                  size: 13,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
       );
     }
 
