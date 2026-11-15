@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
@@ -7,43 +6,25 @@ import 'package:flutter_bill_splitter/features/friends/data/repositories/friends
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
 
-/// Repository managing persistent storage of group expense stories adhering to the standard story JSON schema.
+/// Repository managing group expense stories backed solely by Supabase Cloud Database.
 class StoryRepository extends ChangeNotifier {
   static final StoryRepository instance = StoryRepository();
 
-  static const String _storageKey = 'saved_stories_key';
-  final StorageService _storageService;
-
-  StoryRepository({StorageService? storageService})
-      : _storageService = storageService ?? StorageService.instance;
+  StoryRepository({StorageService? storageService});
 
   final List<Story> _stories = [];
 
   List<Story> get stories => List.unmodifiable(_stories);
 
-  /// Initializes stories from offline persistent storage and syncs with Supabase.
+  /// Initializes stories directly from Supabase Cloud Database.
   Future<void> init() async {
     try {
-      final jsonStrings = await _storageService.getStringList(_storageKey);
-      if (jsonStrings != null && jsonStrings.isNotEmpty) {
-        _stories.clear();
-        for (final str in jsonStrings) {
-          try {
-            final map = jsonDecode(str) as Map<String, dynamic>;
-            _stories.add(Story.fromJson(map));
-          } catch (e) {
-            debugPrint('Error parsing stored story: $e');
-          }
-        }
-      }
+      await _syncFromSupabase();
       final currentAvatar = SupabaseService.resolvedUserAvatar;
       if (currentAvatar != null) {
         _applyAvatarToUserMembers(currentAvatar);
       }
       notifyListeners();
-
-      // Sync stories with Supabase Cloud
-      _syncFromSupabase().ignore();
     } catch (e) {
       debugPrint('StoryRepository init error: $e');
     }
@@ -52,54 +33,13 @@ class StoryRepository extends ChangeNotifier {
   Future<void> _syncFromSupabase() async {
     try {
       final remote = await SupabaseService.fetchStories();
-      if (remote.isNotEmpty) {
-        bool changed = false;
-        for (final r in remote) {
-          final idx = _stories.indexWhere((s) => s.storyId == r.storyId);
-          if (idx == -1) {
-            _stories.add(r);
-            changed = true;
-          } else {
-            final local = _stories[idx];
-            final hasNewerMembers = r.members.length > local.members.length;
-            final hasNewerExpenses = r.expenses.length > local.expenses.length;
-            final hasDifferentExpenses =
-                r.summary.totalExpenses != local.summary.totalExpenses;
-            if (hasNewerMembers || hasNewerExpenses || hasDifferentExpenses) {
-              final mergedMembers =
-                  Story.deduplicateMembers([...local.members, ...r.members]);
-              final existingExpIds =
-                  local.expenses.map((e) => e.expenseId).toSet();
-              final mergedExpenses = List<StoryExpense>.from(local.expenses);
-              for (final remExp in r.expenses) {
-                if (!existingExpIds.contains(remExp.expenseId)) {
-                  mergedExpenses.add(remExp);
-                  existingExpIds.add(remExp.expenseId);
-                }
-              }
-              _stories[idx] = r.copyWith(
-                members: mergedMembers,
-                expenses: mergedExpenses.isNotEmpty
-                    ? mergedExpenses
-                    : r.expenses,
-              );
-              changed = true;
-            }
-          }
-        }
-        final currentAvatar = SupabaseService.resolvedUserAvatar;
-        if (currentAvatar != null) {
-          if (_applyAvatarToUserMembers(currentAvatar)) {
-            changed = true;
-          }
-        }
-        if (changed) {
-          notifyListeners();
-          final jsonStrings =
-              _stories.map((s) => jsonEncode(s.toJson())).toList();
-          await _storageService.setStringList(_storageKey, jsonStrings);
-        }
+      _stories.clear();
+      _stories.addAll(remote);
+      final currentAvatar = SupabaseService.resolvedUserAvatar;
+      if (currentAvatar != null) {
+        _applyAvatarToUserMembers(currentAvatar);
       }
+      notifyListeners();
     } catch (e) {
       debugPrint('Supabase story sync note: $e');
     }
@@ -119,45 +59,19 @@ class StoryRepository extends ChangeNotifier {
     await _syncFromSupabase();
   }
 
-  /// Pulls the latest version of a specific story from Supabase and updates local cache.
+  /// Pulls the latest version of a specific story from Supabase and updates in-memory state.
   Future<Story?> refreshStory(String storyId) async {
     try {
       final remote = await SupabaseService.fetchStoryById(storyId);
       if (remote != null) {
         final idx = _stories.indexWhere((s) => s.storyId == storyId);
         if (idx != -1) {
-          final local = _stories[idx];
-          final mergedMembers =
-              Story.deduplicateMembers([...local.members, ...remote.members]);
-          final existingExpIds =
-              local.expenses.map((e) => e.expenseId).toSet();
-          final mergedExpenses = List<StoryExpense>.from(local.expenses);
-          for (final remExp in remote.expenses) {
-            if (!existingExpIds.contains(remExp.expenseId)) {
-              mergedExpenses.add(remExp);
-              existingExpIds.add(remExp.expenseId);
-            }
-          }
-          final updated = remote.copyWith(
-            members: mergedMembers,
-            expenses: mergedExpenses.isNotEmpty
-                ? mergedExpenses
-                : remote.expenses,
-          );
-          _stories[idx] = updated;
-          notifyListeners();
-          final jsonStrings =
-              _stories.map((s) => jsonEncode(s.toJson())).toList();
-          await _storageService.setStringList(_storageKey, jsonStrings);
-          return updated;
+          _stories[idx] = remote;
         } else {
-          _stories.add(remote);
-          notifyListeners();
-          final jsonStrings =
-              _stories.map((s) => jsonEncode(s.toJson())).toList();
-          await _storageService.setStringList(_storageKey, jsonStrings);
-          return remote;
+          _stories.insert(0, remote);
         }
+        notifyListeners();
+        return remote;
       }
     } catch (e) {
       debugPrint('StoryRepository refreshStory error: $e');
@@ -270,7 +184,6 @@ class StoryRepository extends ChangeNotifier {
         );
 
         await updateStory(updatedStory);
-        await SupabaseService.saveStory(updatedStory);
         return updatedStory;
       }
 
@@ -325,7 +238,6 @@ class StoryRepository extends ChangeNotifier {
       );
 
       await updateStory(updatedStory);
-      await SupabaseService.saveStory(updatedStory);
 
       // Also add other story members to Friends list
       for (final m in updatedMembers) {
@@ -346,14 +258,19 @@ class StoryRepository extends ChangeNotifier {
     }
   }
 
-  /// Adds a new story and persists it.
+  /// Adds a new story and persists it to Supabase.
   Future<void> addStory(Story story) async {
-    _stories.insert(0, story);
+    final idx = _stories.indexWhere((s) => s.storyId == story.storyId);
+    if (idx != -1) {
+      _stories[idx] = story;
+    } else {
+      _stories.insert(0, story);
+    }
     notifyListeners();
-    await _persist();
+    await SupabaseService.saveStory(story);
   }
 
-  /// Updates an existing story and persists it.
+  /// Updates an existing story and persists it to Supabase.
   Future<void> updateStory(Story updatedStory) async {
     final index = _stories.indexWhere((s) => s.storyId == updatedStory.storyId);
     if (index != -1) {
@@ -362,7 +279,7 @@ class StoryRepository extends ChangeNotifier {
       _stories.insert(0, updatedStory);
     }
     notifyListeners();
-    await _persist();
+    await SupabaseService.saveStory(updatedStory);
   }
 
   /// Adds an expense to an existing story, automatically recalculating summary, balances, and settlements.
@@ -372,7 +289,7 @@ class StoryRepository extends ChangeNotifier {
       final updated = _stories[index].addExpense(expense);
       _stories[index] = updated;
       notifyListeners();
-      await _persist();
+      await SupabaseService.saveStory(updated);
     }
   }
 
@@ -424,11 +341,11 @@ class StoryRepository extends ChangeNotifier {
       );
 
       notifyListeners();
-      await _persist();
+      await SupabaseService.saveStory(_stories[index]);
     }
   }
 
-  /// Deletes a story by its identifier and cleans up associated activities and expenses.
+  /// Deletes a story by its identifier from Supabase and cleans up in-memory state.
   Future<void> deleteStory(String storyId) async {
     final storyIndex = _stories.indexWhere((s) => s.storyId == storyId);
     String? storyTitle;
@@ -439,58 +356,33 @@ class StoryRepository extends ChangeNotifier {
       _stories.removeWhere((s) => s.storyId == storyId);
     }
 
+    notifyListeners();
+    await SupabaseService.deleteStory(storyId);
+
     if (storyTitle != null && storyTitle.isNotEmpty) {
       ActivityRepository.instance
           .deleteActivitiesForStory(storyTitle, storyId: storyId);
     }
-
-    // If no stories remain, clean up remaining orphan activities
-    if (_stories.isEmpty) {
-      ActivityRepository.instance.clearActivities();
-    }
-
-    notifyListeners();
-    await _persist();
-    SupabaseService.deleteStory(storyId).ignore();
   }
 
-  /// Updates the current user's avatar across all their stories.
-  Future<void> updateCurrentUserAvatar(String avatar) async {
-    final changed = _applyAvatarToUserMembers(avatar);
-    if (changed) {
-      notifyListeners();
-      await _persist();
-    }
-  }
-
-  bool _isMemberCurrentUser(StoryMember m) {
-    final currentUserId = SupabaseService.currentUser?.id;
-    final currentUserName = SupabaseService.userDisplayName ??
-        _storageService.getStringSync('user_profile_name') ??
-        'Roshan';
-
-    if (currentUserId != null &&
-        m.userId.isNotEmpty &&
-        m.userId == currentUserId) {
-      return true;
-    }
-    final cleanM = m.name.toLowerCase().trim();
-    final cleanUser = currentUserName.toLowerCase().trim();
-    if (cleanM == 'you' || cleanM == cleanUser) return true;
-    if (cleanUser.isNotEmpty &&
-        (cleanM.contains(cleanUser) || cleanUser.contains(cleanM))) {
-      return true;
-    }
-    if (cleanM == 'roshan' || cleanM == 'roshan badwaik') return true;
-    if (m.role == 'creator') return true;
-    return false;
-  }
-
+  /// Updates all member instances of the current user with their chosen avatar.
   bool _applyAvatarToUserMembers(String avatar) {
     bool changed = false;
+    final currentUserId = SupabaseService.currentUser?.id;
+    final currentUserName = SupabaseService.userDisplayName?.toLowerCase() ??
+        StorageService.instance.getStringSync('user_profile_name')?.toLowerCase() ??
+        '';
+
     for (int i = 0; i < _stories.length; i++) {
       final story = _stories[i];
-      final memberIndex = story.members.indexWhere(_isMemberCurrentUser);
+      final memberIndex = story.members.indexWhere((m) {
+        if (currentUserId != null && m.userId == currentUserId) return true;
+        final name = m.name.toLowerCase();
+        if (currentUserName.isNotEmpty && name == currentUserName) return true;
+        if (name == 'you') return true;
+        return false;
+      });
+
       if (memberIndex != -1) {
         final currentMember = story.members[memberIndex];
         if (currentMember.avatar != avatar) {
@@ -526,25 +418,21 @@ class StoryRepository extends ChangeNotifier {
     return changed;
   }
 
+  /// Updates the current user's avatar across all their stories and syncs to Supabase.
+  Future<void> updateCurrentUserAvatar(String avatar) async {
+    final changed = _applyAvatarToUserMembers(avatar);
+    if (changed) {
+      notifyListeners();
+      for (final story in _stories) {
+        SupabaseService.saveStory(story).ignore();
+      }
+    }
+  }
+
   /// Clears all stories (for tests or resets).
   Future<void> clearAll() async {
     _stories.clear();
     ActivityRepository.instance.clearActivities();
     notifyListeners();
-    await _persist();
-  }
-
-  Future<void> _persist() async {
-    try {
-      final jsonStrings = _stories.map((s) => jsonEncode(s.toJson())).toList();
-      await _storageService.setStringList(_storageKey, jsonStrings);
-
-      // Asynchronously sync stories to Supabase Cloud
-      for (final story in _stories) {
-        SupabaseService.saveStory(story).ignore();
-      }
-    } catch (e) {
-      debugPrint('StoryRepository persist error: $e');
-    }
   }
 }

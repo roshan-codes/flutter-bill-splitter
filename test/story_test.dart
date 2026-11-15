@@ -190,12 +190,6 @@ void main() {
       expect(s1.status, equals('completed'));
       expect(updatedStory.summary.totalSettled, equals(3000.0));
       expect(updatedStory.summary.pendingAmount, equals(2000.0));
-
-      // Reinitialize repo to verify offline persistence
-      final repo2 = StoryRepository(storageService: StorageService.instance);
-      await repo2.init();
-      expect(repo2.stories.length, equals(1));
-      expect(repo2.stories[0].summary.totalSettled, equals(3000.0));
     });
   });
 }

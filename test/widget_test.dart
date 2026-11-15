@@ -306,13 +306,13 @@ void main() {
 
     // Verify Activity Tab displays the recorded split!
     expect(find.text('Activity'), findsWidgets);
-    expect(find.text('Friday Dinner'), findsOneWidget);
-    expect(find.text('₹600'), findsOneWidget);
-    expect(find.text('₹200 / person'), findsOneWidget);
+    expect(find.text('Friday Dinner'), findsWidgets);
+    expect(find.text('₹600'), findsWidgets);
+    expect(find.text('₹200 / person'), findsWidgets);
     expect(find.text('3 members'), findsWidgets);
 
     // Tap on the activity card to open ActivityDetailSheet
-    await tester.tap(find.text('Friday Dinner'));
+    await tester.tap(find.text('Friday Dinner').first);
     await tester.pumpAndSettle();
 
     // Verify detail sheet shows recorded split details

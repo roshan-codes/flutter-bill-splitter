@@ -360,18 +360,21 @@ class SupabaseService {
               story.createdBy != 'anonymous')
           ? story.createdBy
           : (currentUser?.id ?? 'anonymous');
-      await cli.from('stories').upsert({
-        'story_id': story.storyId,
-        'user_id': effectiveUserId,
-        'title': story.title,
-        'description': story.description,
-        'cover_emoji': story.coverEmoji,
-        'currency': story.currency,
-        'status': story.status,
-        'created_by': effectiveUserId,
-        'created_at': story.createdAt,
-        'data': story.toJson(),
-      });
+      await cli.from('stories').upsert(
+        {
+          'story_id': story.storyId,
+          'user_id': effectiveUserId,
+          'title': story.title,
+          'description': story.description,
+          'cover_emoji': story.coverEmoji,
+          'currency': story.currency,
+          'status': story.status,
+          'created_by': effectiveUserId,
+          'created_at': story.createdAt,
+          'data': story.toJson(),
+        },
+        onConflict: 'story_id',
+      );
       savedToDb = true;
       debugPrint('Saved story "${story.title}" to Supabase database table.');
     } catch (e) {
@@ -539,19 +542,67 @@ class SupabaseService {
 
     try {
       final userId = currentUser?.id ?? 'anonymous';
-      await cli.from('activities').upsert({
-        'id': activity.id,
-        'user_id': userId,
-        'group_name': activity.groupName,
-        'total_amount': activity.totalAmount,
-        'share_per_person': activity.sharePerPerson,
-        'timestamp': activity.timestamp.toIso8601String(),
-        'data': activity.toJson(),
-      });
+      await cli.from('activities').upsert(
+        {
+          'id': activity.id,
+          'user_id': userId,
+          'group_name': activity.groupName,
+          'total_amount': activity.totalAmount,
+          'share_per_person': activity.sharePerPerson,
+          'timestamp': activity.timestamp.toIso8601String(),
+          'data': activity.toJson(),
+        },
+        onConflict: 'id',
+      );
       return true;
     } catch (e) {
       debugPrint('Supabase saveActivity note: $e');
       return false;
+    }
+  }
+
+  /// Fetches split activities from the Supabase 'activities' database table.
+  static Future<List<SplitActivity>> fetchActivities() async {
+    final cli = client;
+    if (cli == null) return [];
+
+    try {
+      final response = await cli
+          .from('activities')
+          .select()
+          .order('timestamp', ascending: false);
+
+      final List<SplitActivity> results = [];
+      for (final row in response as List) {
+        if (row is Map<String, dynamic>) {
+          if (row['data'] != null) {
+            final data = row['data'];
+            if (data is Map<String, dynamic>) {
+              results.add(SplitActivity.fromJson(data));
+            } else if (data is String) {
+              results.add(SplitActivity.fromJson(jsonDecode(data)));
+            }
+          } else {
+            results.add(SplitActivity(
+              id: row['id']?.toString() ?? '',
+              groupName: row['group_name']?.toString() ?? '',
+              totalAmount: (row['total_amount'] as num?)?.toDouble() ?? 0.0,
+              sharePerPerson:
+                  (row['share_per_person'] as num?)?.toDouble() ?? 0.0,
+              timestamp:
+                  DateTime.tryParse(row['timestamp']?.toString() ?? '') ??
+                      DateTime.now(),
+              members: const [],
+              memberExpenses: const {},
+              settlements: const [],
+            ));
+          }
+        }
+      }
+      return results;
+    } catch (e) {
+      debugPrint('Supabase fetchActivities note: $e');
+      return [];
     }
   }
 

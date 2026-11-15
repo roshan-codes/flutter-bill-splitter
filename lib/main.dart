@@ -58,8 +58,11 @@ void main() async {
   // Initialize Supabase backend
   await SupabaseService.init();
 
-  // Initialize offline storage and repositories
+  // Initialize offline storage and clean up obsolete local story/activity cache
   await StorageService.instance.init();
+  await StorageService.instance.remove('saved_stories_key');
+  await StorageService.instance.remove('split_activities_key');
+
   await ActivityRepository.instance.init();
   await FriendsRepository.instance.init();
   await StoryRepository.instance.init();

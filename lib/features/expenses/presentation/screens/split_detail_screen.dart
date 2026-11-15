@@ -14,6 +14,8 @@ import 'package:flutter_bill_splitter/core/utils/currency_formatter.dart';
 import 'package:flutter_bill_splitter/core/utils/date_formatter.dart';
 import 'package:flutter_bill_splitter/core/constants/expense_categories.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
+import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
+import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/edit_story_bottom_sheet.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/share_story_invite_sheet.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_summary_screen.dart';
@@ -257,7 +259,25 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
   String _getDateSubtitle(int memberCount) =>
       DateFormatter.formatStoryDateSubtitle(memberCount, _story.startDate, _story.endDate);
 
-  void _recalculateBalances() {
+  Future<void> _persistExpense(StoryExpense expense, String payerName) async {
+    final count = _story.members.isNotEmpty ? _story.members.length : 1;
+    final activity = SplitActivity(
+      id: expense.expenseId,
+      groupName: _story.title,
+      totalAmount: expense.amount,
+      sharePerPerson: expense.amount / count,
+      timestamp: DateTime.tryParse(expense.date) ?? DateTime.now(),
+      members: _story.members
+          .map((m) => Friend(name: m.name, phone: '+91 98765 00000'))
+          .toList(),
+      memberExpenses: {payerName: expense.amount},
+      settlements: const [],
+    );
+    ActivityRepository.instance.recordActivity(activity);
+    await _recalculateBalances();
+  }
+
+  Future<void> _recalculateBalances() async {
     final total = _story.expenses.fold<double>(0.0, (sum, e) => sum + e.amount);
     final count = _story.members.isNotEmpty ? _story.members.length : 1;
     final perPerson = total / count;
@@ -301,8 +321,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
         memberBalances: updatedBalances,
       );
     });
-    StoryRepository.instance.updateStory(_story);
-    SupabaseService.saveStory(_story);
+    await StoryRepository.instance.updateStory(_story);
+    await SupabaseService.saveStory(_story);
   }
 
   void _showAddExpenseDialog(Friend friend) {
@@ -406,40 +426,41 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                 borderRadius: BorderRadius.circular(AppRadius.buttonSecondary),
               ),
             ),
-            onPressed: () {
+            onPressed: () async {
               if (formKey.currentState?.validate() ?? false) {
                 final amount = double.parse(controller.text.trim());
+                final matchingMember = _story.members.firstWhere(
+                  (m) => m.name.toLowerCase() == friend.name.toLowerCase(),
+                  orElse: () => StoryMember(
+                      userId: friend.name, name: friend.name, joinedAt: ''),
+                );
+
+                final newExpense = StoryExpense(
+                  expenseId: 'exp_${DateTime.now().millisecondsSinceEpoch}',
+                  title: 'Expense by ${friend.name}',
+                  category: 'general',
+                  amount: amount,
+                  paidBy: matchingMember.userId,
+                  splitType: 'equal',
+                  participants: _story.members.map((m) => m.userId).toList(),
+                  shares: _story.members
+                      .map((m) => ExpenseShare(
+                            userId: m.userId,
+                            amount: amount /
+                                (_story.members.isNotEmpty
+                                    ? _story.members.length
+                                    : 1),
+                          ))
+                      .toList(),
+                  date: DateTime.now().toIso8601String(),
+                );
+
                 setState(() {
                   _memberExpenses[friend.name] = amount;
 
                   // Add or update matching StoryExpense
                   final existingIdx = _story.expenses.indexWhere(
                     (e) => e.title == 'Expense by ${friend.name}',
-                  );
-                  final matchingMember = _story.members.firstWhere(
-                    (m) => m.name.toLowerCase() == friend.name.toLowerCase(),
-                    orElse: () => StoryMember(
-                        userId: friend.name, name: friend.name, joinedAt: ''),
-                  );
-
-                  final newExpense = StoryExpense(
-                    expenseId: 'exp_${DateTime.now().millisecondsSinceEpoch}',
-                    title: 'Expense by ${friend.name}',
-                    category: 'general',
-                    amount: amount,
-                    paidBy: matchingMember.userId,
-                    splitType: 'equal',
-                    participants: _story.members.map((m) => m.userId).toList(),
-                    shares: _story.members
-                        .map((m) => ExpenseShare(
-                              userId: m.userId,
-                              amount: amount /
-                                  (_story.members.isNotEmpty
-                                      ? _story.members.length
-                                      : 1),
-                            ))
-                        .toList(),
-                    date: DateTime.now().toIso8601String(),
                   );
 
                   if (existingIdx != -1) {
@@ -452,8 +473,10 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                   }
                 });
 
-                _recalculateBalances();
-                Navigator.of(context).pop();
+                await _persistExpense(newExpense, matchingMember.name);
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
               }
             },
             child: Text('Save Expense',
@@ -608,7 +631,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                         borderRadius: BorderRadius.circular(AppRadius.button),
                       ),
                     ),
-                    onPressed: () {
+                    onPressed: () async {
                       if (sheetFormKey.currentState?.validate() ?? false) {
                         final amt = double.parse(amountController.text.trim());
                         final payer = _story.members.firstWhere(
@@ -680,8 +703,10 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                               (_memberExpenses[payer.name] ?? 0.0) + amt;
                         });
 
-                        _recalculateBalances();
-                        Navigator.of(ctx).pop();
+                        await _persistExpense(newExpense, payer.name);
+                        if (ctx.mounted) {
+                          Navigator.of(ctx).pop();
+                        }
                       }
                     },
                     child: Text(

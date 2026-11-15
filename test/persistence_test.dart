@@ -86,7 +86,7 @@ void main() {
       expect(restored.settlements.first.amount, 134.0);
     });
 
-    test('ActivityRepository persists data across simulated app restart',
+    test('ActivityRepository manages activities in-memory without local disk storage',
         () async {
       final repo1 = ActivityRepository(storageService: StorageService.instance);
       await repo1.init();
@@ -106,15 +106,9 @@ void main() {
 
       repo1.recordActivity(activity);
       expect(repo1.activities.length, 1);
-
-      // Simulate App Restart by creating a fresh repository instance and calling init()
-      final repo2 = ActivityRepository(storageService: StorageService.instance);
-      await repo2.init();
-
-      expect(repo2.activities.length, 1);
-      expect(repo2.activities.first.id, 'split_persisted_1');
-      expect(repo2.activities.first.groupName, 'Goa Trip Fuel');
-      expect(repo2.activities.first.totalAmount, 2800.0);
+      expect(repo1.activities.first.id, 'split_persisted_1');
+      expect(repo1.activities.first.groupName, 'Goa Trip Fuel');
+      expect(repo1.activities.first.totalAmount, 2800.0);
     });
 
     test(
@@ -141,22 +135,16 @@ void main() {
       expect(repo2.groups.first.name, 'Office Lunch');
     });
 
-    test('StoryRepository persists stories across simulated restart', () async {
+    test('StoryRepository manages stories in-memory without local disk storage', () async {
       final repo1 = StoryRepository(storageService: StorageService.instance);
       await repo1.init();
 
       final story = Story.sampleGoaTrip();
       await repo1.addStory(story);
       expect(repo1.stories.length, 1);
-
-      // Simulate App Restart
-      final repo2 = StoryRepository(storageService: StorageService.instance);
-      await repo2.init();
-
-      expect(repo2.stories.length, 1);
-      expect(repo2.stories.first.storyId, story.storyId);
-      expect(repo2.stories.first.title, story.title);
-      expect(repo2.stories.first.summary.totalExpenses,
+      expect(repo1.stories.first.storyId, story.storyId);
+      expect(repo1.stories.first.title, story.title);
+      expect(repo1.stories.first.summary.totalExpenses,
           story.summary.totalExpenses);
     });
   });
