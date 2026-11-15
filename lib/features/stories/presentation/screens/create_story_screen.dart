@@ -4,13 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/animations/app_motion.dart';
 import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
-import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
-import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Screen 1 from design: High-fidelity "Create Story" form matching the mockup
 /// - Header: Back button `<` + Title "Create Story"
@@ -311,16 +309,14 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isIOS = isIOSPlatform(context);
-
     return Scaffold(
-      backgroundColor: isIOS ? AppColors.iosBackground : AppColors.background,
+      backgroundColor: const Color(0xFFFAFAFC),
       body: SafeArea(
         child: Column(
           children: [
             // Top Navigation Bar
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Row(
                 children: [
                   Material(
@@ -333,13 +329,14 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                         height: 44,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.surface,
-                          border: Border.all(color: AppColors.border, width: 1.0),
+                          color: Colors.white,
+                          border: Border.all(
+                              color: const Color(0xFFE5E7EB), width: 1.0),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.04),
-                              blurRadius: 6,
-                              offset: const Offset(0, 1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
@@ -347,7 +344,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                           child: Icon(
                             Icons.chevron_left_rounded,
                             size: 26,
-                            color: AppColors.textPrimary,
+                            color: Color(0xFF111111),
                           ),
                         ),
                       ),
@@ -359,16 +356,16 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
 
             // Form Title: "Create Story"
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Create Story',
                   style: GoogleFonts.manrope(
-                    fontSize: 28,
+                    fontSize: 30,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    letterSpacing: -0.6,
+                    color: const Color(0xFF111111),
+                    letterSpacing: -0.7,
                   ),
                 ),
               ),
@@ -378,7 +375,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -386,43 +383,52 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                     Text(
                       'Story name',
                       style: GoogleFonts.manrope(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF111111),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Container(
-                      height: 52,
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      height: 56,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                            color: const Color(0xFFEAEAEF), width: 1.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.025),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Row(
                         children: [
                           const Icon(
                             Icons.people_outline_rounded,
-                            size: 20,
+                            size: 22,
                             color: Color(0xFF6B7280),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 14),
                           Expanded(
                             child: TextField(
                               controller: _nameController,
                               style: GoogleFonts.manrope(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xFF111827),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF111111),
                               ),
                               decoration: InputDecoration(
                                 isDense: true,
                                 border: InputBorder.none,
                                 hintText: 'Mumbai Trip',
                                 hintStyle: GoogleFonts.manrope(
-                                  fontSize: 15,
-                                  color: const Color(0xFF9CA3AF),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF111111),
                                 ),
                               ),
                             ),
@@ -436,19 +442,27 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                     Text(
                       'Description (optional)',
                       style: GoogleFonts.manrope(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF111111),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Container(
-                      height: 52,
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      height: 56,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                            color: const Color(0xFFEAEAEF), width: 1.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.025),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Center(
                         child: TextField(
@@ -456,7 +470,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                           style: GoogleFonts.manrope(
                             fontSize: 15,
                             fontWeight: FontWeight.w500,
-                            color: const Color(0xFF111827),
+                            color: const Color(0xFF111111),
                           ),
                           decoration: InputDecoration(
                             isDense: true,
@@ -464,6 +478,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                             hintText: 'Trip, stay, food, travel etc.',
                             hintStyle: GoogleFonts.manrope(
                               fontSize: 15,
+                              fontWeight: FontWeight.w500,
                               color: const Color(0xFF9CA3AF),
                             ),
                           ),
@@ -476,38 +491,47 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                     GestureDetector(
                       onTap: _pickDateRange,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 18, vertical: 14),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                              color: const Color(0xFFEAEAEF), width: 1.2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.025),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Row(
                           children: [
                             const Icon(
                               Icons.calendar_today_outlined,
-                              size: 20,
-                              color: Color(0xFF6B7280),
+                              size: 22,
+                              color: Color(0xFF111111),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 16),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   'Start date',
                                   style: GoogleFonts.manrope(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
                                     color: const Color(0xFF6B7280),
                                   ),
                                 ),
-                                const SizedBox(height: 2),
+                                const SizedBox(height: 3),
                                 Text(
                                   _formatDisplayDate(_startDate),
                                   style: GoogleFonts.manrope(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF111827),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF111111),
                                   ),
                                 ),
                               ],
@@ -516,7 +540,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                             const Icon(
                               Icons.arrow_forward_rounded,
                               size: 18,
-                              color: Color(0xFF9CA3AF),
+                              color: Color(0xFF111111),
                             ),
                             const Spacer(),
                             Column(
@@ -525,22 +549,23 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                                 Text(
                                   'End date',
                                   style: GoogleFonts.manrope(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
                                     color: const Color(0xFF6B7280),
                                   ),
                                 ),
-                                const SizedBox(height: 2),
+                                const SizedBox(height: 3),
                                 Text(
                                   _formatDisplayDate(_endDate),
                                   style: GoogleFonts.manrope(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF111827),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF111111),
                                   ),
                                 ),
                               ],
                             ),
+                            const SizedBox(width: 8),
                           ],
                         ),
                       ),
@@ -551,27 +576,36 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                     Text(
                       'Add members',
                       style: GoogleFonts.manrope(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF111111),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                            color: const Color(0xFFEAEAEF), width: 1.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.025),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Row(
                         children: [
                           const Icon(
                             Icons.people_outline_rounded,
-                            size: 20,
+                            size: 22,
                             color: Color(0xFF6B7280),
                           ),
-                          const SizedBox(width: 14),
+                          const SizedBox(width: 16),
                           Expanded(
                             child: SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
@@ -579,19 +613,19 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                                 children: [
                                   for (final member in _selectedMembers) ...[
                                     _buildMemberAvatarChip(member),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: 10),
                                   ],
                                   // Add member '+' button
                                   GestureDetector(
                                     onTap: _showAddMemberModal,
                                     child: Container(
-                                      width: 38,
-                                      height: 38,
+                                      width: 40,
+                                      height: 40,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         color: Colors.white,
                                         border: Border.all(
-                                          color: const Color(0xFFD1D5DB),
+                                          color: const Color(0xFFE5E7EB),
                                           width: 1.2,
                                         ),
                                       ),
@@ -599,7 +633,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                                         child: Icon(
                                           Icons.add_rounded,
                                           size: 20,
-                                          color: Color(0xFF374151),
+                                          color: Color(0xFF111111),
                                         ),
                                       ),
                                     ),
@@ -619,10 +653,10 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
 
             // Bottom "Create Story →" Black Pill Button
             Container(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
               child: SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: 54,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF111111),
@@ -667,24 +701,25 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
 
     if (isRoshan) {
       return Container(
-        width: 38,
-        height: 38,
-        decoration: const BoxDecoration(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Color(0xFF1E1E1E),
+          color: const Color(0xFF111111),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
         ),
         child: ClipOval(
           child: Image.asset(
             'assets/avatars/user_roshan.png',
-            width: 38,
-            height: 38,
+            width: 40,
+            height: 40,
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => Center(
               child: Text(
                 initial,
                 style: GoogleFonts.manrope(
                   color: Colors.white,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                   fontSize: 15,
                 ),
               ),
@@ -695,18 +730,18 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
     }
 
     return Container(
-      width: 38,
-      height: 38,
+      width: 40,
+      height: 40,
       decoration: const BoxDecoration(
         shape: BoxShape.circle,
-        color: Color(0xFF1E1E1E),
+        color: Color(0xFF111111),
       ),
       child: Center(
         child: Text(
           initial,
           style: GoogleFonts.manrope(
             color: Colors.white,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             fontSize: 15,
           ),
         ),

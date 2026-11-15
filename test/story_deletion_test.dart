@@ -30,10 +30,10 @@ void main() {
         MaterialApp(
           home: SplitDetailScreen(
             groupName: story.title,
-            members: [
-              const Friend(name: 'Roshan', phone: '+91 98765 00000'),
-              const Friend(name: 'Rahul', phone: '+91 98765 11111'),
-              const Friend(name: 'Priya', phone: '+91 98765 22222'),
+            members: const [
+              Friend(name: 'Roshan', phone: '+91 98765 00000'),
+              Friend(name: 'Rahul', phone: '+91 98765 11111'),
+              Friend(name: 'Priya', phone: '+91 98765 22222'),
             ],
             story: story,
           ),
