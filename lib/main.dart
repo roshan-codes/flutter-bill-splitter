@@ -5,7 +5,6 @@ import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
-import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
 import 'app/app.dart';
 
 export 'app/app.dart';

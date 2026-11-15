@@ -943,13 +943,18 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                       onTap: () {
                         showModalBottomSheet(
                           context: context,
-                          backgroundColor: Colors.transparent,
-                          builder: (ctx) => Container(
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(24),
-                              ),
+                          backgroundColor: Colors.white,
+                          barrierColor: Colors.black54,
+                          elevation: 10,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(24),
+                            ),
+                          ),
+                          builder: (ctx) => Material(
+                            color: Colors.white,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(24),
                             ),
                             child: SafeArea(
                               child: Padding(
