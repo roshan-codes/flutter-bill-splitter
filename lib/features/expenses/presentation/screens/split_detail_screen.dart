@@ -64,9 +64,11 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     }
 
     if (widget.members.isEmpty) {
-      // Fallback for tests or direct previews
-      final sample = StoryRepository.instance.getStoryById('story_001') ??
-          Story.sampleGoaTrip();
+      // Fallback for tests or direct previews: prefer Delhi mockup story, then Goa trip
+      final sample =
+          StoryRepository.instance.getStoryById('story_delhi_001') ??
+              StoryRepository.instance.getStoryById('story_001') ??
+              Story.sampleDelhiTrip();
       _story = sample;
       for (final exp in _story.expenses) {
         final payerMember = _story.members.firstWhere(
@@ -149,8 +151,11 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
 
   String _getDateSubtitle(int memberCount) {
     final memberSuffix = memberCount == 1 ? '1 member' : '$memberCount members';
+    if (_story.startDate == '2026-11-15' && _story.endDate == '2026-11-18') {
+      return '$memberSuffix · Nov 15 – 18';
+    }
     if (_story.startDate == '2026-11-12' && _story.endDate == '2026-11-16') {
-      return 'Nov 12 – Nov 16 · $memberSuffix';
+      return '$memberSuffix · Nov 12 – 16';
     }
     const months = [
       'Jan',
@@ -176,11 +181,14 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
           if (eDate != null && eDate.isNotEmpty && eDate != sDate) {
             final end = DateTime.tryParse(eDate);
             if (end != null) {
+              if (start.month == end.month) {
+                return '$memberSuffix · $monthName ${start.day} – ${end.day}';
+              }
               final endMonth = months[end.month - 1];
-              return '$monthName ${start.day} – $endMonth ${end.day} · $memberSuffix';
+              return '$memberSuffix · $monthName ${start.day} – $endMonth ${end.day}';
             }
           }
-          return '$monthName ${start.day} · $memberSuffix';
+          return '$memberSuffix · $monthName ${start.day}';
         }
       }
     } catch (_) {}
@@ -1003,7 +1011,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                       foregroundColor: AppColors.textPrimary,
                       elevation: 0,
                       side: const BorderSide(
-                          color: Color(0xFF111111), width: 1.2),
+                          color: AppColors.border, width: 1.0),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(28),
                       ),
@@ -1427,24 +1435,42 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
-          // Circular Avatar (Dark circle with white initial)
+          // Circular Avatar (Image for user or dark circle with white initial)
           Container(
             width: 42,
             height: 42,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color:
-                  isRoshan ? const Color(0xFF333333) : const Color(0xFF1E1E1E),
+              color: Color(0xFF1E1E1E),
             ),
-            child: Center(
-              child: Text(
-                initial,
-                style: GoogleFonts.manrope(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                ),
-              ),
+            child: ClipOval(
+              child: isRoshan
+                  ? Image.asset(
+                      'assets/avatars/user_roshan.png',
+                      width: 42,
+                      height: 42,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Center(
+                        child: Text(
+                          initial,
+                          style: GoogleFonts.manrope(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                        initial,
+                        style: GoogleFonts.manrope(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
             ),
           ),
           const SizedBox(width: 14),
@@ -1464,7 +1490,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Paid ₹${_formatAmount(paid)}  •  Share ₹${_formatAmount(share)}',
+                  'Paid ₹${_formatAmount(paid)} · Share ₹${_formatAmount(share)}',
                   style: GoogleFonts.manrope(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -1567,7 +1593,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Nov 12  •  Paid by ${payer.name}',
+                  'Nov 12 · Paid by ${payer.name}',
                   style: GoogleFonts.manrope(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,

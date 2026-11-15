@@ -587,6 +587,151 @@ class Story {
     );
   }
 
+  /// Default Delhi Trip Story matching the design mockup in user requirements.
+  static Story sampleDelhiTrip() {
+    return Story.fromJson(sampleDelhiTripJson());
+  }
+
+  /// Returns the exact map representation for Delhi trip matching the design mockup:
+  /// - 3 members: Rashmi, Shubham, Roshan
+  /// - Total expenses: ₹10,500, Per person: ₹3,500
+  /// - Rashmi paid ₹6,500 (Gets ₹3,000)
+  /// - Shubham paid ₹0 (Owes ₹3,500)
+  /// - Roshan paid ₹4,000 (Gets ₹500)
+  /// - Recent expense: Hotel Stay, Nov 12 · Paid by Rashmi, ₹6,000
+  static Map<String, dynamic> sampleDelhiTripJson() => {
+        "story_id": "story_delhi_001",
+        "title": "Delhi",
+        "description": "Trip with friends in Delhi",
+        "cover_emoji": "🌴",
+        "currency": "INR",
+        "status": "active",
+        "created_by": "user_003",
+        "created_at": "2026-11-15T09:00:00Z",
+        "start_date": "2026-11-15",
+        "end_date": "2026-11-18",
+        "members": [
+          {
+            "user_id": "user_rashmi",
+            "name": "Rashmi",
+            "avatar": "",
+            "role": "member",
+            "joined_at": "2026-11-15T09:00:00Z"
+          },
+          {
+            "user_id": "user_shubham",
+            "name": "Shubham",
+            "avatar": "",
+            "role": "member",
+            "joined_at": "2026-11-15T09:10:00Z"
+          },
+          {
+            "user_id": "user_roshan",
+            "name": "Roshan",
+            "avatar": "assets/avatars/user_roshan.png",
+            "role": "admin",
+            "joined_at": "2026-11-15T09:15:00Z"
+          }
+        ],
+        "summary": {
+          "total_expenses": 10500,
+          "total_settled": 0,
+          "pending_amount": 3500,
+          "member_count": 3,
+          "expense_count": 3
+        },
+        "expenses": [
+          {
+            "expense_id": "exp_delhi_001",
+            "title": "Hotel Stay",
+            "category": "accommodation",
+            "amount": 6000,
+            "paid_by": "user_rashmi",
+            "split_type": "equal",
+            "participants": ["user_rashmi", "user_shubham", "user_roshan"],
+            "shares": [
+              {"user_id": "user_rashmi", "amount": 2000},
+              {"user_id": "user_shubham", "amount": 2000},
+              {"user_id": "user_roshan", "amount": 2000}
+            ],
+            "date": "2026-11-12T10:30:00Z",
+            "note": "Hotel stay in Delhi"
+          },
+          {
+            "expense_id": "exp_delhi_002",
+            "title": "Cab & Sightseeing",
+            "category": "transport",
+            "amount": 4000,
+            "paid_by": "user_roshan",
+            "split_type": "equal",
+            "participants": ["user_rashmi", "user_shubham", "user_roshan"],
+            "shares": [
+              {"user_id": "user_rashmi", "amount": 1333.33},
+              {"user_id": "user_shubham", "amount": 1333.33},
+              {"user_id": "user_roshan", "amount": 1333.34}
+            ],
+            "date": "2026-11-13T14:00:00Z"
+          },
+          {
+            "expense_id": "exp_delhi_003",
+            "title": "Café & Breakfast",
+            "category": "food",
+            "amount": 500,
+            "paid_by": "user_rashmi",
+            "split_type": "equal",
+            "participants": ["user_rashmi", "user_shubham", "user_roshan"],
+            "shares": [
+              {"user_id": "user_rashmi", "amount": 166.67},
+              {"user_id": "user_shubham", "amount": 166.67},
+              {"user_id": "user_roshan", "amount": 166.66}
+            ],
+            "date": "2026-11-14T09:30:00Z"
+          }
+        ],
+        "member_balances": [
+          {
+            "user_id": "user_rashmi",
+            "name": "Rashmi",
+            "total_paid": 6500,
+            "total_share": 3500,
+            "net_balance": 3000,
+            "status": "gets_back"
+          },
+          {
+            "user_id": "user_shubham",
+            "name": "Shubham",
+            "total_paid": 0,
+            "total_share": 3500,
+            "net_balance": -3500,
+            "status": "owes"
+          },
+          {
+            "user_id": "user_roshan",
+            "name": "Roshan",
+            "total_paid": 4000,
+            "total_share": 3500,
+            "net_balance": 500,
+            "status": "gets_back"
+          }
+        ],
+        "settlements": [
+          {
+            "settlement_id": "set_delhi_001",
+            "from_user": "user_shubham",
+            "to_user": "user_rashmi",
+            "amount": 3000,
+            "status": "pending"
+          },
+          {
+            "settlement_id": "set_delhi_002",
+            "from_user": "user_shubham",
+            "to_user": "user_roshan",
+            "amount": 500,
+            "status": "pending"
+          }
+        ]
+      };
+
   /// Default Goa Trip Story exactly matching the user-provided JSON format.
   static Story sampleGoaTrip() {
     return Story.fromJson(sampleGoaTripJson());
