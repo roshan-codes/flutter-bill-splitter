@@ -67,9 +67,10 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
 
     if (widget.members.isEmpty) {
       // Fallback for tests or direct previews: prefer Delhi mockup story, then Goa trip
-      final sample = StoryRepository.instance.getStoryById('story_delhi_001') ??
-          StoryRepository.instance.getStoryById('story_001') ??
-          Story.sampleDelhiTrip();
+      final sample =
+          StoryRepository.instance.getStoryById('story_delhi_001') ??
+              StoryRepository.instance.getStoryById('story_001') ??
+              Story.sampleDelhiTrip();
       _story = sample;
       for (final exp in _story.expenses) {
         final payerMember = _story.members.firstWhere(
@@ -930,8 +931,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                       height: 1,
                       child: Text(
                         'Split with Members',
-                        style:
-                            TextStyle(fontSize: 0.1, color: Colors.transparent),
+                        style: TextStyle(
+                            fontSize: 0.1, color: Colors.transparent),
                       ),
                     ),
                   ),
@@ -968,7 +969,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                                     Container(
                                       width: 36,
                                       height: 4,
-                                      margin: const EdgeInsets.only(bottom: 12),
+                                      margin:
+                                          const EdgeInsets.only(bottom: 12),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFE5E7EB),
                                         borderRadius: BorderRadius.circular(2),
@@ -1114,8 +1116,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                     ),
                   ),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: const Color(0xFFE8F8EE),
                       borderRadius: BorderRadius.circular(12),
@@ -1156,7 +1158,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                 reverse: _previousTab > _currentTab,
                 type: SharedAxisTransitionType.horizontal,
                 duration: AppMotion.normal,
-                child: _buildCurrentTabContent(totalExpenses, perPersonAmount),
+                child:
+                    _buildCurrentTabContent(totalExpenses, perPersonAmount),
               ),
             ),
           ],
@@ -1175,102 +1178,103 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     }
     // Overview (Screen 2) & Expenses (Screen 3) tab: [ ⇄ Settle Up ] [ Add Expense + ]
     return Container(
-      color: isIOS ? AppColors.iosBackground : AppColors.background,
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            // Left button: ⇄ Settle Up (navigates to SplitSummaryScreen)
-            Expanded(
-              child: SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.surface,
-                    foregroundColor: AppColors.textPrimary,
-                    elevation: 0,
-                    side: const BorderSide(color: AppColors.border, width: 1.0),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
-                  onPressed: _navigateToSummary,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.sync_alt_rounded,
-                              color: Color(0xFF111111), size: 18),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Settle Up',
-                            style: GoogleFonts.manrope(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF111111),
-                            ),
-                          ),
-                        ],
+        color: isIOS ? AppColors.iosBackground : AppColors.background,
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+        child: SafeArea(
+          top: false,
+          child: Row(
+            children: [
+              // Left button: ⇄ Settle Up (navigates to SplitSummaryScreen)
+              Expanded(
+                child: SizedBox(
+                  height: 52,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.surface,
+                      foregroundColor: AppColors.textPrimary,
+                      elevation: 0,
+                      side: const BorderSide(
+                          color: AppColors.border, width: 1.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
                       ),
-                      // Hidden semantic text & icon for test compatibility (Confirm Split)
-                      const Opacity(
-                        opacity: 0.0,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                    ),
+                    onPressed: _navigateToSummary,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text('Confirm Split',
-                                style: TextStyle(fontSize: 0.1)),
-                            Icon(Icons.arrow_forward_rounded, size: 0.1),
+                            const Icon(Icons.sync_alt_rounded,
+                                color: Color(0xFF111111), size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Settle Up',
+                              style: GoogleFonts.manrope(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF111111),
+                              ),
+                            ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            // Right button: Add Expense +
-            Expanded(
-              child: SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF111111),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
+                        // Hidden semantic text & icon for test compatibility (Confirm Split)
+                        const Opacity(
+                          opacity: 0.0,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('Confirm Split',
+                                  style: TextStyle(fontSize: 0.1)),
+                              Icon(Icons.arrow_forward_rounded, size: 0.1),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  onPressed: () => _openAddExpenseSheet(context),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Add Expense',
-                        style: GoogleFonts.manrope(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Right button: Add Expense +
+              Expanded(
+                child: SizedBox(
+                  height: 52,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF111111),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
                       ),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.add_rounded,
-                          color: Colors.white, size: 19),
-                    ],
+                    ),
+                    onPressed: () => _openAddExpenseSheet(context),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Add Expense',
+                          style: GoogleFonts.manrope(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.add_rounded,
+                            color: Colors.white, size: 19),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildSegmentPill({required int index, required String label}) {
@@ -1306,7 +1310,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     );
   }
 
-  Widget _buildCurrentTabContent(double totalExpenses, double perPersonAmount) {
+  Widget _buildCurrentTabContent(
+      double totalExpenses, double perPersonAmount) {
     switch (_currentTab) {
       case 0:
         return _buildOverviewTab(totalExpenses, perPersonAmount);
@@ -2351,7 +2356,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
-                    child: Icon(icon, size: 20, color: const Color(0xFF1F2937)),
+                    child:
+                        Icon(icon, size: 20, color: const Color(0xFF1F2937)),
                   ),
                 ),
                 const SizedBox(width: 14),
