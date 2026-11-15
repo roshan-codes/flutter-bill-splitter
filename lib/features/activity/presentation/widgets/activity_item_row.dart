@@ -7,7 +7,7 @@ import 'package:flutter_bill_splitter/features/activity/domain/models/activity_d
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_detail_sheet.dart';
 
 /// Single row item representing an activity entry inside an activity section card.
-/// Adheres to design.md Section 2, 3 & 10.
+/// Matches design mockup (media_1794729268088_39ebec66.jpg).
 class ActivityItemRow extends StatelessWidget {
   final ActivityDisplayItem item;
   final VoidCallback? onTap;
@@ -31,6 +31,10 @@ class ActivityItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasMockupStyle = item.subtitleAmount != null ||
+        item.timestamp != null ||
+        item.trailingText != null;
+
     return InkWell(
       onTap: onTap ??
           () {
@@ -41,30 +45,32 @@ class ActivityItemRow extends StatelessWidget {
           },
       borderRadius: BorderRadius.circular(AppRadius.input),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // Squircle Icon Avatar
                 Container(
-                  width: 46,
-                  height: 46,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
                     color: item.iconBgColor,
-                    borderRadius:
-                        BorderRadius.circular(AppRadius.iconContainer),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(
-                    item.icon,
-                    color: item.iconColor,
-                    size: 22,
+                  child: Center(
+                    child: Icon(
+                      item.icon,
+                      color: item.iconColor,
+                      size: 22,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 14),
 
-                // Title and Member Count
+                // Center Title & Subtitles
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,55 +82,90 @@ class ActivityItemRow extends StatelessWidget {
                         style: GoogleFonts.manrope(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: const Color(0xFF111827),
                           letterSpacing: -0.2,
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        '${item.memberCount} members',
-                        style: GoogleFonts.manrope(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textSecondary,
+                      if (hasMockupStyle) ...[
+                        if (item.subtitleAmount != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            item.subtitleAmount!,
+                            style: GoogleFonts.manrope(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF111827),
+                            ),
+                          ),
+                        ],
+                        if (item.timestamp != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            item.timestamp!,
+                            style: GoogleFonts.manrope(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
+                      ] else ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          '${item.memberCount} members',
+                          style: GoogleFonts.manrope(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
 
                 // Trailing Amount & Status
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
+                if (hasMockupStyle) ...[
+                  if (item.trailingText != null)
                     Text(
-                      _formatAmount(item.totalAmount),
+                      item.trailingText!,
                       style: GoogleFonts.manrope(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                        letterSpacing: -0.3,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: item.trailingColor ?? const Color(0xFF111827),
+                        letterSpacing: -0.2,
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      item.statusText,
-                      style: GoogleFonts.manrope(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: item.statusColor,
-                        letterSpacing: -0.1,
+                ] else ...[
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        _formatAmount(item.totalAmount),
+                        style: GoogleFonts.manrope(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.3,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(height: 3),
+                      Text(
+                        item.statusText,
+                        style: GoogleFonts.manrope(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: item.statusColor,
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
 
-            // If this item was generated from a recorded split with detailed settlements,
-            // render a subtle settlement detail row below so the user and test assertions
-            // can see the exact settlement path (e.g. "Sophia Martinez pays ₹300 to Alex Johnson").
             if (item.splitActivity != null &&
                 item.splitActivity!.settlements.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -141,7 +182,7 @@ class ActivityItemRow extends StatelessWidget {
                     const Icon(
                       Icons.arrow_forward_rounded,
                       size: 13,
-                      color: AppColors.primary,
+                      color: AppColors.primaryDeep,
                     ),
                     const SizedBox(width: 6),
                     Expanded(
@@ -162,7 +203,7 @@ class ActivityItemRow extends StatelessWidget {
                       style: GoogleFonts.manrope(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: AppColors.primaryDeep,
                       ),
                     ),
                   ],

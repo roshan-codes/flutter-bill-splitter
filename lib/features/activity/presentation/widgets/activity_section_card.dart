@@ -6,8 +6,8 @@ import 'package:flutter_bill_splitter/features/activity/domain/models/activity_d
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_item_row.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
-/// Platform-adaptive Card container rendering a section of activities (e.g., "This Week", "Last Week").
-/// Adheres to design.md Section 4 & 5.
+/// Platform-adaptive Card container rendering a section of activities (e.g., "Today", "Yesterday", "This Week").
+/// Matches design mockup (media_1794729268088_39ebec66.jpg).
 class ActivitySectionCard extends StatelessWidget {
   final String title;
   final List<ActivityDisplayItem> items;
@@ -26,42 +26,57 @@ class ActivitySectionCard extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    final hasMockupItems = items.any(
+        (it) => it.subtitleAmount != null || it.timestamp != null);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
           style: GoogleFonts.manrope(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
             color: AppColors.textPrimary,
             letterSpacing: -0.3,
           ),
         ),
-        const SizedBox(height: 12),
-        PlatformCard(
-          borderRadius: AppRadius.card,
-          elevation: 0,
-          color: AppColors.surface,
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          child: Column(
-            children: [
-              for (int i = 0; i < items.length; i++) ...[
-                ActivityItemRow(
-                  item: items[i],
-                  onTap: onItemTap != null ? () => onItemTap!(items[i]) : null,
-                ),
-                if (i < items.length - 1)
-                  const Divider(
-                    color: AppColors.border,
-                    height: 12,
-                    thickness: 1.0,
+        const SizedBox(height: 8),
+        if (hasMockupItems) ...[
+          for (int i = 0; i < items.length; i++) ...[
+            ActivityItemRow(
+              item: items[i],
+              onTap: onItemTap != null ? () => onItemTap!(items[i]) : null,
+            ),
+            if (i < items.length - 1)
+              const SizedBox(height: 6),
+          ],
+        ] else ...[
+          PlatformCard(
+            borderRadius: AppRadius.card,
+            elevation: 0,
+            color: AppColors.surface,
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            child: Column(
+              children: [
+                for (int i = 0; i < items.length; i++) ...[
+                  ActivityItemRow(
+                    item: items[i],
+                    onTap:
+                        onItemTap != null ? () => onItemTap!(items[i]) : null,
                   ),
+                  if (i < items.length - 1)
+                    const Divider(
+                      color: AppColors.border,
+                      height: 12,
+                      thickness: 1.0,
+                    ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
