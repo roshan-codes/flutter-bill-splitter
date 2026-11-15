@@ -52,9 +52,6 @@ void main() async {
   await ActivityRepository.instance.init();
   await FriendsRepository.instance.init();
   await StoryRepository.instance.init();
-  if (StoryRepository.instance.stories.isEmpty) {
-    await StoryRepository.instance.addStory(Story.sampleDelhiTrip());
-  }
 
   runApp(const MyApp());
 }
