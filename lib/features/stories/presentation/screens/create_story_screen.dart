@@ -7,6 +7,7 @@ import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
 import 'package:flutter_bill_splitter/core/services/invite_service.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
+import 'package:flutter_bill_splitter/core/utils/avatar_resolver.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
@@ -634,6 +635,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         StoryMember(
           userId: generatedId,
           name: mName,
+          avatar: AvatarResolver.getDefaultAvatarForName(mName),
           role: 'member',
           joinedAt: now.toIso8601String(),
         ),

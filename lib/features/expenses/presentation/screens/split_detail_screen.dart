@@ -14,6 +14,7 @@ import 'package:flutter_bill_splitter/core/utils/currency_formatter.dart';
 import 'package:flutter_bill_splitter/core/utils/date_formatter.dart';
 import 'package:flutter_bill_splitter/core/constants/expense_categories.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
+import 'package:flutter_bill_splitter/core/utils/avatar_resolver.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/edit_story_bottom_sheet.dart';
@@ -1881,7 +1882,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                     m.name.toLowerCase().trim() ==
                         balance.name.toLowerCase().trim())
                 .firstOrNull
-                ?.avatar,
+                ?.avatar ??
+                AvatarResolver.getDefaultAvatarForName(balance.name),
             isCurrentUser: isMe,
             backgroundColor: const Color(0xFF1E1E1E),
             textColor: Colors.white,
@@ -2375,7 +2377,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                     m.name.toLowerCase().trim() ==
                         balance.name.toLowerCase().trim())
                 .firstOrNull
-                ?.avatar,
+                ?.avatar ??
+                AvatarResolver.getDefaultAvatarForName(balance.name),
             isCurrentUser: isMe,
             backgroundColor: const Color(0xFF1E1E1E),
             textColor: Colors.white,

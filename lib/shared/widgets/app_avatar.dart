@@ -42,18 +42,12 @@ class AppAvatar extends StatelessWidget {
 
   bool _checkIsCurrentUser() {
     if (isCurrentUser) return true;
-    final clean = name.toLowerCase().trim();
+    final clean = name
+        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .toLowerCase()
+        .trim();
     if (clean.isEmpty) return false;
     if (clean == 'you') return true;
-
-    final currentName = SupabaseService.userDisplayName ??
-        StorageService.instance.getStringSync('user_profile_name');
-    if (currentName != null && currentName.trim().isNotEmpty) {
-      final myClean = currentName.toLowerCase().trim();
-      if (clean == myClean) {
-        return true;
-      }
-    }
     return false;
   }
 

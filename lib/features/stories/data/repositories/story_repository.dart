@@ -5,6 +5,7 @@ import 'package:flutter_bill_splitter/features/activity/data/repositories/activi
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
+import 'package:flutter_bill_splitter/core/utils/avatar_resolver.dart';
 
 /// Repository managing group expense stories backed solely by Supabase Cloud Database.
 class StoryRepository extends ChangeNotifier {
@@ -187,7 +188,9 @@ class StoryRepository extends ChangeNotifier {
               : existing.name
                   .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
                   .trim(),
-          avatar: userAvatar ?? existing.avatar,
+          avatar: userAvatar ??
+              existing.avatar ??
+              AvatarResolver.getDefaultAvatarForName(effectiveUserName),
           role: existing.role,
           joinedAt: existing.joinedAt.isNotEmpty
               ? existing.joinedAt
@@ -239,7 +242,8 @@ class StoryRepository extends ChangeNotifier {
       final newMember = StoryMember(
         userId: newMemberId,
         name: effectiveUserName,
-        avatar: userAvatar,
+        avatar: userAvatar ??
+            AvatarResolver.getDefaultAvatarForName(effectiveUserName),
         role: 'member',
         joinedAt: now.toIso8601String(),
       );

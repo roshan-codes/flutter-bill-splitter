@@ -4,6 +4,7 @@ import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/utils/currency_formatter.dart';
+import 'package:flutter_bill_splitter/core/utils/avatar_resolver.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
 import 'package:flutter_bill_splitter/shared/widgets/app_avatar.dart';
 
@@ -66,25 +67,45 @@ class ActiveStoryCard extends StatelessWidget {
     return 'Trip Split';
   }
 
-  Widget _buildAvatar(StoryMember member) {
-    final currentUserId = SupabaseService.currentUser?.id;
-    final currentUserName = SupabaseService.userDisplayName ??
-        StorageService.instance.getStringSync('user_profile_name') ??
+  String? _resolveCurrentMemberId() {
+    final currentId = SupabaseService.currentUser?.id;
+    final currentName = SupabaseService.userDisplayName ??
+        StorageService.instance.getStringSync('user_profile_name');
+    final myClean = currentName
+        ?.replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .toLowerCase()
+        .trim() ??
         '';
-    final clean = member.name
-        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
-        .toLowerCase()
-        .trim();
-    final cleanCurrent = currentUserName
-        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
-        .toLowerCase()
-        .trim();
 
-    final isMe = (currentUserId != null &&
-            member.userId.isNotEmpty &&
-            member.userId == currentUserId) ||
-        (cleanCurrent.isNotEmpty && clean == cleanCurrent) ||
-        clean == 'you';
+    if (currentId != null && currentId.isNotEmpty) {
+      for (final m in story.members) {
+        if (m.userId == currentId) return m.userId;
+      }
+    }
+
+    if (myClean.isNotEmpty) {
+      for (final m in story.members) {
+        final cleanM = m.name
+            .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+            .toLowerCase()
+            .trim();
+        if (cleanM == myClean) return m.userId;
+      }
+    }
+
+    for (final m in story.members) {
+      if (m.name.toLowerCase().trim() == 'you') return m.userId;
+    }
+
+    if (currentId != null && story.createdBy == currentId) {
+      return story.createdBy;
+    }
+
+    return null;
+  }
+
+  Widget _buildAvatar(StoryMember member, String? resolvedMeId) {
+    final isMe = resolvedMeId != null && member.userId == resolvedMeId;
 
     return Container(
       decoration: BoxDecoration(
@@ -99,7 +120,10 @@ class ActiveStoryCard extends StatelessWidget {
       ),
       child: AppAvatar(
         size: 32,
-        avatarUrl: member.avatar,
+        avatarUrl: isMe
+            ? null
+            : (member.avatar ??
+                AvatarResolver.getDefaultAvatarForName(member.name)),
         name: member.name,
         isCurrentUser: isMe,
         border: Border.all(color: Colors.white, width: 2.0),
@@ -115,6 +139,7 @@ class ActiveStoryCard extends StatelessWidget {
     if (displayMembers.isEmpty) {
       return const SizedBox.shrink();
     }
+    final resolvedMeId = _resolveCurrentMemberId();
 
     return SizedBox(
       height: 34,
@@ -125,7 +150,7 @@ class ActiveStoryCard extends StatelessWidget {
             Positioned(
               left: i * 22.0,
               top: 0,
-              child: _buildAvatar(displayMembers[i]),
+              child: _buildAvatar(displayMembers[i], resolvedMeId),
             ),
         ],
       ),
