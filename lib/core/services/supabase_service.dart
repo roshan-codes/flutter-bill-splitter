@@ -343,6 +343,37 @@ class SupabaseService {
     return savedToDb || savedToStorage;
   }
 
+  /// Deletes a story from Supabase (Database table + Cloud Storage backup).
+  static Future<bool> deleteStory(String storyId) async {
+    final cli = client;
+    if (cli == null) return false;
+
+    bool deletedFromDb = false;
+    bool deletedFromStorage = false;
+
+    // 1. Delete from Supabase Database Table
+    try {
+      await cli.from('stories').delete().eq('story_id', storyId);
+      deletedFromDb = true;
+      debugPrint('Deleted story "$storyId" from Supabase database table.');
+    } catch (e) {
+      debugPrint('Supabase table delete note: $e');
+    }
+
+    // 2. Delete JSON backup from Supabase Cloud Storage
+    try {
+      final userId = currentUser?.id ?? 'shared';
+      final path = 'stories/$userId/$storyId.json';
+      await cli.storage.from(storageBucket).remove([path]);
+      deletedFromStorage = true;
+      debugPrint('Deleted story "$storyId" from Supabase storage.');
+    } catch (e) {
+      debugPrint('Supabase storage remove note: $e');
+    }
+
+    return deletedFromDb || deletedFromStorage;
+  }
+
   /// Fetches stories from Supabase (Database or Cloud Storage).
   static Future<List<Story>> fetchStories() async {
     final cli = client;

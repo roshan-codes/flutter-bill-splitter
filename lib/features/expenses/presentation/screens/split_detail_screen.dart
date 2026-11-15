@@ -1,4 +1,5 @@
 import 'package:animations/animations.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -694,6 +695,111 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     );
   }
 
+  void _confirmDeleteStory(BuildContext context) {
+    if (isIOSPlatform(context)) {
+      showCupertinoDialog(
+        context: context,
+        builder: (ctx) => CupertinoAlertDialog(
+          title: Text(
+            'Delete Story?',
+            style: GoogleFonts.manrope(fontWeight: FontWeight.w700),
+          ),
+          content: Text(
+            'Are you sure you want to delete "${_story.title}"? All expenses and member balances in this story will be permanently removed.',
+            style: GoogleFonts.manrope(),
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () async {
+                Navigator.of(ctx).pop();
+                await _performDeleteStory();
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      AppTransitions.showFadeScaleDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            side: const BorderSide(color: AppColors.border, width: 1.0),
+          ),
+          title: Text(
+            'Delete Story?',
+            style: GoogleFonts.manrope(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete "${_story.title}"? All expenses and member balances in this story will be permanently removed.',
+            style: GoogleFonts.manrope(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.manrope(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.danger,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(AppRadius.buttonSecondary),
+                ),
+              ),
+              onPressed: () async {
+                Navigator.of(ctx).pop();
+                await _performDeleteStory();
+              },
+              child: Text(
+                'Delete',
+                style: GoogleFonts.manrope(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Future<void> _performDeleteStory() async {
+    final storyTitle = _story.title;
+    await StoryRepository.instance.deleteStory(_story.storyId);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Story "$storyTitle" deleted successfully',
+          style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: const Color(0xFF1E1E1E),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+    Navigator.of(context).pop();
+  }
+
   IconData _getCategoryIcon(String category) {
     switch (category.toLowerCase()) {
       case 'accommodation':
@@ -833,33 +939,96 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                   Material(
                     color: Colors.transparent,
                     child: InkWell(
+                      key: const ValueKey('story_detail_more_button'),
                       onTap: () {
                         showModalBottomSheet(
                           context: context,
-                          builder: (ctx) => SafeArea(
-                            child: Wrap(
-                              children: [
-                                ListTile(
-                                  leading:
-                                      const Icon(Icons.calculate_outlined),
-                                  title: Text('Finalize & Settle Split',
-                                      style: GoogleFonts.manrope()),
-                                  onTap: () {
-                                    Navigator.of(ctx).pop();
-                                    _navigateToSummary();
-                                  },
+                          backgroundColor: Colors.transparent,
+                          builder: (ctx) => Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(24),
+                              ),
+                            ),
+                            child: SafeArea(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
                                 ),
-                                ListTile(
-                                  leading:
-                                      const Icon(Icons.group_add_outlined),
-                                  title: Text('Add New Member',
-                                      style: GoogleFonts.manrope()),
-                                  onTap: () {
-                                    Navigator.of(ctx).pop();
-                                    setState(() => _currentTab = 2);
-                                  },
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 36,
+                                      height: 4,
+                                      margin:
+                                          const EdgeInsets.only(bottom: 12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE5E7EB),
+                                        borderRadius: BorderRadius.circular(2),
+                                      ),
+                                    ),
+                                    ListTile(
+                                      leading: const Icon(
+                                        Icons.calculate_outlined,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                      title: Text(
+                                        'Finalize & Settle Split',
+                                        style: GoogleFonts.manrope(
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        Navigator.of(ctx).pop();
+                                        _navigateToSummary();
+                                      },
+                                    ),
+                                    ListTile(
+                                      leading: const Icon(
+                                        Icons.group_add_outlined,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                      title: Text(
+                                        'Add New Member',
+                                        style: GoogleFonts.manrope(
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        Navigator.of(ctx).pop();
+                                        setState(() => _currentTab = 2);
+                                      },
+                                    ),
+                                    const Divider(
+                                      color: AppColors.border,
+                                      height: 1,
+                                    ),
+                                    ListTile(
+                                      key: const ValueKey('delete_story_tile'),
+                                      leading: const Icon(
+                                        Icons.delete_outline_rounded,
+                                        color: AppColors.danger,
+                                      ),
+                                      title: Text(
+                                        'Delete Story',
+                                        style: GoogleFonts.manrope(
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.danger,
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        Navigator.of(ctx).pop();
+                                        _confirmDeleteStory(context);
+                                      },
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         );
@@ -1980,7 +2149,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
           _buildOptionTile(
             icon: Icons.settings_outlined,
             title: 'Story settings',
-            onTap: () {},
+            onTap: () => _confirmDeleteStory(context),
           ),
         ],
       ),

@@ -160,6 +160,7 @@ class StoryRepository extends ChangeNotifier {
     _stories.removeWhere((s) => s.storyId == storyId);
     notifyListeners();
     await _persist();
+    SupabaseService.deleteStory(storyId).ignore();
   }
 
   /// Clears all stories (for tests or resets).
