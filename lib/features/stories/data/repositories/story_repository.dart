@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
+import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
 
 /// Repository managing persistent storage of group expense stories adhering to the standard story JSON schema.
@@ -17,7 +18,7 @@ class StoryRepository extends ChangeNotifier {
 
   List<Story> get stories => List.unmodifiable(_stories);
 
-  /// Initializes stories from offline persistent storage.
+  /// Initializes stories from offline persistent storage and syncs with Supabase.
   Future<void> init() async {
     try {
       final jsonStrings = await _storageService.getStringList(_storageKey);
@@ -33,8 +34,35 @@ class StoryRepository extends ChangeNotifier {
         }
       }
       notifyListeners();
+
+      // Sync stories with Supabase Cloud
+      _syncFromSupabase().ignore();
     } catch (e) {
       debugPrint('StoryRepository init error: $e');
+    }
+  }
+
+  Future<void> _syncFromSupabase() async {
+    try {
+      final remote = await SupabaseService.fetchStories();
+      if (remote.isNotEmpty) {
+        bool changed = false;
+        for (final r in remote) {
+          final idx = _stories.indexWhere((s) => s.storyId == r.storyId);
+          if (idx == -1) {
+            _stories.add(r);
+            changed = true;
+          }
+        }
+        if (changed) {
+          notifyListeners();
+          final jsonStrings =
+              _stories.map((s) => jsonEncode(s.toJson())).toList();
+          await _storageService.setStringList(_storageKey, jsonStrings);
+        }
+      }
+    } catch (e) {
+      debugPrint('Supabase story sync note: $e');
     }
   }
 
@@ -145,6 +173,11 @@ class StoryRepository extends ChangeNotifier {
     try {
       final jsonStrings = _stories.map((s) => jsonEncode(s.toJson())).toList();
       await _storageService.setStringList(_storageKey, jsonStrings);
+
+      // Asynchronously sync stories to Supabase Cloud
+      for (final story in _stories) {
+        SupabaseService.saveStory(story).ignore();
+      }
     } catch (e) {
       debugPrint('StoryRepository persist error: $e');
     }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
+import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 
 /// Repository responsible for storing, providing access to, and persisting recorded split activities.
@@ -39,11 +40,12 @@ class ActivityRepository extends ChangeNotifier {
   }
 
   /// Records a new split activity (inserted at the top so newest appears first)
-  /// and automatically persists it to offline storage.
+  /// and automatically persists it to offline storage and syncs to Supabase.
   void recordActivity(SplitActivity activity) {
     _activities.insert(0, activity);
     notifyListeners();
     _persist();
+    SupabaseService.saveActivity(activity).ignore();
   }
 
   /// Clears all recorded activities (useful for test resets or user data reset).
