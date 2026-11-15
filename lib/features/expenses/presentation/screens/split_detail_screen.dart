@@ -47,7 +47,8 @@ class SplitDetailScreen extends StatefulWidget {
   State<SplitDetailScreen> createState() => _SplitDetailScreenState();
 }
 
-class _SplitDetailScreenState extends State<SplitDetailScreen> {
+class _SplitDetailScreenState extends State<SplitDetailScreen>
+    with WidgetsBindingObserver {
   int _currentTab = 0; // 0: Overview, 1: Expenses, 2: Members
   int _previousTab = 0;
   late Story _story;
@@ -61,6 +62,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _memberExpenses = {};
     _initStoryData();
     StoryRepository.instance.addListener(_onRepositoryChanged);
@@ -70,9 +72,17 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     StoryRepository.instance.removeListener(_onRepositoryChanged);
     _disposeRealtimeSubscription();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      _fetchLatestStoryFromCloud();
+    }
   }
 
   void _onRepositoryChanged() {
@@ -278,51 +288,27 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
   }
 
   Future<void> _recalculateBalances() async {
-    final total = _story.expenses.fold<double>(0.0, (sum, e) => sum + e.amount);
-    final count = _story.members.isNotEmpty ? _story.members.length : 1;
-    final perPerson = total / count;
-
-    final updatedBalances = _story.members.map((m) {
-      final paid = _story.expenses
-          .where((e) => e.paidBy == m.userId || e.paidBy == m.name)
-          .fold<double>(0.0, (sum, e) => sum + e.amount);
-      final dummy = StoryMemberBalance(
-        userId: m.userId,
-        name: m.name,
-        totalPaid: paid,
-        totalShare: 0,
-        netBalance: 0,
-        status: 'settled',
-      );
-      final share = _getMemberShare(dummy, total, perPerson);
-      final net = paid - share;
-      String status = 'settled';
-      if (net > 0) status = 'gets_back';
-      if (net < 0) status = 'owes';
-
-      return StoryMemberBalance(
-        userId: m.userId,
-        name: m.name,
-        totalPaid: paid,
-        totalShare: share,
-        netBalance: net,
-        status: status,
-      );
-    }).toList();
+    final recalculated = Story.create(
+      storyId: _story.storyId,
+      title: _story.title,
+      description: _story.description,
+      coverEmoji: _story.coverEmoji,
+      currency: _story.currency,
+      status: _story.status,
+      splitMethod: _splitMethod,
+      createdBy: _story.createdBy,
+      createdAt: _story.createdAt,
+      startDate: _story.startDate,
+      endDate: _story.endDate,
+      members: _story.members,
+      expenses: _story.expenses,
+      existingSettlements: _story.settlements.where((s) => s.status == 'completed').toList(),
+    );
 
     setState(() {
-      _story = _story.copyWith(
-        splitMethod: _splitMethod,
-        summary: _story.summary.copyWith(
-          totalExpenses: total,
-          expenseCount: _story.expenses.length,
-          memberCount: count,
-        ),
-        memberBalances: updatedBalances,
-      );
+      _story = recalculated;
     });
-    await StoryRepository.instance.updateStory(_story);
-    await SupabaseService.saveStory(_story);
+    await StoryRepository.instance.updateStory(recalculated);
   }
 
   void _showAddExpenseDialog(Friend friend) {
@@ -491,8 +477,11 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     HapticFeedback.lightImpact();
     final titleController = TextEditingController();
     final amountController = TextEditingController();
-    String selectedPayerId =
-        _story.members.isNotEmpty ? _story.members.first.userId : 'user_001';
+    final myMember = _story.members
+        .where((m) => _isCurrentUser(m.name, m.userId))
+        .firstOrNull;
+    String selectedPayerId = myMember?.userId ??
+        (_story.members.isNotEmpty ? _story.members.first.userId : 'user_001');
     final sheetFormKey = GlobalKey<FormState>();
 
     showModalBottomSheet(
@@ -1349,6 +1338,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
             _previousTab = _currentTab;
             _currentTab = index;
           });
+          _fetchLatestStoryFromCloud();
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -1670,7 +1660,79 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     );
   }
 
+  String _formatMemberDisplayName(String name, bool isMe) {
+    final clean = name
+        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .trim();
+    return isMe ? '$clean (You)' : clean;
+  }
+
+  String? get _resolvedCurrentMemberId {
+    final currentId = SupabaseService.currentUser?.id;
+    final currentName = SupabaseService.userDisplayName ??
+        StorageService.instance.getStringSync('user_profile_name');
+    final myClean = currentName
+        ?.replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .toLowerCase()
+        .trim() ??
+        '';
+
+    // 1. Authenticated user ID matches a member's userId
+    if (currentId != null && currentId.isNotEmpty) {
+      for (final m in _story.members) {
+        if (m.userId == currentId) return m.userId;
+      }
+    }
+
+    // 2. Profile display name matches member name
+    if (myClean.isNotEmpty) {
+      for (final m in _story.members) {
+        final cleanM = m.name
+            .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+            .toLowerCase()
+            .trim();
+        if (cleanM == myClean) return m.userId;
+      }
+    }
+
+    // 3. Member named 'you' literally
+    for (final m in _story.members) {
+      final cleanM = m.name.toLowerCase().trim();
+      if (cleanM == 'you') return m.userId;
+    }
+
+    // 4. Fallback to creator if current user is creator
+    if (currentId != null && _story.createdBy == currentId) {
+      return _story.createdBy;
+    }
+
+    return null;
+  }
+
   bool _isCurrentUser(String name, [String? userId]) {
+    final cleanName = name
+        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .trim();
+    final clean = cleanName.toLowerCase();
+    if (clean == 'you') return true;
+
+    final myId = _resolvedCurrentMemberId;
+    if (myId != null) {
+      if (userId != null && userId.isNotEmpty) {
+        return userId == myId;
+      }
+      final myMember =
+          _story.members.where((m) => m.userId == myId).firstOrNull;
+      if (myMember != null) {
+        final myClean = myMember.name
+            .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+            .toLowerCase()
+            .trim();
+        return clean == myClean;
+      }
+      return false;
+    }
+
     final currentId = SupabaseService.currentUser?.id;
     if (userId != null &&
         userId.isNotEmpty &&
@@ -1680,19 +1742,14 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
       return true;
     }
 
-    final clean = name.toLowerCase().trim();
-    if (clean == 'you') return true;
-
     final currentName = SupabaseService.userDisplayName ??
         StorageService.instance.getStringSync('user_profile_name');
     if (currentName != null && currentName.trim().isNotEmpty) {
-      final myClean = currentName.toLowerCase().trim();
+      final myClean = currentName
+          .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+          .toLowerCase()
+          .trim();
       if (clean == myClean) return true;
-      if (userId != null &&
-          userId.isNotEmpty &&
-          userId == 'user_${myClean.replaceAll(' ', '_')}') {
-        return true;
-      }
     }
     return false;
   }
@@ -1704,10 +1761,11 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     bool isSampleGoaTrip,
   ) {
     final isMe = _isCurrentUser(balance.name, balance.userId);
-    final displayName = isMe ? '${balance.name} (You)' : balance.name;
-    final friend = Friend(name: balance.name, phone: '+91 98765 00000');
-    final hasExpense = _memberExpenses[balance.name] != null &&
-        _memberExpenses[balance.name]! > 0;
+    final displayName = _formatMemberDisplayName(balance.name, isMe);
+    final cleanFriendName = _formatMemberDisplayName(balance.name, false);
+    final friend = Friend(name: cleanFriendName, phone: '+91 98765 00000');
+    final hasExpense = _memberExpenses[cleanFriendName] != null &&
+        _memberExpenses[cleanFriendName]! > 0;
     final paid = balance.totalPaid;
     final share = _getMemberShare(balance, totalExpenses, perPersonAmount);
     final net = paid - share;
@@ -2276,7 +2334,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     double perPersonAmount,
   ) {
     final isMe = _isCurrentUser(balance.name, balance.userId);
-    final displayName = isMe ? '${balance.name} (You)' : balance.name;
+    final displayName = _formatMemberDisplayName(balance.name, isMe);
     final paid = balance.totalPaid;
     final share = _getMemberShare(balance, totalExpenses, perPersonAmount);
     final net = paid - share;
@@ -3007,9 +3065,10 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                _isCurrentUser(member.name, member.userId)
-                                    ? '${member.name} (You)'
-                                    : member.name,
+                                _formatMemberDisplayName(
+                                  member.name,
+                                  _isCurrentUser(member.name, member.userId),
+                                ),
                                 style: GoogleFonts.manrope(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -3245,9 +3304,10 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                _isCurrentUser(member.name, member.userId)
-                                    ? '${member.name} (You)'
-                                    : member.name,
+                                _formatMemberDisplayName(
+                                  member.name,
+                                  _isCurrentUser(member.name, member.userId),
+                                ),
                                 style: GoogleFonts.manrope(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -3435,9 +3495,10 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                _isCurrentUser(member.name, member.userId)
-                                    ? '${member.name} (You)'
-                                    : member.name,
+                                _formatMemberDisplayName(
+                                  member.name,
+                                  _isCurrentUser(member.name, member.userId),
+                                ),
                                 style: GoogleFonts.manrope(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,

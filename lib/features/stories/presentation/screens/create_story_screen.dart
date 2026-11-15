@@ -581,14 +581,24 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
     final endStr =
         '${_endDate.year}-${_endDate.month.toString().padLeft(2, '0')}-${_endDate.day.toString().padLeft(2, '0')}';
 
-    final currentUserId = SupabaseService.currentUser?.id ?? 'user_creator';
-    final currentUserName =
-        _creatorName.trim().isNotEmpty ? _creatorName.trim() : 'You';
+    final authUserId = SupabaseService.currentUser?.id;
+    String? localGuestId = StorageService.instance.getStringSync('local_unique_device_user_id');
+    if (localGuestId == null || localGuestId.isEmpty) {
+      localGuestId = 'user_creator_${DateTime.now().millisecondsSinceEpoch}';
+      StorageService.instance.setString('local_unique_device_user_id', localGuestId);
+    }
+    final currentUserId = (authUserId != null && authUserId.isNotEmpty) ? authUserId : localGuestId;
+
+    final rawCreator = _creatorName.trim().isNotEmpty ? _creatorName.trim() : 'You';
+    final cleanCurrentName = rawCreator
+        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .trim();
+    final currentUserName = cleanCurrentName.isNotEmpty ? cleanCurrentName : 'You';
 
     // Build member list: creator is guaranteed to be Member #1 with role 'creator'
     final List<StoryMember> rawMembers = [];
 
-    // 1. Add Creator (You)
+    // 1. Add Creator
     rawMembers.add(
       StoryMember(
         userId: currentUserId,

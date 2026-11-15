@@ -70,19 +70,20 @@ class ActiveStoryCard extends StatelessWidget {
     final currentUserId = SupabaseService.currentUser?.id;
     final currentUserName = SupabaseService.userDisplayName ??
         StorageService.instance.getStringSync('user_profile_name') ??
-        'Roshan';
-    final clean = member.name.toLowerCase().trim();
-    final cleanCurrent = currentUserName.toLowerCase().trim();
+        '';
+    final clean = member.name
+        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .toLowerCase()
+        .trim();
+    final cleanCurrent = currentUserName
+        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .toLowerCase()
+        .trim();
 
     final isMe = (currentUserId != null &&
             member.userId.isNotEmpty &&
             member.userId == currentUserId) ||
-        clean == cleanCurrent ||
-        (cleanCurrent.isNotEmpty &&
-            (clean.contains(cleanCurrent) || cleanCurrent.contains(clean))) ||
-        clean == 'roshan' ||
-        clean == 'roshan badwaik' ||
-        member.role == 'creator' ||
+        (cleanCurrent.isNotEmpty && clean == cleanCurrent) ||
         clean == 'you';
 
     return Container(

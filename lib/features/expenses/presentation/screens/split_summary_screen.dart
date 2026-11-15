@@ -768,11 +768,18 @@ class SplitSummaryScreen extends StatelessWidget {
     final net = paid - sharePerPerson;
     final currentUserName = SupabaseService.userDisplayName ??
         StorageService.instance.getStringSync('user_profile_name');
-    final cleanM = member.name.toLowerCase().trim();
-    final cleanUser = currentUserName?.toLowerCase().trim() ?? '';
+    final cleanName = member.name
+        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .trim();
+    final cleanM = cleanName.toLowerCase();
+    final cleanUser = currentUserName
+            ?.replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+            .toLowerCase()
+            .trim() ??
+        '';
     final isCurrentUser = cleanM == 'you' ||
         (cleanUser.isNotEmpty && cleanM == cleanUser);
-    final displayName = isCurrentUser ? '${member.name} (You)' : member.name;
+    final displayName = isCurrentUser ? '$cleanName (You)' : cleanName;
 
     // Status pill
     Color pillBg;

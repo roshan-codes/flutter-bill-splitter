@@ -497,10 +497,14 @@ class SupabaseService {
           if (parsed != null) {
             final isCreator = (userId != null &&
                 (parsed.createdBy == userId || item['user_id'] == userId));
-            final isMember = parsed.members.any((m) =>
-                (userId != null && m.userId == userId) ||
-                (cleanUser.isNotEmpty &&
-                    m.name.toLowerCase().trim() == cleanUser));
+            final isMember = parsed.members.any((m) {
+              final cleanM = m.name
+                  .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+                  .toLowerCase()
+                  .trim();
+              return (userId != null && m.userId == userId) ||
+                  (cleanUser.isNotEmpty && cleanM == cleanUser);
+            });
 
             final isAllowed = (userId == null && cleanUser.isEmpty) ||
                 isCreator ||

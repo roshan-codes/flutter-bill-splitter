@@ -17,9 +17,13 @@ class StoryMember {
   });
 
   factory StoryMember.fromJson(Map<String, dynamic> json) {
+    final rawName = json['name'] as String? ?? '';
+    final cleanName = rawName
+        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .trim();
     return StoryMember(
       userId: json['user_id'] as String? ?? '',
-      name: json['name'] as String? ?? '',
+      name: cleanName.isNotEmpty ? cleanName : rawName,
       avatar: json['avatar'] as String?,
       role: json['role'] as String? ?? 'member',
       joinedAt: json['joined_at'] as String? ?? '',
@@ -188,9 +192,13 @@ class StoryMemberBalance {
   });
 
   factory StoryMemberBalance.fromJson(Map<String, dynamic> json) {
+    final rawName = json['name'] as String? ?? '';
+    final cleanName = rawName
+        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .trim();
     return StoryMemberBalance(
       userId: json['user_id'] as String? ?? '',
-      name: json['name'] as String? ?? '',
+      name: cleanName.isNotEmpty ? cleanName : rawName,
       totalPaid: (json['total_paid'] as num?)?.toDouble() ?? 0.0,
       totalShare: (json['total_share'] as num?)?.toDouble() ?? 0.0,
       netBalance: (json['net_balance'] as num?)?.toDouble() ?? 0.0,
@@ -242,12 +250,18 @@ class StorySettlement {
         'status': status,
       };
 
-  StorySettlement copyWith({String? status}) {
+  StorySettlement copyWith({
+    String? settlementId,
+    String? fromUser,
+    String? toUser,
+    double? amount,
+    String? status,
+  }) {
     return StorySettlement(
-      settlementId: settlementId,
-      fromUser: fromUser,
-      toUser: toUser,
-      amount: amount,
+      settlementId: settlementId ?? this.settlementId,
+      fromUser: fromUser ?? this.fromUser,
+      toUser: toUser ?? this.toUser,
+      amount: amount ?? this.amount,
       status: status ?? this.status,
     );
   }

@@ -94,25 +94,47 @@ class StoryRepository extends ChangeNotifier {
       story ??= getStoryById(storyId);
       if (story == null) return null;
 
-      final userId = SupabaseService.currentUser?.id ?? 'user_guest';
-      final userName = SupabaseService.userDisplayName ??
+      final authUserId = SupabaseService.currentUser?.id;
+      final rawUserName = SupabaseService.userDisplayName ??
           await StorageService.instance.getString('user_profile_name') ??
           'Friend';
+      final cleanUserName = rawUserName
+          .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+          .trim();
+      final effectiveUserName =
+          cleanUserName.isNotEmpty ? cleanUserName : 'Friend';
       final userAvatar = SupabaseService.resolvedUserAvatar;
 
-      final cleanUser = userName.toLowerCase().trim();
+      // Stable unique device ID for unauthenticated / guest users
+      String? localGuestId = await StorageService.instance
+          .getString('local_unique_device_user_id');
+      if (localGuestId == null || localGuestId.isEmpty) {
+        localGuestId =
+            'user_guest_${DateTime.now().millisecondsSinceEpoch}_${cleanUserName.toLowerCase().replaceAll(RegExp(r'\s+'), '_')}';
+        await StorageService.instance
+            .setString('local_unique_device_user_id', localGuestId);
+      }
+      final currentDeviceUserId =
+          (authUserId != null && authUserId.isNotEmpty)
+              ? authUserId
+              : localGuestId;
+
+      final cleanUser = effectiveUserName.toLowerCase().trim();
       final uFirst = cleanUser.split(' ').first;
 
       // Check if user is already a member (or matches an existing manual member slot)
       final existingIndex = story.members.indexWhere((m) {
-        final cleanM = m.name.toLowerCase().trim();
+        final cleanM = m.name
+            .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+            .toLowerCase()
+            .trim();
         final mId = m.userId.trim();
 
         // 1. Authenticated user ID matches
-        if (userId != 'user_guest' &&
-            userId.isNotEmpty &&
+        if (authUserId != null &&
+            authUserId.isNotEmpty &&
             mId.isNotEmpty &&
-            mId == userId) {
+            mId == authUserId) {
           return true;
         }
 
@@ -121,15 +143,18 @@ class StoryRepository extends ChangeNotifier {
 
         // 3. 'You' matches ONLY if current user is the story creator
         if (cleanM == 'you' &&
-            (story!.createdBy == userId ||
-                story.createdBy == 'user_guest' ||
-                story.createdBy.isEmpty)) {
+            (story!.createdBy == currentDeviceUserId ||
+                (authUserId != null && story.createdBy == authUserId))) {
           return true;
         }
 
         // 4. First name matches full name (e.g. "Roshan" and "Roshan Badwaik")
         final mFirst = cleanM.split(' ').first;
-        if (mFirst == uFirst && mFirst.length > 2) return true;
+        if (mFirst == uFirst &&
+            mFirst.length > 2 &&
+            (cleanM.length == mFirst.length || cleanUser.length == uFirst.length)) {
+          return true;
+        }
 
         // 5. Manual generated ID matches: user_roshan matches Roshan
         if (mId == 'user_${cleanUser.replaceAll(' ', '_')}') return true;
@@ -141,14 +166,27 @@ class StoryRepository extends ChangeNotifier {
         // User is already a member or has a pre-existing manual member slot.
         // Claim and upgrade their existing slot with real authenticated userId and avatar.
         final existing = story.members[existingIndex];
+
+        // Ensure targetUserId does not clash with another member in the story
+        final isIdAlreadyUsedByOther = story.members
+            .asMap()
+            .entries
+            .any((e) => e.key != existingIndex && e.value.userId == currentDeviceUserId);
+
+        final targetUserId = isIdAlreadyUsedByOther
+            ? (existing.userId.isNotEmpty
+                ? existing.userId
+                : 'user_${cleanUser.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch % 10000}')
+            : currentDeviceUserId;
+
         final updatedMember = StoryMember(
-          userId: (userId != 'user_guest' && userId.isNotEmpty)
-              ? userId
-              : (existing.userId.isNotEmpty ? existing.userId : userId),
+          userId: targetUserId,
           name: (existing.name.toLowerCase().trim() == 'you' ||
                   cleanUser.length > existing.name.length)
-              ? userName
-              : existing.name,
+              ? effectiveUserName
+              : existing.name
+                  .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+                  .trim(),
           avatar: userAvatar ?? existing.avatar,
           role: existing.role,
           joinedAt: existing.joinedAt.isNotEmpty
@@ -160,12 +198,15 @@ class StoryRepository extends ChangeNotifier {
         updatedMembers[existingIndex] = updatedMember;
 
         final updatedBalances = story.memberBalances.map((b) {
-          final bClean = b.name.toLowerCase().trim();
-          final exClean = existing.name.toLowerCase().trim();
-          if (b.userId == existing.userId ||
-              bClean == exClean ||
-              bClean == cleanUser ||
-              (b.userId.isNotEmpty && b.userId == userId)) {
+          final bClean = b.name
+              .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+              .toLowerCase()
+              .trim();
+          final exClean = existing.name
+              .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+              .toLowerCase()
+              .trim();
+          if (b.userId == existing.userId || bClean == exClean) {
             return StoryMemberBalance(
               userId: updatedMember.userId,
               name: updatedMember.name,
@@ -188,10 +229,16 @@ class StoryRepository extends ChangeNotifier {
       }
 
       // Truly new member joining
+      final isIdUsed =
+          story.members.any((m) => m.userId == currentDeviceUserId);
+      final newMemberId = isIdUsed
+          ? 'user_${cleanUser.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch % 10000}'
+          : currentDeviceUserId;
+
       final now = DateTime.now();
       final newMember = StoryMember(
-        userId: userId,
-        name: userName,
+        userId: newMemberId,
+        name: effectiveUserName,
         avatar: userAvatar,
         role: 'member',
         joinedAt: now.toIso8601String(),
@@ -202,8 +249,8 @@ class StoryRepository extends ChangeNotifier {
       final updatedBalances = Story.deduplicateBalances([
         ...story.memberBalances,
         StoryMemberBalance(
-          userId: userId,
-          name: userName,
+          userId: newMemberId,
+          name: effectiveUserName,
           totalPaid: 0.0,
           totalShare: 0.0,
           netBalance: 0.0,
@@ -241,8 +288,8 @@ class StoryRepository extends ChangeNotifier {
 
       // Also add other story members to Friends list
       for (final m in updatedMembers) {
-        if (m.userId != userId &&
-            m.name.toLowerCase() != userName.toLowerCase()) {
+        if (m.userId != currentDeviceUserId &&
+            m.name.toLowerCase() != effectiveUserName.toLowerCase()) {
           final existing = FriendsRepository.instance.friends
               .any((f) => f.name.toLowerCase() == m.name.toLowerCase());
           if (!existing) {
