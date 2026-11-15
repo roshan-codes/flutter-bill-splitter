@@ -8,7 +8,6 @@ import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/screens/activity_tab.dart';
-import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/screens/home_tab.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/screens/profile_tab.dart';
@@ -58,9 +57,9 @@ class _MainScreenState extends State<MainScreen> {
   late final List<Widget> _tabs = [
     HomeTab(
       onCreateStory: () => _openCreateStoryScreen(),
-      onAddExpense: () => _openAddExpenseScreen(),
+      onAddExpense: () => _openCreateStoryScreen(),
       onAddExpenseWithTitle: (title) =>
-          _openAddExpenseScreen(initialTitle: title),
+          _openCreateStoryScreen(initialTitle: title),
     ),
     ActivityTab(
       onCreateStory: () => _openCreateStoryScreen(),
@@ -75,20 +74,6 @@ class _MainScreenState extends State<MainScreen> {
         type: SharedAxisTransitionType.vertical,
         duration: AppMotion.medium,
         builder: (context) => CreateStoryScreen(
-          initialTitle: initialTitle,
-        ),
-      ),
-    );
-  }
-
-  void _openAddExpenseScreen({String? initialTitle}) {
-    Navigator.of(context).push(
-      AppTransitions.sharedAxisRoute(
-        type: SharedAxisTransitionType.vertical,
-        duration: AppMotion.medium,
-        builder: (context) => AddExpenseScreen(
-          friends: FriendsRepository.instance.friends,
-          groups: FriendsRepository.instance.groups,
           initialTitle: initialTitle,
         ),
       ),
@@ -202,7 +187,7 @@ class _MainScreenState extends State<MainScreen> {
                 tooltip: 'Add Story',
                 onPressed: () {
                   HapticFeedback.lightImpact();
-                  _openAddExpenseScreen();
+                  _openCreateStoryScreen();
                 },
               ),
             );

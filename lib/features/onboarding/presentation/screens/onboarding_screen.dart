@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_bill_splitter/core/services/invite_service.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
+import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
+import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/navigation/presentation/screens/main_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/onboarding_illustrations.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/onboarding_page_indicator.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/splash_wave_painter.dart';
+import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 
 /// Onboarding Screen matching the TTMM Club 5-screen flow:
 /// - Screen 1: "Split expenses with friends" (Floating receipt with ₹2,400, ₹6,000, ₹2,100, purple group badge)
@@ -16,10 +20,12 @@ import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/s
 /// - Saves 'has_completed_onboarding' = true so it only appears for first-time users.
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback? onGetStarted;
+  final String? inviteStoryId;
 
   const OnboardingScreen({
     super.key,
     this.onGetStarted,
+    this.inviteStoryId,
   });
 
   @override
@@ -30,6 +36,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _isSigningIn = false;
+  bool _hasPendingInvite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkInvite();
+  }
+
+  Future<void> _checkInvite() async {
+    final pending = widget.inviteStoryId ?? await InviteService.getPendingInvite();
+    if (pending != null && pending.isNotEmpty) {
+      if (mounted) {
+        setState(() => _hasPendingInvite = true);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_pageController.hasClients) {
+            _pageController.jumpToPage(3);
+          }
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -62,6 +89,43 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
     await StorageService.instance.setBool('has_completed_onboarding', true);
     await StorageService.instance.setBool('is_logged_in_with_google', true);
+
+    // Check if user was invited to join a story
+    final pendingInvite =
+        widget.inviteStoryId ?? await InviteService.getPendingInvite();
+    if (pendingInvite != null && pendingInvite.isNotEmpty) {
+      final joinedStory = await StoryRepository.instance
+          .joinStoryWithCurrentUser(pendingInvite);
+      await InviteService.clearPendingInvite();
+
+      if (context.mounted && joinedStory != null) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => SplitDetailScreen(
+              groupName: joinedStory.title,
+              members: joinedStory.members
+                  .map((m) => Friend(name: m.name, phone: ''))
+                  .toList(),
+              story: joinedStory,
+            ),
+            transitionsBuilder: (_, animation, __, child) =>
+                FadeTransition(opacity: animation, child: child),
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '🎉 You successfully joined "${joinedStory.title}"!',
+              style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
+            ),
+            backgroundColor: const Color(0xFF111111),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+    }
 
     if (widget.onGetStarted != null) {
       widget.onGetStarted!();
@@ -630,6 +694,35 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   letterSpacing: 0.2,
                 ),
               ),
+              if (_hasPendingInvite) ...[
+                const SizedBox(height: 14),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEEDFA),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: const Color(0xFF5B4DFF).withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.mark_email_read_outlined,
+                          size: 16, color: Color(0xFF5B4DFF)),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Join Story Invite • Sign in to accept',
+                        style: GoogleFonts.manrope(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF5B4DFF),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const Spacer(flex: 4),
 
               // Button 1: Continue with Google

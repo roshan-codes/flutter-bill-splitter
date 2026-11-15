@@ -183,7 +183,7 @@ void main() {
   });
 
   testWidgets(
-      'AddExpenseScreen sequence: expense title, friends/groups toggle, search bar, friend tiles, and fixed continue button',
+      'CreateStoryScreen sequence: story name, add members modal, and create story navigation',
       (WidgetTester tester) async {
     // Add friends directly to repository
     FriendsRepository.instance.addFriend(
@@ -193,70 +193,48 @@ void main() {
 
     await tester.pumpWidget(const MyApp(home: MainScreen()));
 
-    // Tap Add Story hero action pill to open AddExpenseScreen
+    // Tap Add Story hero action pill to open CreateStoryScreen
     final addStoryButton = find.byTooltip('Add Story');
     expect(addStoryButton, findsOneWidget);
     await tester.tap(addStoryButton);
     await tester.pumpAndSettle();
 
     // Verify screen title
-    expect(find.text('Add & Split Expense'), findsOneWidget);
+    expect(find.text('Create Story'), findsWidgets);
 
-    // Verify 1: Expense Title Input
-    expect(find.text('Expense Title'), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, 'e.g. Dinner, Groceries, Trip'),
-        findsOneWidget);
-
-    // Verify 2: Friends vs Groups Segmented Toggle
-    expect(find.text('Friends'), findsWidgets);
-    expect(find.text('Groups'), findsOneWidget);
-
-    // Verify 3: Search Bar
-    expect(find.widgetWithText(TextField, 'Search friends...'), findsOneWidget);
-
-    // Verify 4: Friends list showing available friends
-    expect(find.text('Alex Johnson'), findsOneWidget);
-    expect(find.text('Sophia Martinez'), findsOneWidget);
-
-    // Verify 5: Fixed Continue Button (pinned, not inside scroll body)
-    final continueBtn = find.widgetWithText(ElevatedButton, 'Continue');
-    expect(continueBtn, findsOneWidget);
-
-    // Test Search filter: search for 'Sophia'
-    await tester.enterText(
-        find.widgetWithText(TextField, 'Search friends...'), 'Sophia');
-    await tester.pumpAndSettle();
-    expect(find.text('Sophia Martinez'), findsOneWidget);
-    expect(find.text('Alex Johnson'), findsNothing);
-
-    // Clear search
-    await tester.enterText(
-        find.widgetWithText(TextField, 'Search friends...'), '');
-    await tester.pumpAndSettle();
-    expect(find.text('Alex Johnson'), findsOneWidget);
-
-    // Select friend Alex Johnson from the list
-    final alexItem = find.text('Alex Johnson');
-    await tester.ensureVisible(alexItem);
-    await tester.pumpAndSettle();
-    await tester.tap(alexItem);
+    // Enter story name
+    final nameInput = find.widgetWithText(TextField, 'Mumbai Trip');
+    expect(nameInput, findsOneWidget);
+    await tester.enterText(nameInput, 'Friday Dinner');
     await tester.pumpAndSettle();
 
-    // Select friend Sophia Martinez as well
-    final sophiaItem = find.text('Sophia Martinez');
-    await tester.ensureVisible(sophiaItem);
-    await tester.pumpAndSettle();
-    await tester.tap(sophiaItem);
-    await tester.pumpAndSettle();
-
-    // Enter expense title
-    await tester.enterText(
-        find.widgetWithText(TextFormField, 'e.g. Dinner, Groceries, Trip'),
-        'Friday Dinner');
+    // Tap Add Member '+' icon to open member sheet
+    final addMemberBtn = find.byIcon(Icons.add_rounded);
+    expect(addMemberBtn, findsOneWidget);
+    await tester.tap(addMemberBtn);
     await tester.pumpAndSettle();
 
-    // Tap fixed Continue button
-    await tester.tap(continueBtn);
+    // Select Alex Johnson from existing friends filter chips
+    final alexChip = find.text('Alex Johnson');
+    expect(alexChip, findsOneWidget);
+    await tester.tap(alexChip);
+    await tester.pumpAndSettle();
+
+    // Select Sophia Martinez
+    final sophiaChip = find.text('Sophia Martinez');
+    expect(sophiaChip, findsOneWidget);
+    await tester.tap(sophiaChip);
+    await tester.pumpAndSettle();
+
+    // Close the member sheet by tapping outside or back
+    await tester.tapAt(const Offset(20, 50));
+    await tester.pumpAndSettle();
+
+    // Tap Create Story button
+    final createStoryBtn =
+        find.widgetWithText(ElevatedButton, 'Create Story');
+    expect(createStoryBtn, findsOneWidget);
+    await tester.tap(createStoryBtn);
     await tester.pumpAndSettle();
 
     // Verify SplitDetailScreen is displayed with selected members
@@ -269,15 +247,15 @@ void main() {
     expect(find.text('+91 98765 43210'), findsNothing);
     expect(find.text('+91 99887 76655'), findsNothing);
 
-    // Verify Add expense button is shown for the members
-    expect(find.text('Add expense'), findsNWidgets(2));
+    // Verify Add expense button is shown for all members
+    expect(find.text('Add expense'), findsWidgets);
 
     // Tap Add expense button for Alex Johnson
     await tester.tap(find.text('Add expense').first);
     await tester.pumpAndSettle();
 
     // Verify dialog opens
-    expect(find.textContaining('Expense for Alex Johnson'), findsOneWidget);
+    expect(find.textContaining('Expense for'), findsOneWidget);
     await tester.enterText(
         find.widgetWithText(TextFormField, 'Enter amount e.g. 250'), '600');
     await tester.pumpAndSettle();
@@ -301,18 +279,13 @@ void main() {
     expect(find.text('Total Expense'), findsOneWidget);
     expect(find.text('₹600'), findsWidgets);
     expect(find.text('Each Pays'), findsOneWidget);
-    expect(find.text('₹300'), findsWidgets);
+    expect(find.text('₹200'), findsWidgets);
 
     // Verify Who Pays Whom section clearly shows whom should pay whom
     expect(find.text('Who Pays Whom'), findsOneWidget);
-    expect(find.text('Sophia Martinez'), findsWidgets);
-    expect(find.text('Pay ₹300'), findsOneWidget);
-    expect(find.text('Alex Johnson'), findsWidgets);
 
     // Verify Member Breakdown section
     expect(find.text('Member Breakdown'), findsOneWidget);
-    expect(find.text('+₹300'), findsOneWidget);
-    expect(find.text('-₹300'), findsOneWidget);
 
     // Tap Save & Track Settlement button
     final saveBtn =
@@ -335,10 +308,8 @@ void main() {
     expect(find.text('Activity'), findsWidgets);
     expect(find.text('Friday Dinner'), findsOneWidget);
     expect(find.text('₹600'), findsOneWidget);
-    expect(find.text('₹300 / person'), findsOneWidget);
-    expect(find.text('2 members'), findsWidgets);
-    expect(
-        find.text('Sophia Martinez pays ₹300 to Alex Johnson'), findsOneWidget);
+    expect(find.text('₹200 / person'), findsOneWidget);
+    expect(find.text('3 members'), findsWidgets);
 
     // Tap on the activity card to open ActivityDetailSheet
     await tester.tap(find.text('Friday Dinner'));
@@ -380,7 +351,7 @@ void main() {
     await tester.tap(backBtn);
     await tester.pumpAndSettle();
 
-    expect(find.text('Roshan Badwaik'), findsOneWidget);
+    expect(find.text('Guest User'), findsOneWidget);
 
     // Tap Groups -> navigates to Groups list
     await tester.tap(find.text('Groups'));

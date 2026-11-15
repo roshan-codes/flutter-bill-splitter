@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:floating_pill_navbar/floating_pill_navbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/screens/activity_tab.dart';
-import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
+import 'package:flutter_bill_splitter/features/stories/presentation/screens/create_story_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_summary_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/search_name_group_bar.dart';
@@ -146,7 +146,7 @@ void main() {
       await tester.tap(find.byTooltip('Add Story'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(AddExpenseScreen), findsOneWidget);
+      expect(find.byType(CreateStoryScreen), findsOneWidget);
     });
 
     testWidgets(
@@ -180,7 +180,7 @@ void main() {
 
       // Verify header greeting & user name (app logo bolt removed from home tab)
       expect(find.textContaining('Good'), findsOneWidget);
-      expect(find.text('Roshan'), findsOneWidget);
+      expect(find.text('Friend'), findsOneWidget);
       expect(find.text('👋'), findsOneWidget);
       expect(find.byIcon(Icons.bolt_rounded), findsNothing);
       expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
@@ -223,10 +223,9 @@ void main() {
       expect(find.text('Profile'), findsOneWidget);
       expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
 
-      // Verify Avatar & User Info
-      expect(find.text('R'), findsOneWidget);
-      expect(find.text('Roshan Badwaik'), findsOneWidget);
-      expect(find.text('+91 9876543210'), findsOneWidget);
+      // Verify Avatar & User Info (defaults to Guest User when unauthenticated)
+      expect(find.text('G'), findsOneWidget);
+      expect(find.text('Guest User'), findsOneWidget);
 
       // Verify Menu Items
       expect(find.text('Edit Profile'), findsOneWidget);
@@ -316,44 +315,29 @@ void main() {
       expect(find.text('₹480'), findsOneWidget);
     });
 
-    testWidgets('AddExpenseScreen renders adaptive UI elements',
+    testWidgets('CreateStoryScreen renders adaptive UI elements',
         (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: AddExpenseScreen(
-            friends: AddExpenseScreen.sampleFriends,
-            groups: [],
-          ),
+          home: CreateStoryScreen(),
         ),
       );
 
       // Verify Header
-      expect(find.text('Add & Split Expense'), findsOneWidget);
+      expect(find.text('Create Story'), findsWidgets);
       expect(find.byTooltip('Back'), findsOneWidget);
 
-      // Verify Expense Title Section
-      expect(find.text('Expense Title'), findsOneWidget);
-      expect(find.widgetWithText(TextFormField, 'e.g. Dinner, Groceries, Trip'),
-          findsOneWidget);
-      expect(find.byIcon(Icons.restaurant_rounded), findsOneWidget);
-
-      // Verify Friends & Groups Toggle
-      expect(find.text('Friends'), findsWidgets);
-      expect(find.text('Groups'), findsOneWidget);
-
-      // Verify Search Bar
-      expect(
-          find.widgetWithText(TextField, 'Search friends...'), findsOneWidget);
-
-      // Verify default screenshot friends
-      expect(find.text('Vinit'), findsOneWidget);
-      expect(find.text('Nishant'), findsOneWidget);
-      expect(find.text('Saurabh'), findsOneWidget);
-      expect(find.text('Harshal'), findsOneWidget);
+      // Verify Form Field Labels
+      expect(find.text('Story name'), findsOneWidget);
+      expect(find.text('Mumbai Trip'), findsOneWidget);
+      expect(find.text('Description (optional)'), findsOneWidget);
+      expect(find.text('Start date'), findsOneWidget);
+      expect(find.text('End date'), findsOneWidget);
+      expect(find.text('Add members'), findsOneWidget);
 
       // Verify Continue button
-      expect(find.widgetWithText(ElevatedButton, 'Continue'), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_forward_rounded), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Create Story'), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_forward_rounded), findsWidgets);
     });
 
     testWidgets('SplitDetailScreen renders adaptive UI elements',
@@ -544,7 +528,7 @@ void main() {
 
       // Verify Header
       expect(find.textContaining('Good'), findsOneWidget);
-      expect(find.text('Roshan'), findsOneWidget);
+      expect(find.text('Friend'), findsOneWidget);
       expect(find.text('👋'), findsOneWidget);
       expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
 

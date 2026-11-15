@@ -383,6 +383,32 @@ class SupabaseService {
     return deletedFromDb || deletedFromStorage;
   }
 
+  /// Fetches a specific Story by its unique ID (used for invite link joins).
+  static Future<Story?> fetchStoryById(String storyId) async {
+    final cli = client;
+    if (cli == null) return null;
+
+    try {
+      final res = await cli
+          .from('stories')
+          .select()
+          .eq('story_id', storyId)
+          .maybeSingle();
+      if (res != null && res['data'] != null) {
+        final data = res['data'];
+        if (data is Map<String, dynamic>) {
+          return Story.fromJson(data);
+        } else if (data is String) {
+          return Story.fromJson(jsonDecode(data));
+        }
+      }
+    } catch (e) {
+      debugPrint('Supabase fetchStoryById table note: $e');
+    }
+
+    return null;
+  }
+
   /// Fetches stories from Supabase (Database or Cloud Storage).
   static Future<List<Story>> fetchStories() async {
     final cli = client;

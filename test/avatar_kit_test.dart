@@ -62,11 +62,11 @@ void main() {
       ),
     );
 
-    // Initial state shows 'R'
-    expect(find.text('R'), findsOneWidget);
+    // Initial state shows 'G' for Guest
+    expect(find.text('G'), findsOneWidget);
 
     // Tap avatar to open sheet
-    await tester.tap(find.text('R'));
+    await tester.tap(find.text('G'));
     await tester.pumpAndSettle();
 
     // Verify bottom sheet is displayed with 35 memo avatars

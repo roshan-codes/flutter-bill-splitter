@@ -24,6 +24,9 @@ class ProfileTab extends StatefulWidget {
   final VoidCallback? onFriendsTap;
   final VoidCallback? onGroupsTap;
   final int? initialAvatarIndex;
+  final String? initialUserName;
+  final String? initialPhone;
+  final String? initialEmail;
 
   const ProfileTab({
     super.key,
@@ -31,6 +34,9 @@ class ProfileTab extends StatefulWidget {
     this.onFriendsTap,
     this.onGroupsTap,
     this.initialAvatarIndex,
+    this.initialUserName,
+    this.initialPhone,
+    this.initialEmail,
   });
 
   @override
@@ -40,14 +46,23 @@ class ProfileTab extends StatefulWidget {
 class _ProfileTabState extends State<ProfileTab> {
   int? _avatarIndex;
   String? _avatarUrl;
-  String _userName = 'Roshan Badwaik';
+  String _userName = 'Guest User';
   String _userEmail = '';
-  String _userPhone = '+91 9876543210';
+  String _userPhone = '';
 
   @override
   void initState() {
     super.initState();
     _avatarIndex = widget.initialAvatarIndex;
+    if (widget.initialUserName != null && widget.initialUserName!.isNotEmpty) {
+      _userName = widget.initialUserName!;
+    }
+    if (widget.initialPhone != null && widget.initialPhone!.isNotEmpty) {
+      _userPhone = widget.initialPhone!;
+    }
+    if (widget.initialEmail != null && widget.initialEmail!.isNotEmpty) {
+      _userEmail = widget.initialEmail!;
+    }
     _loadSavedProfile();
   }
 
@@ -74,17 +89,17 @@ class _ProfileTabState extends State<ProfileTab> {
         _avatarIndex ??= savedAvatar ?? dbAvatarIndex;
         _avatarUrl = googleAvatar ?? savedAvatarUrl;
 
-        final resolvedName = googleName ?? savedName;
+        final resolvedName = widget.initialUserName ?? googleName ?? savedName;
         if (resolvedName != null && resolvedName.isNotEmpty) {
           _userName = resolvedName;
         }
 
-        final resolvedEmail = googleEmail ?? savedEmail;
+        final resolvedEmail = widget.initialEmail ?? googleEmail ?? savedEmail;
         if (resolvedEmail != null && resolvedEmail.isNotEmpty) {
           _userEmail = resolvedEmail;
         }
 
-        final resolvedContact = googleContact ?? savedPhone;
+        final resolvedContact = widget.initialPhone ?? googleContact ?? savedPhone;
         if (resolvedContact != null && resolvedContact.isNotEmpty) {
           _userPhone = resolvedContact;
         }
@@ -447,7 +462,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 email: _userEmail.isNotEmpty ? _userEmail : null,
                 phone: _userPhone,
                 initial:
-                    _userName.isNotEmpty ? _userName[0].toUpperCase() : 'R',
+                    _userName.isNotEmpty ? _userName[0].toUpperCase() : 'G',
                 avatarIndex: _avatarIndex,
                 avatarUrl: _avatarUrl,
                 onTap: () => _openAvatarPicker(context),

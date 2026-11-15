@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_bill_splitter/core/services/invite_service.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
+import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
+import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/features/navigation/presentation/screens/main_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/onboarding_screen.dart';
@@ -56,11 +59,43 @@ class _SplashScreenState extends State<SplashScreen> {
             false;
     final isSupabaseSignedIn = SupabaseService.isSignedIn;
 
+    // Check if user arrived via an invite link: ?story_id=xyz
+    final uriInviteStoryId = InviteService.getInviteStoryIdFromUri();
+    if (uriInviteStoryId != null) {
+      await InviteService.savePendingInvite(uriInviteStoryId);
+    }
+    final pendingInvite = await InviteService.getPendingInvite();
+
     if (!mounted) return;
 
     // Strict authentication gate: do not allow entering app without active Supabase authentication
     if (hasCompletedOnboarding && isSupabaseSignedIn) {
+      // If invited to a story, automatically join and open story detail
+      if (pendingInvite != null) {
+        final joinedStory =
+            await StoryRepository.instance.joinStoryWithCurrentUser(pendingInvite);
+        await InviteService.clearPendingInvite();
+        if (mounted && joinedStory != null) {
+          Navigator.of(context).pushReplacement(
+            PageRouteBuilder(
+              pageBuilder: (_, __, ___) => SplitDetailScreen(
+                groupName: joinedStory.title,
+                members: joinedStory.members
+                    .map((m) => Friend(name: m.name, phone: ''))
+                    .toList(),
+                story: joinedStory,
+              ),
+              transitionsBuilder: (_, animation, __, child) =>
+                  FadeTransition(opacity: animation, child: child),
+              transitionDuration: const Duration(milliseconds: 500),
+            ),
+          );
+          return;
+        }
+      }
+
       // Authenticated user who has completed onboarding -> directly enter app
+      if (!mounted) return;
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (_, __, ___) => const MainScreen(),
@@ -71,15 +106,17 @@ class _SplashScreenState extends State<SplashScreen> {
       );
     } else {
       // First-time or unauthenticated user -> require authentication
-      _navigateToOnboarding();
+      _navigateToOnboarding(pendingInvite);
     }
   }
 
-  void _navigateToOnboarding() {
+  void _navigateToOnboarding([String? inviteStoryId]) {
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const OnboardingScreen(),
+        pageBuilder: (_, __, ___) => OnboardingScreen(
+          inviteStoryId: inviteStoryId,
+        ),
         transitionsBuilder: (_, animation, __, child) =>
             FadeTransition(opacity: animation, child: child),
         transitionDuration: const Duration(milliseconds: 500),

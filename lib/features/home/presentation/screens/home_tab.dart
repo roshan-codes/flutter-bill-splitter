@@ -32,6 +32,7 @@ class HomeTab extends StatefulWidget {
   final double? youGetAmount;
   final double? youOweAmount;
   final List<RecentExpense>? customExpenses;
+  final String? userName;
 
   const HomeTab({
     super.key,
@@ -44,6 +45,7 @@ class HomeTab extends StatefulWidget {
     this.youGetAmount,
     this.youOweAmount,
     this.customExpenses,
+    this.userName,
   });
 
   @override
@@ -51,7 +53,17 @@ class HomeTab extends StatefulWidget {
 }
 
 class _HomeTabState extends State<HomeTab> {
-  String _userName = 'Roshan';
+  String? _resolvedName;
+
+  String get _displayName {
+    if (widget.userName != null && widget.userName!.trim().isNotEmpty) {
+      return widget.userName!.trim();
+    }
+    if (_resolvedName != null && _resolvedName!.isNotEmpty) {
+      return _resolvedName!;
+    }
+    return 'Friend';
+  }
 
   @override
   void initState() {
@@ -65,7 +77,7 @@ class _HomeTabState extends State<HomeTab> {
         await StorageService.instance.getString('user_profile_name');
     final nameToUse = googleName ?? savedName;
     if (mounted && nameToUse != null && nameToUse.trim().isNotEmpty) {
-      setState(() => _userName = nameToUse.trim().split(' ').first);
+      setState(() => _resolvedName = nameToUse.trim().split(' ').first);
     }
   }
 
@@ -111,7 +123,7 @@ class _HomeTabState extends State<HomeTab> {
             children: [
               // Header: Greeting, user name, waving hand, and circular bell icon button
               HomeHeader(
-                userName: _userName,
+                userName: _displayName,
                 onNotificationPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

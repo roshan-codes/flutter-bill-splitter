@@ -8,8 +8,7 @@ import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/activity_display_item.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_section_card.dart';
-import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
-import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
+import 'package:flutter_bill_splitter/features/stories/presentation/screens/create_story_screen.dart';
 import 'package:flutter_bill_splitter/shared/widgets/empty_state_illustration.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
@@ -114,10 +113,7 @@ class _ActivityTabState extends State<ActivityTab> {
       AppTransitions.sharedAxisRoute(
         type: SharedAxisTransitionType.vertical,
         duration: AppMotion.medium,
-        builder: (context) => AddExpenseScreen(
-          friends: FriendsRepository.instance.friends,
-          groups: FriendsRepository.instance.groups,
-        ),
+        builder: (context) => const CreateStoryScreen(),
       ),
     );
   }

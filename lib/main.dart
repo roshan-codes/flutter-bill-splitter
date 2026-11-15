@@ -19,7 +19,7 @@ export 'features/friends/data/repositories/friends_repository.dart';
 export 'features/stories/domain/models/story.dart';
 export 'features/stories/data/repositories/story_repository.dart';
 export 'features/navigation/presentation/screens/main_screen.dart';
-export 'features/expenses/presentation/screens/add_expense_screen.dart';
+export 'features/stories/presentation/screens/create_story_screen.dart';
 export 'features/expenses/presentation/screens/split_detail_screen.dart';
 export 'features/expenses/presentation/screens/split_summary_screen.dart';
 export 'features/expenses/domain/models/settlement_transaction.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
+import 'package:flutter_bill_splitter/features/stories/presentation/screens/create_story_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_summary_screen.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/friend_selection_tile.dart';
@@ -10,11 +10,11 @@ import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/o
 void main() {
   group('Apple HIG Compliance Tests', () {
     testWidgets(
-        'Back button in AddExpenseScreen has at least 44x44pt hit target and semantic label',
+        'Back button in CreateStoryScreen has at least 44x44pt hit target and semantic label',
         (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: AddExpenseScreen(friends: [], groups: []),
+          home: CreateStoryScreen(),
         ),
       );
 

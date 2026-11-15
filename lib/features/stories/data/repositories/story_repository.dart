@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
+import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
+import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
 
 /// Repository managing persistent storage of group expense stories adhering to the standard story JSON schema.
@@ -74,6 +76,104 @@ class StoryRepository extends ChangeNotifier {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Adds the current authenticated user to an existing story via an invite link.
+  Future<Story?> joinStoryWithCurrentUser(String storyId) async {
+    // 1. Fetch story by ID (either from local repository or Supabase)
+    var story = getStoryById(storyId);
+    if (story == null) {
+      story = await SupabaseService.fetchStoryById(storyId);
+      if (story != null) {
+        _stories.insert(0, story);
+      }
+    }
+    if (story == null) return null;
+
+    final userId = SupabaseService.currentUser?.id ?? 'user_guest';
+    final userName = SupabaseService.userDisplayName ??
+        await StorageService.instance.getString('user_profile_name') ??
+        'Friend';
+    final userAvatar = SupabaseService.userAvatarUrl;
+
+    // Check if user is already a member
+    final alreadyMember = story.members.any((m) =>
+        m.userId == userId ||
+        (m.userId.isNotEmpty && m.userId == userId) ||
+        m.name.toLowerCase().trim() == userName.toLowerCase().trim());
+
+    if (alreadyMember) {
+      await _persist();
+      notifyListeners();
+      return story;
+    }
+
+    // Add user as a member
+    final now = DateTime.now();
+    final newMember = StoryMember(
+      userId: userId,
+      name: userName,
+      avatar: userAvatar,
+      role: 'member',
+      joinedAt: now.toIso8601String(),
+    );
+
+    final updatedMembers = [...story.members, newMember];
+    final updatedBalances = [
+      ...story.memberBalances,
+      StoryMemberBalance(
+        userId: userId,
+        name: userName,
+        totalPaid: 0.0,
+        totalShare: 0.0,
+        netBalance: 0.0,
+        status: 'settled',
+      ),
+    ];
+
+    final updatedSummary = StorySummary(
+      totalExpenses: story.summary.totalExpenses,
+      totalSettled: story.summary.totalSettled,
+      pendingAmount: story.summary.pendingAmount,
+      memberCount: updatedMembers.length,
+      expenseCount: story.summary.expenseCount,
+    );
+
+    final updatedStory = Story(
+      storyId: story.storyId,
+      title: story.title,
+      description: story.description,
+      coverEmoji: story.coverEmoji,
+      currency: story.currency,
+      status: story.status,
+      createdBy: story.createdBy,
+      createdAt: story.createdAt,
+      startDate: story.startDate,
+      endDate: story.endDate,
+      members: updatedMembers,
+      expenses: story.expenses,
+      memberBalances: updatedBalances,
+      settlements: story.settlements,
+      summary: updatedSummary,
+    );
+
+    await updateStory(updatedStory);
+    await SupabaseService.saveStory(updatedStory);
+
+    // Also add other story members to Friends list
+    for (final m in updatedMembers) {
+      if (m.userId != userId &&
+          m.name.toLowerCase() != userName.toLowerCase()) {
+        final existing = FriendsRepository.instance.friends
+            .any((f) => f.name.toLowerCase() == m.name.toLowerCase());
+        if (!existing) {
+          FriendsRepository.instance
+              .addFriend(Friend(name: m.name, phone: ''));
+        }
+      }
+    }
+
+    return updatedStory;
   }
 
   /// Adds a new story and persists it.
