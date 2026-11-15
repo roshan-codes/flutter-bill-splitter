@@ -64,7 +64,7 @@ class _MainScreenState extends State<MainScreen> {
     ),
     ActivityTab(
       onCreateStory: () => _openCreateStoryScreen(),
-      showMockupFeed: true,
+      showMockupFeed: false,
     ),
     const ProfileTab(),
   ];

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
+import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
+import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
@@ -14,11 +16,37 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await StorageService.instance.init();
     await StorageService.instance.clear();
+    await ActivityRepository.instance.init();
+    ActivityRepository.instance.clearActivities();
     await StoryRepository.instance.init();
     await StoryRepository.instance.clearAll();
   });
 
   group('Story Deletion in SplitDetailScreen', () {
+    test('Deleting a story also deletes associated activities in ActivityRepository',
+        () async {
+      final story = Story.sampleGoaTrip();
+      await StoryRepository.instance.addStory(story);
+
+      final activity = SplitActivity(
+        id: 'act_${story.storyId}',
+        groupName: story.title,
+        totalAmount: 1000,
+        sharePerPerson: 500,
+        members: const [],
+        memberExpenses: const {},
+        settlements: const [],
+        timestamp: DateTime.now(),
+      );
+      ActivityRepository.instance.recordActivity(activity);
+      expect(ActivityRepository.instance.activities.length, 1);
+
+      await StoryRepository.instance.deleteStory(story.storyId);
+
+      expect(StoryRepository.instance.stories.isEmpty, isTrue);
+      expect(ActivityRepository.instance.activities.isEmpty, isTrue);
+    });
+
     testWidgets('3-dot menu shows Delete Story option and confirms deletion',
         (tester) async {
       final story = Story.sampleGoaTrip();

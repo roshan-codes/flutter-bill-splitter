@@ -9,9 +9,14 @@ import 'package:flutter_bill_splitter/features/activity/domain/models/split_acti
 /// Centralized Supabase backend service for TTMM.
 /// Handles Authentication, Database sync, and Cloud Storage for stories, expenses, and files.
 class SupabaseService {
-  static const String supabaseUrl = 'https://hqfdwqrhtertpvlmwvsk.supabase.co';
-  static const String supabasePublishableKey =
-      'sb_publishable_E55yVbk-WsMaVFFi6BP50g_VCIXQOez';
+  static const String supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://hqfdwqrhtertpvlmwvsk.supabase.co',
+  );
+  static const String supabasePublishableKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: 'sb_publishable_E55yVbk-WsMaVFFi6BP50g_VCIXQOez',
+  );
 
   static const String storageBucket = 'app_data';
 
@@ -170,11 +175,11 @@ class SupabaseService {
           final bytes = byteData.buffer.asUint8List();
           final storagePath = 'avatars/${u.id}/avatar_$avatarIndex.png';
           await cli.storage.from(storageBucket).uploadBinary(
-            storagePath,
-            bytes,
-            fileOptions:
-                const FileOptions(upsert: true, contentType: 'image/png'),
-          );
+                storagePath,
+                bytes,
+                fileOptions:
+                    const FileOptions(upsert: true, contentType: 'image/png'),
+              );
           final publicUrl =
               cli.storage.from(storageBucket).getPublicUrl(storagePath);
           await StorageService.instance
@@ -209,7 +214,8 @@ class SupabaseService {
       await StorageService.instance.setString('user_profile_email', u.email!);
     }
     if (avatar != null && avatar.isNotEmpty) {
-      await StorageService.instance.setString('user_profile_avatar_url', avatar);
+      await StorageService.instance
+          .setString('user_profile_avatar_url', avatar);
     }
 
     await syncUserProfileToDb();
@@ -326,16 +332,17 @@ class SupabaseService {
     try {
       final userId = currentUser?.id ?? 'shared';
       final path = 'stories/$userId/${story.storyId}.json';
-      final bytes =
-          Uint8List.fromList(utf8.encode(jsonEncode(story.toJson())));
+      final bytes = Uint8List.fromList(utf8.encode(jsonEncode(story.toJson())));
 
       await cli.storage.from(storageBucket).uploadBinary(
             path,
             bytes,
-            fileOptions: const FileOptions(upsert: true, contentType: 'application/json'),
+            fileOptions: const FileOptions(
+                upsert: true, contentType: 'application/json'),
           );
       savedToStorage = true;
-      debugPrint('Backed up story "${story.title}" to Supabase storage ($path).');
+      debugPrint(
+          'Backed up story "${story.title}" to Supabase storage ($path).');
     } catch (e) {
       debugPrint('Supabase storage upload note: $e');
     }
@@ -359,6 +366,10 @@ class SupabaseService {
     } catch (e) {
       debugPrint('Supabase table delete note: $e');
     }
+
+    try {
+      await cli.from('activities').delete().eq('story_id', storyId);
+    } catch (_) {}
 
     // 2. Delete JSON backup from Supabase Cloud Storage
     try {
@@ -407,7 +418,8 @@ class SupabaseService {
     // 2. Fallback: read from Cloud Storage bucket
     try {
       final userId = currentUser?.id ?? 'shared';
-      final files = await cli.storage.from(storageBucket).list(path: 'stories/$userId');
+      final files =
+          await cli.storage.from(storageBucket).list(path: 'stories/$userId');
       final List<Story> storageResults = [];
       for (final file in files) {
         if (file.name.endsWith('.json')) {

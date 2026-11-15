@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
+import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
 
 /// Repository managing persistent storage of group expense stories adhering to the standard story JSON schema.
@@ -155,9 +156,27 @@ class StoryRepository extends ChangeNotifier {
     }
   }
 
-  /// Deletes a story by its identifier.
+  /// Deletes a story by its identifier and cleans up associated activities and expenses.
   Future<void> deleteStory(String storyId) async {
-    _stories.removeWhere((s) => s.storyId == storyId);
+    final storyIndex = _stories.indexWhere((s) => s.storyId == storyId);
+    String? storyTitle;
+    if (storyIndex != -1) {
+      storyTitle = _stories[storyIndex].title;
+      _stories.removeAt(storyIndex);
+    } else {
+      _stories.removeWhere((s) => s.storyId == storyId);
+    }
+
+    if (storyTitle != null && storyTitle.isNotEmpty) {
+      ActivityRepository.instance
+          .deleteActivitiesForStory(storyTitle, storyId: storyId);
+    }
+
+    // If no stories remain, clean up remaining orphan activities
+    if (_stories.isEmpty) {
+      ActivityRepository.instance.clearActivities();
+    }
+
     notifyListeners();
     await _persist();
     SupabaseService.deleteStory(storyId).ignore();
@@ -166,6 +185,7 @@ class StoryRepository extends ChangeNotifier {
   /// Clears all stories (for tests or resets).
   Future<void> clearAll() async {
     _stories.clear();
+    ActivityRepository.instance.clearActivities();
     notifyListeners();
     await _persist();
   }

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/animations/app_motion.dart';
 import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
+import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
@@ -66,10 +67,9 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
 
     if (widget.members.isEmpty) {
       // Fallback for tests or direct previews: prefer Delhi mockup story, then Goa trip
-      final sample =
-          StoryRepository.instance.getStoryById('story_delhi_001') ??
-              StoryRepository.instance.getStoryById('story_001') ??
-              Story.sampleDelhiTrip();
+      final sample = StoryRepository.instance.getStoryById('story_delhi_001') ??
+          StoryRepository.instance.getStoryById('story_001') ??
+          Story.sampleDelhiTrip();
       _story = sample;
       for (final exp in _story.expenses) {
         final payerMember = _story.members.firstWhere(
@@ -930,8 +930,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                       height: 1,
                       child: Text(
                         'Split with Members',
-                        style: TextStyle(
-                            fontSize: 0.1, color: Colors.transparent),
+                        style:
+                            TextStyle(fontSize: 0.1, color: Colors.transparent),
                       ),
                     ),
                   ),
@@ -968,8 +968,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                                     Container(
                                       width: 36,
                                       height: 4,
-                                      margin:
-                                          const EdgeInsets.only(bottom: 12),
+                                      margin: const EdgeInsets.only(bottom: 12),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFE5E7EB),
                                         borderRadius: BorderRadius.circular(2),
@@ -1115,8 +1114,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: const Color(0xFFE8F8EE),
                       borderRadius: BorderRadius.circular(12),
@@ -1157,8 +1156,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                 reverse: _previousTab > _currentTab,
                 type: SharedAxisTransitionType.horizontal,
                 duration: AppMotion.normal,
-                child:
-                    _buildCurrentTabContent(totalExpenses, perPersonAmount),
+                child: _buildCurrentTabContent(totalExpenses, perPersonAmount),
               ),
             ),
           ],
@@ -1177,103 +1175,102 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     }
     // Overview (Screen 2) & Expenses (Screen 3) tab: [ ⇄ Settle Up ] [ Add Expense + ]
     return Container(
-        color: isIOS ? AppColors.iosBackground : AppColors.background,
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-        child: SafeArea(
-          top: false,
-          child: Row(
-            children: [
-              // Left button: ⇄ Settle Up (navigates to SplitSummaryScreen)
-              Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.surface,
-                      foregroundColor: AppColors.textPrimary,
-                      elevation: 0,
-                      side: const BorderSide(
-                          color: AppColors.border, width: 1.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
+      color: isIOS ? AppColors.iosBackground : AppColors.background,
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            // Left button: ⇄ Settle Up (navigates to SplitSummaryScreen)
+            Expanded(
+              child: SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.surface,
+                    foregroundColor: AppColors.textPrimary,
+                    elevation: 0,
+                    side: const BorderSide(color: AppColors.border, width: 1.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
                     ),
-                    onPressed: _navigateToSummary,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.sync_alt_rounded,
-                                color: Color(0xFF111111), size: 18),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Settle Up',
-                              style: GoogleFonts.manrope(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF111111),
-                              ),
+                  ),
+                  onPressed: _navigateToSummary,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.sync_alt_rounded,
+                              color: Color(0xFF111111), size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Settle Up',
+                            style: GoogleFonts.manrope(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF111111),
                             ),
+                          ),
+                        ],
+                      ),
+                      // Hidden semantic text & icon for test compatibility (Confirm Split)
+                      const Opacity(
+                        opacity: 0.0,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('Confirm Split',
+                                style: TextStyle(fontSize: 0.1)),
+                            Icon(Icons.arrow_forward_rounded, size: 0.1),
                           ],
                         ),
-                        // Hidden semantic text & icon for test compatibility (Confirm Split)
-                        const Opacity(
-                          opacity: 0.0,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('Confirm Split',
-                                  style: TextStyle(fontSize: 0.1)),
-                              Icon(Icons.arrow_forward_rounded, size: 0.1),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-
-              // Right button: Add Expense +
-              Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF111111),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
                       ),
-                    ),
-                    onPressed: () => _openAddExpenseSheet(context),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Add Expense',
-                          style: GoogleFonts.manrope(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.add_rounded,
-                            color: Colors.white, size: 19),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 12),
+
+            // Right button: Add Expense +
+            Expanded(
+              child: SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF111111),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                  ),
+                  onPressed: () => _openAddExpenseSheet(context),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Add Expense',
+                        style: GoogleFonts.manrope(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.add_rounded,
+                          color: Colors.white, size: 19),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      );
+      ),
+    );
   }
 
   Widget _buildSegmentPill({required int index, required String label}) {
@@ -1309,8 +1306,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     );
   }
 
-  Widget _buildCurrentTabContent(
-      double totalExpenses, double perPersonAmount) {
+  Widget _buildCurrentTabContent(double totalExpenses, double perPersonAmount) {
     switch (_currentTab) {
       case 0:
         return _buildOverviewTab(totalExpenses, perPersonAmount);
@@ -1604,13 +1600,24 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     );
   }
 
+  bool _isCurrentUser(String name, [String? userId]) {
+    final currentName = SupabaseService.userDisplayName ?? 'Roshan';
+    final currentId = SupabaseService.currentUser?.id;
+    if (userId != null && currentId != null && userId == currentId) {
+      return true;
+    }
+    final clean = name.toLowerCase().trim();
+    final myClean = currentName.toLowerCase().trim();
+    return clean == myClean || clean.contains(myClean) || clean == 'roshan';
+  }
+
   Widget _buildGroupSummaryMemberRow(
     StoryMemberBalance balance,
     double perPersonAmount,
     bool isSampleGoaTrip,
   ) {
-    final isRoshan = balance.name.toLowerCase() == 'roshan';
-    final displayName = isRoshan ? '${balance.name} (You)' : balance.name;
+    final isMe = _isCurrentUser(balance.name, balance.userId);
+    final displayName = isMe ? '${balance.name} (You)' : balance.name;
     final friend = Friend(name: balance.name, phone: '+91 98765 00000');
     final hasExpense = _memberExpenses[balance.name] != null &&
         _memberExpenses[balance.name]! > 0;
@@ -1730,7 +1737,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
               color: Color(0xFF1E1E1E),
             ),
             child: ClipOval(
-              child: isRoshan
+              child: isMe
                   ? Image.asset(
                       'assets/avatars/user_roshan.png',
                       width: 42,
@@ -2165,8 +2172,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
     StoryMemberBalance balance,
     double perPersonAmount,
   ) {
-    final isRoshan = balance.name.toLowerCase() == 'roshan';
-    final displayName = isRoshan ? '${balance.name} (You)' : balance.name;
+    final isMe = _isCurrentUser(balance.name, balance.userId);
+    final displayName = isMe ? '${balance.name} (You)' : balance.name;
     final initial = balance.name.isNotEmpty ? balance.name[0] : '?';
     final paid = balance.totalPaid;
     final share = perPersonAmount;
@@ -2207,7 +2214,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
               color: Color(0xFF1E1E1E),
             ),
             child: ClipOval(
-              child: isRoshan
+              child: isMe
                   ? Image.asset(
                       'assets/avatars/user_roshan.png',
                       width: 42,
@@ -2344,8 +2351,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
-                    child:
-                        Icon(icon, size: 20, color: const Color(0xFF1F2937)),
+                    child: Icon(icon, size: 20, color: const Color(0xFF1F2937)),
                   ),
                 ),
                 const SizedBox(width: 14),

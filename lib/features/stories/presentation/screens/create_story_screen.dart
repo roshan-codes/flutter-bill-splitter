@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/animations/app_motion.dart';
 import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
+import 'package:flutter_bill_splitter/core/services/storage_service.dart';
+import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_detail_screen.dart';
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
@@ -36,6 +38,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
   DateTime _startDate = DateTime(2025, 11, 15);
   DateTime _endDate = DateTime(2025, 11, 18);
 
+  String _creatorName = 'Roshan';
   final List<String> _selectedMembers = ['Rashmi', 'Shubham', 'Roshan'];
 
   @override
@@ -43,6 +46,29 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
     super.initState();
     _nameController = TextEditingController(text: widget.initialTitle ?? '');
     _descriptionController = TextEditingController();
+    _initCreator();
+  }
+
+  Future<void> _initCreator() async {
+    final authName = SupabaseService.userDisplayName;
+    final savedName =
+        await StorageService.instance.getString('user_profile_name');
+    final name = authName ?? savedName;
+    if (name != null && name.trim().isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _creatorName = name.trim();
+          if (!_selectedMembers.contains(_creatorName)) {
+            final idx = _selectedMembers.indexWhere((m) => m == 'Roshan');
+            if (idx != -1) {
+              _selectedMembers[idx] = _creatorName;
+            } else {
+              _selectedMembers.add(_creatorName);
+            }
+          }
+        });
+      }
+    }
   }
 
   @override
@@ -211,6 +237,11 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                       color: isSelected ? Colors.white : const Color(0xFF374151),
                     ),
                     onSelected: (selected) {
+                      // Cannot unselect the creator
+                      if (!selected &&
+                          f.name.toLowerCase() == _creatorName.toLowerCase()) {
+                        return;
+                      }
                       setState(() {
                         if (selected) {
                           _selectedMembers.add(f.name);
@@ -245,17 +276,37 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
     final endStr =
         '${_endDate.year}-${_endDate.month.toString().padLeft(2, '0')}-${_endDate.day.toString().padLeft(2, '0')}';
 
-    final membersList = _selectedMembers.map((mName) {
-      final isRoshan = mName.toLowerCase().contains('roshan');
-      return StoryMember(
-        userId: isRoshan
-            ? 'user_roshan'
-            : 'user_${mName.toLowerCase().replaceAll(' ', '_')}',
-        name: mName,
-        role: isRoshan ? 'admin' : 'member',
+    final currentUserId = SupabaseService.currentUser?.id ?? 'user_creator';
+    final currentUserName = _creatorName;
+
+    // Build member list: creator is guaranteed to be Member #1 with role 'creator'
+    final List<StoryMember> membersList = [];
+
+    // 1. Add Creator (You)
+    membersList.add(
+      StoryMember(
+        userId: currentUserId,
+        name: currentUserName,
+        role: 'creator',
+        avatar: SupabaseService.userAvatarUrl,
         joinedAt: now.toIso8601String(),
+      ),
+    );
+
+    // 2. Add other selected members
+    for (final mName in _selectedMembers) {
+      if (mName.trim().toLowerCase() == currentUserName.trim().toLowerCase()) {
+        continue; // Already added as creator
+      }
+      membersList.add(
+        StoryMember(
+          userId: 'user_${mName.toLowerCase().replaceAll(' ', '_')}',
+          name: mName,
+          role: 'member',
+          joinedAt: now.toIso8601String(),
+        ),
       );
-    }).toList();
+    }
 
     final balances = membersList.map((m) {
       return StoryMemberBalance(
@@ -275,7 +326,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
       coverEmoji: '🌴',
       currency: 'INR',
       status: 'active',
-      createdBy: 'user_roshan',
+      createdBy: currentUserId,
       createdAt: now.toIso8601String(),
       startDate: startStr,
       endDate: endStr,
@@ -300,7 +351,8 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         duration: AppMotion.normal,
         builder: (context) => SplitDetailScreen(
           groupName: name,
-          members: _selectedMembers.map((m) => Friend(name: m, phone: '')).toList(),
+          members:
+              membersList.map((m) => Friend(name: m.name, phone: '')).toList(),
           story: newStory,
         ),
       ),
@@ -696,10 +748,11 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
   }
 
   Widget _buildMemberAvatarChip(String name) {
-    final isRoshan = name.toLowerCase().contains('roshan');
+    final isMe = name.toLowerCase().contains(_creatorName.toLowerCase()) ||
+        name.toLowerCase().contains('roshan');
     final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
 
-    if (isRoshan) {
+    if (isMe) {
       return Container(
         width: 40,
         height: 40,

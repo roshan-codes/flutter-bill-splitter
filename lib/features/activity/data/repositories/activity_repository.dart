@@ -48,6 +48,18 @@ class ActivityRepository extends ChangeNotifier {
     SupabaseService.saveActivity(activity).ignore();
   }
 
+  /// Deletes recorded activities associated with a given story by title or ID.
+  void deleteActivitiesForStory(String storyTitle, {String? storyId}) {
+    _activities.removeWhere((a) {
+      final matchesTitle =
+          a.groupName.trim().toLowerCase() == storyTitle.trim().toLowerCase();
+      final matchesId = storyId != null && a.id.contains(storyId);
+      return matchesTitle || matchesId;
+    });
+    notifyListeners();
+    _persist();
+  }
+
   /// Clears all recorded activities (useful for test resets or user data reset).
   void clearActivities() {
     _activities.clear();
