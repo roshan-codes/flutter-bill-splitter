@@ -27,12 +27,16 @@ class SplitSummaryScreen extends StatelessWidget {
   final String groupName;
   final List<Friend> members;
   final Map<String, double> memberExpenses;
+  final String? storyId;
+  final Story? existingStory;
 
   const SplitSummaryScreen({
     super.key,
     required this.groupName,
     required this.members,
     required this.memberExpenses,
+    this.storyId,
+    this.existingStory,
   });
 
   String _formatAmount(double amount) => CurrencyFormatter.format(amount);
@@ -470,21 +474,43 @@ class SplitSummaryScreen extends StatelessWidget {
                   }
                 });
 
-                final story = Story.create(
-                  storyId: 'story_${DateTime.now().millisecondsSinceEpoch}',
-                  title: title,
-                  description: 'Shared expense story for $title',
-                  coverEmoji: '🌴',
-                  currency: 'INR',
-                  status: 'active',
-                  createdBy: storyMembers.isNotEmpty
-                      ? storyMembers.first.userId
-                      : 'user_001',
-                  createdAt: DateTime.now().toIso8601String(),
-                  members: storyMembers,
-                  expenses: storyExpenses,
-                );
-                StoryRepository.instance.addStory(story);
+                // Resolve existing story to update rather than creating a duplicate story
+                final existing = existingStory ??
+                    (storyId != null
+                        ? StoryRepository.instance.getStoryById(storyId!)
+                        : null) ??
+                    StoryRepository.instance.stories
+                        .where((s) =>
+                            s.title.toLowerCase().trim() ==
+                            title.toLowerCase().trim())
+                        .firstOrNull;
+
+                if (existing != null) {
+                  final updatedExpenses = existing.expenses.isNotEmpty
+                      ? existing.expenses
+                      : storyExpenses;
+                  final updatedStory = existing.copyWith(
+                    expenses: updatedExpenses,
+                    status: 'settled',
+                  );
+                  StoryRepository.instance.updateStory(updatedStory);
+                } else {
+                  final story = Story.create(
+                    storyId: 'story_${DateTime.now().millisecondsSinceEpoch}',
+                    title: title,
+                    description: 'Shared expense story for $title',
+                    coverEmoji: '🌴',
+                    currency: 'INR',
+                    status: 'active',
+                    createdBy: storyMembers.isNotEmpty
+                        ? storyMembers.first.userId
+                        : 'user_001',
+                    createdAt: DateTime.now().toIso8601String(),
+                    members: storyMembers,
+                    expenses: storyExpenses,
+                  );
+                  StoryRepository.instance.addStory(story);
+                }
 
                 Navigator.of(context).popUntil((route) => route.isFirst);
                 ScaffoldMessenger.of(context).showSnackBar(

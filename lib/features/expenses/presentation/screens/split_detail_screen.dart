@@ -738,6 +738,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen> {
           groupName: _story.title,
           members: effectiveFriends,
           memberExpenses: _memberExpenses,
+          storyId: _story.storyId,
+          existingStory: _story,
         ),
       ),
     );

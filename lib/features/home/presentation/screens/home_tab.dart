@@ -265,10 +265,24 @@ class _HomeTabState extends State<HomeTab> {
   /// Populated content when stories or expenses exist.
   Widget _buildPopulatedContent(
       BuildContext context, List<Story> stories, bool isIOS) {
+    // Deduplicate stories by storyId and normalized title as UI safeguard
+    final List<Story> uniqueStories = [];
+    final Set<String> seenIds = {};
+    final Set<String> seenTitles = {};
+    for (final s in stories) {
+      final normTitle = s.title.toLowerCase().trim();
+      if (!seenIds.contains(s.storyId) &&
+          (normTitle.isEmpty || !seenTitles.contains(normTitle))) {
+        seenIds.add(s.storyId);
+        if (normTitle.isNotEmpty) seenTitles.add(normTitle);
+        uniqueStories.add(s);
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (stories.isNotEmpty) ...[
+        if (uniqueStories.isNotEmpty) ...[
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -295,7 +309,7 @@ class _HomeTabState extends State<HomeTab> {
             ],
           ),
           const SizedBox(height: 12),
-          for (int index = 0; index < stories.length; index++) ...[
+          for (int index = 0; index < uniqueStories.length; index++) ...[
             AppTransitions.openContainer(
               context: context,
               borderRadius: BorderRadius.circular(24),
@@ -304,22 +318,22 @@ class _HomeTabState extends State<HomeTab> {
               duration: AppMotion.medium,
               closedBuilder: (context, openContainer) {
                 return ActiveStoryCard(
-                  story: stories[index],
+                  story: uniqueStories[index],
                   onTap: openContainer,
                 );
               },
               openBuilder: (context, closeContainer) {
                 return SplitDetailScreen(
-                  groupName: stories[index].title,
-                  members: stories[index]
+                  groupName: uniqueStories[index].title,
+                  members: uniqueStories[index]
                       .members
                       .map((m) => Friend(name: m.name, phone: ''))
                       .toList(),
-                  story: stories[index],
+                  story: uniqueStories[index],
                 );
               },
             ),
-            if (index < stories.length - 1) const SizedBox(height: 14),
+            if (index < uniqueStories.length - 1) const SizedBox(height: 14),
           ],
         ],
 

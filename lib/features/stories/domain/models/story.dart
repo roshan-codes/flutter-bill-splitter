@@ -601,7 +601,8 @@ class Story {
       endDate: endDate,
       members: members,
       expenses: updatedExpenses,
-      existingSettlements: settlements,
+      existingSettlements:
+          settlements.where((s) => s.status == 'completed').toList(),
     );
   }
 
@@ -760,10 +761,15 @@ class Story {
       if (creditors[cIdx].value <= 0.01) cIdx++;
     }
 
-    final finalSettlements =
-        (existingSettlements != null && existingSettlements.isNotEmpty)
-            ? existingSettlements
-            : computedSettlements;
+    final List<StorySettlement> finalSettlements;
+    if (existingSettlements != null &&
+        existingSettlements.any((s) => s.status == 'completed')) {
+      final completed =
+          existingSettlements.where((s) => s.status == 'completed').toList();
+      finalSettlements = [...completed, ...computedSettlements];
+    } else {
+      finalSettlements = computedSettlements;
+    }
 
     final double totalSettled = finalSettlements.fold<double>(
       0.0,

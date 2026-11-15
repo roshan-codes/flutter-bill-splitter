@@ -482,6 +482,9 @@ class SupabaseService {
           .order('created_at', ascending: false);
 
       final List<Story> results = [];
+      final Set<String> seenStoryIds = {};
+      final Map<String, int> titleToIndex = {};
+
       for (final item in response as List) {
         if (item is Map<String, dynamic> && item['data'] != null) {
           final data = item['data'];
@@ -492,18 +495,46 @@ class SupabaseService {
             parsed = Story.fromJson(jsonDecode(data));
           }
           if (parsed != null) {
-            if (userId == null && cleanUser.isEmpty) {
-              results.add(parsed);
-            } else {
-              final isCreator = (userId != null &&
-                  (parsed.createdBy == userId || item['user_id'] == userId));
-              final isMember = parsed.members.any((m) =>
-                  (userId != null && m.userId == userId) ||
-                  (cleanUser.isNotEmpty &&
-                      m.name.toLowerCase().trim() == cleanUser));
-              if (isCreator || isMember) {
-                results.add(parsed);
+            final isCreator = (userId != null &&
+                (parsed.createdBy == userId || item['user_id'] == userId));
+            final isMember = parsed.members.any((m) =>
+                (userId != null && m.userId == userId) ||
+                (cleanUser.isNotEmpty &&
+                    m.name.toLowerCase().trim() == cleanUser));
+
+            final isAllowed = (userId == null && cleanUser.isEmpty) ||
+                isCreator ||
+                isMember;
+
+            if (isAllowed) {
+              // 1. Deduplicate by exact storyId
+              if (seenStoryIds.contains(parsed.storyId)) {
+                continue;
               }
+
+              // 2. Deduplicate identical title duplicates (pick the one with more members/expenses)
+              final normTitle = parsed.title.toLowerCase().trim();
+              if (normTitle.isNotEmpty && titleToIndex.containsKey(normTitle)) {
+                final existingIdx = titleToIndex[normTitle]!;
+                final existing = results[existingIdx];
+                final incomingHasMore =
+                    (parsed.members.length > existing.members.length) ||
+                        (parsed.expenses.length > existing.expenses.length) ||
+                        (parsed.summary.totalExpenses >
+                            existing.summary.totalExpenses);
+                if (incomingHasMore) {
+                  seenStoryIds.remove(existing.storyId);
+                  seenStoryIds.add(parsed.storyId);
+                  results[existingIdx] = parsed;
+                }
+                continue;
+              }
+
+              seenStoryIds.add(parsed.storyId);
+              if (normTitle.isNotEmpty) {
+                titleToIndex[normTitle] = results.length;
+              }
+              results.add(parsed);
             }
           }
         }
