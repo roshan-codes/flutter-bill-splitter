@@ -33,4 +33,35 @@ class SupabaseService {
       debugPrint('Supabase init warning (running in offline/local mode): $e');
     }
   }
+
+  /// Current authenticated user (or null).
+  static User? get currentUser => client?.auth.currentUser;
+
+  /// Whether a user is currently signed in.
+  static bool get isSignedIn => currentUser != null;
+
+  /// Initiates Google OAuth Sign-In.
+  static Future<bool> signInWithGoogle() async {
+    try {
+      final cli = client;
+      if (cli == null) return false;
+
+      return await cli.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kIsWeb ? null : 'ttmm://login-callback',
+      );
+    } catch (e) {
+      debugPrint('Google Sign-In Error: $e');
+      return false;
+    }
+  }
+
+  /// Sign out current user.
+  static Future<void> signOut() async {
+    try {
+      await client?.auth.signOut();
+    } catch (e) {
+      debugPrint('Sign-out error: $e');
+    }
+  }
 }

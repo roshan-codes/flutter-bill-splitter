@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/features/navigation/presentation/screens/main_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/onboarding_page_indicator.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/onboarding_receipt_card.dart';
+import 'package:flutter_bill_splitter/shared/widgets/google_sign_in_button.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Onboarding Screen matching platform design:
@@ -90,33 +90,40 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   itemBuilder: (context, index) {
                     final page = _pages[index];
                     return Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Spacer(flex: 2),
+                        const Spacer(),
 
-                        // Visual Receipt with Rupee symbol
-                        const OnboardingReceiptCard(),
-                        const Spacer(flex: 2),
+                        // Visual Receipt with Rupee symbol (scales down on small screens)
+                        const Flexible(
+                          flex: 6,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: OnboardingReceiptCard(),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
 
                         // Title Headline
                         Text(
                           page['title']!,
                           textAlign: TextAlign.center,
                           style: GoogleFonts.manrope(
-                            fontSize: 28,
+                            fontSize: 26,
                             fontWeight: FontWeight.w800,
                             color: AppColors.textPrimary,
                             letterSpacing: -0.5,
                             height: 1.25,
                           ),
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 10),
 
                         // Subtitle Description
                         Text(
                           page['subtitle']!,
                           textAlign: TextAlign.center,
                           style: GoogleFonts.manrope(
-                            fontSize: 15,
+                            fontSize: 14,
                             fontWeight: FontWeight.w400,
                             color: AppColors.textSecondary,
                             height: 1.4,
@@ -134,19 +141,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 totalPages: _pages.length,
                 currentPage: _currentPage,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 20),
 
               // Primary "Get Started" Button
               SizedBox(
                 width: double.infinity,
-                height: 56,
+                height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.button),
+                      borderRadius: BorderRadius.circular(25),
                     ),
                   ),
                   onPressed: () => _navigateToMain(context),
@@ -160,7 +167,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
+
+              // Sign in with Google Button
+              GoogleSignInButton(
+                onSuccess: () => _navigateToMain(context),
+              ),
+              const SizedBox(height: 6),
 
               // Secondary "I already have an account" button
               TextButton(
