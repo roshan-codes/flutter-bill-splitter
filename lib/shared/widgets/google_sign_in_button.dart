@@ -123,6 +123,9 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
       await StorageService.instance.setBool('is_logged_in_with_google', true);
       await StorageService.instance.setBool('has_completed_onboarding', true);
 
+      // Extract and sync Google profile info
+      await SupabaseService.syncLocalUserData();
+
       if (mounted) {
         if (success) {
           widget.onSuccess?.call();
@@ -147,6 +150,7 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
       debugPrint('Google Sign-In caught error: $e');
       await StorageService.instance.setBool('is_logged_in_with_google', true);
       await StorageService.instance.setBool('has_completed_onboarding', true);
+      await SupabaseService.syncLocalUserData();
       if (mounted) {
         widget.onSuccess?.call();
       }

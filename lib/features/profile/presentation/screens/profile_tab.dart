@@ -39,6 +39,7 @@ class ProfileTab extends StatefulWidget {
 
 class _ProfileTabState extends State<ProfileTab> {
   int? _avatarIndex;
+  String? _avatarUrl;
   String _userName = 'Roshan Badwaik';
   String _userPhone = '+91 9876543210';
 
@@ -50,22 +51,34 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   Future<void> _loadSavedProfile() async {
+    final googleName = SupabaseService.userDisplayName;
+    final googleContact = SupabaseService.userContactInfo;
+    final googleAvatar = SupabaseService.userAvatarUrl;
+
     final savedAvatar =
         await StorageService.instance.getInt('user_profile_avatar_index');
     final savedName =
         await StorageService.instance.getString('user_profile_name');
     final savedPhone =
         await StorageService.instance.getString('user_profile_phone');
+    final savedAvatarUrl =
+        await StorageService.instance.getString('user_profile_avatar_url');
+
     if (mounted) {
       setState(() {
         if (_avatarIndex == null && savedAvatar != null) {
           _avatarIndex = savedAvatar;
         }
-        if (savedName != null && savedName.isNotEmpty) {
-          _userName = savedName;
+        _avatarUrl = googleAvatar ?? savedAvatarUrl;
+
+        final resolvedName = savedName ?? googleName;
+        if (resolvedName != null && resolvedName.isNotEmpty) {
+          _userName = resolvedName;
         }
-        if (savedPhone != null && savedPhone.isNotEmpty) {
-          _userPhone = savedPhone;
+
+        final resolvedContact = savedPhone ?? googleContact;
+        if (resolvedContact != null && resolvedContact.isNotEmpty) {
+          _userPhone = resolvedContact;
         }
       });
     }
@@ -420,6 +433,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 initial:
                     _userName.isNotEmpty ? _userName[0].toUpperCase() : 'R',
                 avatarIndex: _avatarIndex,
+                avatarUrl: _avatarUrl,
                 onTap: () => _openAvatarPicker(context),
               ),
               const SizedBox(height: 24),

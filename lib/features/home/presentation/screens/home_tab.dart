@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/animations/app_motion.dart';
 import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
+import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/add_expense_screen.dart';
@@ -58,10 +59,12 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   Future<void> _loadUserName() async {
+    final googleName = SupabaseService.userDisplayName;
     final savedName =
         await StorageService.instance.getString('user_profile_name');
-    if (mounted && savedName != null && savedName.trim().isNotEmpty) {
-      setState(() => _userName = savedName.trim().split(' ').first);
+    final nameToUse = savedName ?? googleName;
+    if (mounted && nameToUse != null && nameToUse.trim().isNotEmpty) {
+      setState(() => _userName = nameToUse.trim().split(' ').first);
     }
   }
 

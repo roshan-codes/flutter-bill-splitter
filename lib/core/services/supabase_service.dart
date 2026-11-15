@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 
@@ -35,8 +36,23 @@ class SupabaseService {
       );
       _initialized = true;
       debugPrint('Supabase successfully initialized.');
+
+      // Setup auth state listener to automatically sync profile data
+      _setupAuthListener();
     } catch (e) {
       debugPrint('Supabase init warning (running in offline/local mode): $e');
+    }
+  }
+
+  static void _setupAuthListener() {
+    try {
+      client?.auth.onAuthStateChange.listen((data) {
+        if (data.session?.user != null) {
+          syncLocalUserData().ignore();
+        }
+      });
+    } catch (e) {
+      debugPrint('Auth listener note: $e');
     }
   }
 
@@ -45,6 +61,94 @@ class SupabaseService {
 
   /// Whether a user is currently signed in.
   static bool get isSignedIn => currentUser != null;
+
+  /// Retrieves the user's display name from Supabase user metadata or email.
+  static String? get userDisplayName {
+    final u = currentUser;
+    if (u == null) return null;
+    final meta = u.userMetadata;
+    if (meta != null) {
+      final fullName = meta['full_name'] ?? meta['name'];
+      if (fullName is String && fullName.trim().isNotEmpty) {
+        return fullName.trim();
+      }
+    }
+    if (u.email != null && u.email!.isNotEmpty) {
+      return u.email!.split('@').first;
+    }
+    return null;
+  }
+
+  /// Retrieves user contact info (phone or email).
+  static String? get userContactInfo {
+    final u = currentUser;
+    if (u == null) return null;
+    if (u.phone != null && u.phone!.trim().isNotEmpty) {
+      return u.phone!.trim();
+    }
+    if (u.email != null && u.email!.trim().isNotEmpty) {
+      return u.email!.trim();
+    }
+    return null;
+  }
+
+  /// Retrieves user avatar URL from Google OAuth metadata.
+  static String? get userAvatarUrl {
+    final u = currentUser;
+    if (u == null) return null;
+    final meta = u.userMetadata;
+    if (meta != null) {
+      final pic = meta['avatar_url'] ?? meta['picture'];
+      if (pic is String && pic.trim().isNotEmpty) {
+        return pic.trim();
+      }
+    }
+    return null;
+  }
+
+  /// Synchronizes user data from Google/Supabase Auth to local storage and DB.
+  static Future<void> syncLocalUserData() async {
+    final name = userDisplayName;
+    final contact = userContactInfo;
+    final avatar = userAvatarUrl;
+    final u = currentUser;
+
+    if (name != null && name.isNotEmpty) {
+      await StorageService.instance.setString('user_profile_name', name);
+    }
+    if (contact != null && contact.isNotEmpty) {
+      await StorageService.instance.setString('user_profile_phone', contact);
+    }
+    if (u?.email != null && u!.email!.isNotEmpty) {
+      await StorageService.instance.setString('user_profile_email', u.email!);
+    }
+    if (avatar != null && avatar.isNotEmpty) {
+      await StorageService.instance.setString('user_profile_avatar_url', avatar);
+    }
+
+    await syncUserProfileToDb();
+  }
+
+  /// Upserts user profile in the Supabase 'profiles' table.
+  static Future<void> syncUserProfileToDb() async {
+    final u = currentUser;
+    final cli = client;
+    if (u == null || cli == null) return;
+
+    try {
+      await cli.from('profiles').upsert({
+        'id': u.id,
+        'full_name': userDisplayName,
+        'email': u.email,
+        'phone': u.phone,
+        'avatar_url': userAvatarUrl,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      debugPrint('User profile synced to Supabase "profiles" table.');
+    } catch (e) {
+      debugPrint('Supabase profile sync note: $e');
+    }
+  }
 
   /// Initiates Google OAuth Sign-In.
   static Future<bool> signInWithGoogle() async {

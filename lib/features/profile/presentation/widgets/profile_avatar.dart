@@ -10,6 +10,7 @@ class ProfileAvatar extends StatelessWidget {
   final String phone;
   final String initial;
   final int? avatarIndex;
+  final String? avatarUrl;
   final VoidCallback? onTap;
 
   const ProfileAvatar({
@@ -18,6 +19,7 @@ class ProfileAvatar extends StatelessWidget {
     this.phone = '+91 9876543210',
     this.initial = 'R',
     this.avatarIndex,
+    this.avatarUrl,
     this.onTap,
   });
 
@@ -66,6 +68,65 @@ class ProfileAvatar extends StatelessWidget {
               index: avatarIndex!,
               size: 84,
               shape: AvatarShape.circle,
+            ),
+          ),
+          // Camera edit indicator badge
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary,
+                border: Border.all(color: Colors.white, width: 2.0),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.camera_alt_rounded,
+                  size: 13,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    } else if (avatarUrl != null && avatarUrl!.isNotEmpty) {
+      avatarWidget = Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 84,
+            height: 84,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.surfaceSubtle,
+              border: Border.all(color: AppColors.border, width: 1.5),
+            ),
+            child: ClipOval(
+              child: Image.network(
+                avatarUrl!,
+                width: 84,
+                height: 84,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: const Color(0xFF22262E),
+                    child: Center(
+                      child: Text(
+                        initial,
+                        style: GoogleFonts.manrope(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ),
           // Camera edit indicator badge
