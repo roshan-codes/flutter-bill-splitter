@@ -198,10 +198,22 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
         ExpenseCalculator.calculateTotal(_currentMemberExpenses);
     final sharePerPerson = ExpenseCalculator.calculateSharePerPerson(
         totalExpense, widget.members.length);
-    final settlements = ExpenseCalculator.calculateSettlements(
+    final initialSettlements = ExpenseCalculator.calculateSettlements(
       members: widget.members,
       paidAmounts: widget.memberExpenses,
     );
+    // Filter out settlements that have been marked as paid so they disappear from pending list
+    final settlements = initialSettlements.where((st) {
+      final key = '${st.from.name}_${st.to.name}_${st.amount}';
+      if (_paidKeys.contains(key)) return false;
+      final alreadyReimbursed = _currentStory?.expenses.any((e) =>
+              e.category == 'reimbursement' &&
+              e.title.toLowerCase().contains(st.to.name.toLowerCase()) &&
+              e.title.toLowerCase().contains(st.from.name.toLowerCase()) &&
+              (e.amount - st.amount).abs() < 0.01) ??
+          false;
+      return !alreadyReimbursed;
+    }).toList();
     final isIOS = isIOSPlatform(context);
 
     return Scaffold(

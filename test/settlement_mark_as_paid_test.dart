@@ -90,14 +90,25 @@ void main() {
     expect(find.text('Mark as paid'), findsWidgets);
 
     // 2. Click "Mark as paid" on Rahul's settlement (Rahul pays ₹2,000 to Roshan)
-    final markAsPaidButtons = find.widgetWithText(OutlinedButton, 'Mark as paid');
-    expect(markAsPaidButtons, findsWidgets);
+    expect(find.widgetWithText(OutlinedButton, 'Mark as paid'), findsNWidgets(2));
+    expect(find.text('2 payments'), findsOneWidget);
 
-    await tester.tap(markAsPaidButtons.first);
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Mark as paid').first);
     await tester.pumpAndSettle();
 
-    // 3. Verify row now shows "Paid" badge with checkmark
-    expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
+    // 3. Verify paid settlement row immediately disappears from the pending list
+    expect(find.widgetWithText(OutlinedButton, 'Mark as paid'), findsOneWidget);
+    expect(find.text('1 payment'), findsOneWidget);
+
+    // 4. Mark the second settlement as paid as well
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Mark as paid').first);
+    await tester.pumpAndSettle();
+
+    // 5. Verify all rows disappear and empty state "All settled up!" is shown
+    expect(find.widgetWithText(OutlinedButton, 'Mark as paid'), findsNothing);
+    expect(
+        find.text('All settled up! Everyone paid their exact equal share.'),
+        findsOneWidget);
 
     // 4. Verify Story in repository contains reimbursement expense with exact title
     final updatedStory =

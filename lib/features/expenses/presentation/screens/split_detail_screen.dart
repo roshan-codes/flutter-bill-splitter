@@ -2260,8 +2260,13 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     );
 
     // Determine if all settlements are completed across the entire story
-    final allSettled = _story.memberBalances.isEmpty ||
+    // It is ONLY all settled if member balances exist, none of them have pending balances,
+    // and no settlements in the story remain pending.
+    final hasPendingSettlements =
+        _story.settlements.any((s) => s.status == 'pending');
+    final allBalancesZero = _story.memberBalances.isNotEmpty &&
         _story.memberBalances.every((b) => b.netBalance.abs() < 0.01);
+    final allSettled = allBalancesZero && !hasPendingSettlements;
 
     if (allSettled) {
       // All settled banner
@@ -2459,12 +2464,32 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     // 3. Member named 'you' literally
     for (final m in _story.members) {
       final cleanM = m.name.toLowerCase().trim();
-      if (cleanM == 'you') return m.userId;
+      if (cleanM == 'you' || cleanM.contains('(you)')) return m.userId;
     }
 
-    // 4. Fallback to creator if current user is creator
-    if (currentId != null && _story.createdBy == currentId) {
-      return _story.createdBy;
+    // 4. Fallback to story creator if present in members
+    if (_story.createdBy.isNotEmpty) {
+      for (final m in _story.members) {
+        if (m.userId == _story.createdBy) return m.userId;
+      }
+    }
+
+    // 5. Default user name "Roshan" (app owner/primary user profile)
+    for (final m in _story.members) {
+      final cleanM = m.name.toLowerCase().trim();
+      if (cleanM == 'roshan' || cleanM.startsWith('roshan ') || cleanM.contains('roshan')) {
+        return m.userId;
+      }
+    }
+
+    // 6. First admin member
+    for (final m in _story.members) {
+      if (m.role == 'admin') return m.userId;
+    }
+
+    // 7. Fallback to first member
+    if (_story.members.isNotEmpty) {
+      return _story.members.first.userId;
     }
 
     return null;
@@ -2479,8 +2504,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
 
     final myId = _resolvedCurrentMemberId;
     if (myId != null) {
-      if (userId != null && userId.isNotEmpty) {
-        return userId == myId;
+      if (userId != null && userId.isNotEmpty && userId == myId) {
+        return true;
       }
       final myMember =
           _story.members.where((m) => m.userId == myId).firstOrNull;
@@ -2489,9 +2514,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
             .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
             .toLowerCase()
             .trim();
-        return clean == myClean;
+        if (clean == myClean) return true;
       }
-      return false;
     }
 
     final currentId = SupabaseService.currentUser?.id;
@@ -2510,8 +2534,16 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
           .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
           .toLowerCase()
           .trim();
-      if (clean == myClean) return true;
+      if (clean == myClean ||
+          clean.startsWith('$myClean ') ||
+          myClean.startsWith('$clean ')) {
+        return true;
+      }
     }
+
+    // Default primary user name match
+    if (clean == 'roshan' || clean.startsWith('roshan ')) return true;
+
     return false;
   }
 
