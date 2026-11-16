@@ -1,6 +1,7 @@
 import 'package:animations/animations.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -21,6 +22,7 @@ import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/edi
 import 'package:flutter_bill_splitter/features/expenses/presentation/widgets/share_story_invite_sheet.dart';
 import 'package:flutter_bill_splitter/features/expenses/presentation/screens/split_summary_screen.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
+import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
 import 'package:flutter_bill_splitter/shared/widgets/app_avatar.dart';
@@ -52,6 +54,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     with WidgetsBindingObserver {
   int _currentTab = 0; // 0: Overview, 1: Expenses, 2: Members
   int _previousTab = 0;
+  bool _isBottomBarVisible = true;
   late Story _story;
   late final Map<String, double> _memberExpenses;
   String _splitMethod = 'equal';
@@ -1202,16 +1205,32 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
             ),
             const SizedBox(height: 18),
 
-            // Dynamic Body based on selected Segment Tab with SharedAxisTransition
+            // Dynamic Body based on selected Segment Tab with SharedAxisTransition & scroll detection
             Expanded(
-              child: AppTransitions.sharedAxisSwitcher(
-                context: context,
-                transitionKey: _currentTab,
-                reverse: _previousTab > _currentTab,
-                type: SharedAxisTransitionType.horizontal,
-                duration: AppMotion.normal,
-                child:
-                    _buildCurrentTabContent(totalExpenses, perPersonAmount),
+              child: NotificationListener<UserScrollNotification>(
+                onNotification: (notification) {
+                  if (notification.direction == ScrollDirection.reverse) {
+                    // Scrolling down towards bottom of page -> hide Settle & Expense buttons
+                    if (_isBottomBarVisible) {
+                      setState(() => _isBottomBarVisible = false);
+                    }
+                  } else if (notification.direction == ScrollDirection.forward) {
+                    // Scrolling up towards top of page -> show Settle & Expense buttons
+                    if (!_isBottomBarVisible) {
+                      setState(() => _isBottomBarVisible = true);
+                    }
+                  }
+                  return false;
+                },
+                child: AppTransitions.sharedAxisSwitcher(
+                  context: context,
+                  transitionKey: _currentTab,
+                  reverse: _previousTab > _currentTab,
+                  type: SharedAxisTransitionType.horizontal,
+                  duration: AppMotion.normal,
+                  child:
+                      _buildCurrentTabContent(totalExpenses, perPersonAmount),
+                ),
               ),
             ),
           ],
@@ -1228,105 +1247,123 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
       // Members tab: no floating bottom bar in mockup Screen 4
       return null;
     }
-    // Overview (Screen 2) & Expenses (Screen 3) tab: [ ⇄ Settle Up ] [ Add Expense + ]
-    return Container(
-        color: isIOS ? AppColors.iosBackground : AppColors.background,
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-        child: SafeArea(
-          top: false,
-          child: Row(
-            children: [
-              // Left button: ⇄ Settle Up (navigates to SplitSummaryScreen)
-              Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.surface,
-                      foregroundColor: AppColors.textPrimary,
-                      elevation: 0,
-                      side: const BorderSide(
-                          color: AppColors.border, width: 1.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                    ),
-                    onPressed: _navigateToSummary,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final barHeight = 82.0 + bottomPadding;
+
+    // Overview & Expenses tabs: animated [ ⇄ Settle Up ] [ Add Expense + ]
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+      height: _isBottomBarVisible ? barHeight : 0.0,
+      child: AnimatedSlide(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        offset: _isBottomBarVisible ? Offset.zero : const Offset(0, 1.0),
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Container(
+            height: barHeight,
+            color: isIOS ? AppColors.iosBackground : AppColors.background,
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+            child: SafeArea(
+              top: false,
+              child: Row(
+                children: [
+                  // Left button: ⇄ Settle Up (navigates to SplitSummaryScreen)
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.surface,
+                          foregroundColor: AppColors.textPrimary,
+                          elevation: 0,
+                          side: const BorderSide(
+                              color: AppColors.border, width: 1.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                        ),
+                        onPressed: _navigateToSummary,
+                        child: Stack(
+                          alignment: Alignment.center,
                           children: [
-                            const Icon(Icons.sync_alt_rounded,
-                                color: Color(0xFF111111), size: 18),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Settle Up',
-                              style: GoogleFonts.manrope(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF111111),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.sync_alt_rounded,
+                                    color: Color(0xFF111111), size: 18),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Settle Up',
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF111111),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // Hidden semantic text & icon for test compatibility (Confirm Split)
+                            const Opacity(
+                              opacity: 0.0,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text('Confirm Split',
+                                      style: TextStyle(fontSize: 0.1)),
+                                  Icon(Icons.arrow_forward_rounded, size: 0.1),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                        // Hidden semantic text & icon for test compatibility (Confirm Split)
-                        const Opacity(
-                          opacity: 0.0,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('Confirm Split',
-                                  style: TextStyle(fontSize: 0.1)),
-                              Icon(Icons.arrow_forward_rounded, size: 0.1),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-
-              // Right button: Add Expense +
-              Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF111111),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
                       ),
                     ),
-                    onPressed: () => _openAddExpenseSheet(context),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Add Expense',
-                          style: GoogleFonts.manrope(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Right button: Add Expense +
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF111111),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.add_rounded,
-                            color: Colors.white, size: 19),
-                      ],
+                        onPressed: () => _openAddExpenseSheet(context),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Add Expense',
+                              style: GoogleFonts.manrope(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.add_rounded,
+                                color: Colors.white, size: 19),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
-      );
+      ),
+    );
   }
 
   Widget _buildSegmentPill({required int index, required String label}) {
@@ -1338,6 +1375,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
           setState(() {
             _previousTab = _currentTab;
             _currentTab = index;
+            _isBottomBarVisible = true;
           });
           _fetchLatestStoryFromCloud();
         },
@@ -2043,8 +2081,10 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
         physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics()),
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 90),
-        child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Sub-header: "₹10,500 total · 3 expenses"
           Text(
@@ -2201,8 +2241,9 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
               },
             ),
         ],
+          ),
+        ),
       ),
-    ),
     );
   }
 
@@ -2216,8 +2257,10 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
         physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics()),
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 36),
-        child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header: Members (3) on left, + Add on right
           Row(
@@ -2325,8 +2368,9 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
             onTap: () => _confirmDeleteStory(context),
           ),
         ],
+          ),
+        ),
       ),
-    ),
     );
   }
 
@@ -2337,122 +2381,582 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
   ) {
     final isMe = _isCurrentUser(balance.name, balance.userId);
     final displayName = _formatMemberDisplayName(balance.name, isMe);
-    final paid = balance.totalPaid;
-    final share = _getMemberShare(balance, totalExpenses, perPersonAmount);
-    final net = paid - share;
 
-    Color pillBg;
-    Color pillTextColor;
-    String pillTitle;
-    String pillAmount;
+    return InkWell(
+      onTap: () => _showMemberOptionsSheet(context, balance),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            // Circular Avatar (Memo avatar, user photo, or dark circle with initial)
+            AppAvatar(
+              size: 42,
+              name: balance.name,
+              avatarUrl: _story.members
+                  .where((m) =>
+                      m.userId == balance.userId ||
+                      m.name.toLowerCase().trim() ==
+                          balance.name.toLowerCase().trim())
+                  .firstOrNull
+                  ?.avatar ??
+                  AvatarResolver.getDefaultAvatarForName(balance.name),
+              isCurrentUser: isMe,
+              backgroundColor: const Color(0xFF1E1E1E),
+              textColor: Colors.white,
+              fontSize: 16,
+            ),
+            const SizedBox(width: 14),
 
-    if (net > 0.001) {
-      pillBg = const Color(0xFFE8F8EE);
-      pillTextColor = const Color(0xFF16A34A);
-      pillTitle = 'Gets';
-      pillAmount = '₹${_formatAmount(net)}';
-    } else if (net < -0.001) {
-      pillBg = const Color(0xFFFEECEB);
-      pillTextColor = const Color(0xFFE53935);
-      pillTitle = 'Owes';
-      pillAmount = '₹${_formatAmount(-net)}';
-    } else {
-      pillBg = const Color(0xFFF4F4F5);
-      pillTextColor = AppColors.textSecondary;
-      pillTitle = 'Settled';
-      pillAmount = '₹0';
-    }
+            // Member Name
+            Expanded(
+              child: Text(
+                displayName,
+                style: GoogleFonts.manrope(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: Color(0xFF9CA3AF),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          // Circular Avatar (Memo avatar, user photo, or dark circle with initial)
-          AppAvatar(
-            size: 42,
-            name: balance.name,
-            avatarUrl: _story.members
-                .where((m) =>
-                    m.userId == balance.userId ||
-                    m.name.toLowerCase().trim() ==
-                        balance.name.toLowerCase().trim())
-                .firstOrNull
-                ?.avatar ??
-                AvatarResolver.getDefaultAvatarForName(balance.name),
-            isCurrentUser: isMe,
-            backgroundColor: const Color(0xFF1E1E1E),
-            textColor: Colors.white,
-            fontSize: 16,
-          ),
-          const SizedBox(width: 14),
+  void _showMemberOptionsSheet(
+      BuildContext context, StoryMemberBalance balance) {
+    HapticFeedback.lightImpact();
+    final member = _story.members.firstWhere(
+      (m) =>
+          m.userId == balance.userId ||
+          m.name.toLowerCase().trim() == balance.name.toLowerCase().trim(),
+      orElse: () => StoryMember(
+        userId: balance.userId,
+        name: balance.name,
+        joinedAt: '',
+      ),
+    );
 
-          // Name and Paid / Share subtitle
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    final isMe = _isCurrentUser(member.name, member.userId);
+    // Manual member: non-current user added to this story
+    final isManual = !isMe;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 38,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // Member Avatar & Name
+            Row(
               children: [
-                Text(
-                  displayName,
+                AppAvatar(
+                  size: 52,
+                  name: member.name,
+                  avatarUrl: member.avatar ??
+                      AvatarResolver.getDefaultAvatarForName(member.name),
+                  isCurrentUser: isMe,
+                  backgroundColor: const Color(0xFF1E1E1E),
+                  textColor: Colors.white,
+                  fontSize: 18,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    _formatMemberDisplayName(member.name, isMe),
+                    style: GoogleFonts.manrope(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 22),
+            const Divider(color: Color(0xFFF3F4F6), height: 1),
+            const SizedBox(height: 12),
+
+            // Option 1: Edit Name or Number (if added manually)
+            if (isManual) ...[
+              ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.edit_outlined,
+                    color: AppColors.textPrimary,
+                    size: 20,
+                  ),
+                ),
+                title: Text(
+                  'Edit name or number',
                   style: GoogleFonts.manrope(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  'Paid ₹${_formatAmount(paid)} · Share ₹${_formatAmount(share)}',
-                  style: GoogleFonts.manrope(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
-                  ),
+                trailing: const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFF9CA3AF),
+                  size: 20,
                 ),
-              ],
-            ),
-          ),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _showEditMemberDialog(context, member);
+                },
+              ),
+              const SizedBox(height: 6),
+            ],
 
-          // Status Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: pillBg,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  pillTitle,
-                  style: GoogleFonts.manrope(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: pillTextColor,
+            // Option 2: Remove from Group
+            if (!isMe) ...[
+              ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEECEB),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.person_remove_outlined,
+                    color: AppColors.danger,
+                    size: 20,
                   ),
                 ),
-                const SizedBox(height: 1),
-                Text(
-                  pillAmount,
+                title: Text(
+                  'Remove from group',
                   style: GoogleFonts.manrope(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: pillTextColor,
-                    letterSpacing: -0.2,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.danger,
                   ),
                 ),
-              ],
+                trailing: const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFF9CA3AF),
+                  size: 20,
+                ),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _confirmRemoveMember(context, member);
+                },
+              ),
+            ] else ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'You are the owner of this story and cannot be removed.',
+                  style: GoogleFonts.manrope(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textTertiary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmRemoveMember(BuildContext context, StoryMember member) {
+    HapticFeedback.mediumImpact();
+    AppTransitions.showFadeScaleDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          'Remove ${member.name}?',
+          style: GoogleFonts.manrope(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to remove ${member.name} from ${_story.title}? Their shares will be removed from this story.',
+          style: GoogleFonts.manrope(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.manrope(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
-          const SizedBox(width: 8),
-          const Icon(
-            Icons.chevron_right_rounded,
-            size: 20,
-            color: Color(0xFF9CA3AF),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await _removeMemberFromStory(member);
+            },
+            child: Text(
+              'Remove',
+              style: GoogleFonts.manrope(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _removeMemberFromStory(StoryMember member) async {
+    final updatedMembers = _story.members
+        .where((m) =>
+            m.userId != member.userId &&
+            m.name.toLowerCase().trim() != member.name.toLowerCase().trim())
+        .toList();
+
+    final updatedBalances = _story.memberBalances
+        .where((b) =>
+            b.userId != member.userId &&
+            b.name.toLowerCase().trim() != member.name.toLowerCase().trim())
+        .toList();
+
+    final updatedExpenses = _story.expenses.map((e) {
+      final newParticipants = e.participants
+          .where((p) => p != member.name && p != member.userId)
+          .toList();
+      final newShares = e.shares
+          .where((s) => s.userId != member.userId && s.userId != member.name)
+          .toList();
+      return StoryExpense(
+        expenseId: e.expenseId,
+        title: e.title,
+        category: e.category,
+        amount: e.amount,
+        paidBy: e.paidBy,
+        splitType: e.splitType,
+        participants:
+            newParticipants.isNotEmpty ? newParticipants : e.participants,
+        shares: newShares,
+        date: e.date,
+        note: e.note,
+      );
+    }).toList();
+
+    final newStory = _story.copyWith(
+      members: updatedMembers,
+      memberBalances: updatedBalances,
+      expenses: updatedExpenses,
+    );
+
+    setState(() {
+      _story = newStory;
+    });
+
+    await _recalculateBalances();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${member.name} removed from group'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _showEditMemberDialog(BuildContext context, StoryMember member) {
+    HapticFeedback.lightImpact();
+    final existingFriend = FriendsRepository.instance.friends.firstWhere(
+      (f) => f.name.toLowerCase().trim() == member.name.toLowerCase().trim(),
+      orElse: () => Friend(name: member.name, phone: ''),
+    );
+
+    final nameController = TextEditingController(text: member.name);
+    final phoneController = TextEditingController(text: existingFriend.phone);
+    final formKey = GlobalKey<FormState>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 38,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5E7EB),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Edit Member Details',
+                  style: GoogleFonts.manrope(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Name field
+                Text(
+                  'Member Name',
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: nameController,
+                  autofocus: true,
+                  style: GoogleFonts.manrope(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Enter name...',
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    ),
+                  ),
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) {
+                      return 'Name cannot be empty';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 14),
+
+                // Phone field
+                Text(
+                  'Mobile Number (optional)',
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: phoneController,
+                  keyboardType: TextInputType.phone,
+                  style: GoogleFonts.manrope(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: '+91 98765 43210',
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Save button
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF111111),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    onPressed: () async {
+                      if (formKey.currentState?.validate() ?? false) {
+                        final newName = nameController.text.trim();
+                        final newPhone = phoneController.text.trim();
+                        Navigator.of(ctx).pop();
+                        await _updateMemberDetails(member, newName, newPhone);
+                      }
+                    },
+                    child: Text(
+                      'Save Changes',
+                      style: GoogleFonts.manrope(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _updateMemberDetails(
+    StoryMember member,
+    String newName,
+    String newPhone,
+  ) async {
+    final oldName = member.name;
+    final newAvatar = AvatarResolver.getDefaultAvatarForName(newName);
+
+    final updatedMembers = _story.members.map((m) {
+      if (m.userId == member.userId ||
+          m.name.toLowerCase() == oldName.toLowerCase()) {
+        return StoryMember(
+          userId: m.userId,
+          name: newName,
+          avatar: newAvatar,
+          role: m.role,
+          joinedAt: m.joinedAt,
+        );
+      }
+      return m;
+    }).toList();
+
+    final updatedBalances = _story.memberBalances.map((b) {
+      if (b.userId == member.userId ||
+          b.name.toLowerCase() == oldName.toLowerCase()) {
+        return StoryMemberBalance(
+          userId: b.userId,
+          name: newName,
+          totalPaid: b.totalPaid,
+          totalShare: b.totalShare,
+          netBalance: b.netBalance,
+          status: b.status,
+        );
+      }
+      return b;
+    }).toList();
+
+    final updatedExpenses = _story.expenses.map((e) {
+      final newPaidBy = (e.paidBy == oldName || e.paidBy == member.userId)
+          ? newName
+          : e.paidBy;
+      final newParticipants = e.participants
+          .map((p) => (p == oldName || p == member.userId) ? newName : p)
+          .toList();
+      return StoryExpense(
+        expenseId: e.expenseId,
+        title: e.title,
+        category: e.category,
+        amount: e.amount,
+        paidBy: newPaidBy,
+        splitType: e.splitType,
+        participants: newParticipants,
+        shares: e.shares,
+        date: e.date,
+        note: e.note,
+      );
+    }).toList();
+
+    // Also update FriendsRepository so the new name/number is saved
+    FriendsRepository.instance
+        .addFriend(Friend(name: newName, phone: newPhone));
+
+    final newStory = _story.copyWith(
+      members: updatedMembers,
+      memberBalances: updatedBalances,
+      expenses: updatedExpenses,
+    );
+
+    setState(() {
+      _story = newStory;
+    });
+
+    await _recalculateBalances();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Updated $newName successfully'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Widget _buildOptionTile({
@@ -3064,6 +3568,17 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                             AppAvatar(
                               name: member.name,
                               size: 34,
+                              avatarUrl: _story.members
+                                  .where((m) =>
+                                      m.userId == member.userId ||
+                                      m.name.toLowerCase().trim() ==
+                                          member.name.toLowerCase().trim())
+                                  .firstOrNull
+                                  ?.avatar ??
+                                  AvatarResolver.getDefaultAvatarForName(
+                                      member.name),
+                              isCurrentUser:
+                                  _isCurrentUser(member.name, member.userId),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -3303,6 +3818,17 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                             AppAvatar(
                               name: member.name,
                               size: 34,
+                              avatarUrl: _story.members
+                                  .where((m) =>
+                                      m.userId == member.userId ||
+                                      m.name.toLowerCase().trim() ==
+                                          member.name.toLowerCase().trim())
+                                  .firstOrNull
+                                  ?.avatar ??
+                                  AvatarResolver.getDefaultAvatarForName(
+                                      member.name),
+                              isCurrentUser:
+                                  _isCurrentUser(member.name, member.userId),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -3494,6 +4020,17 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                             AppAvatar(
                               name: member.name,
                               size: 34,
+                              avatarUrl: _story.members
+                                  .where((m) =>
+                                      m.userId == member.userId ||
+                                      m.name.toLowerCase().trim() ==
+                                          member.name.toLowerCase().trim())
+                                  .firstOrNull
+                                  ?.avatar ??
+                                  AvatarResolver.getDefaultAvatarForName(
+                                      member.name),
+                              isCurrentUser:
+                                  _isCurrentUser(member.name, member.userId),
                             ),
                             const SizedBox(width: 12),
                             Expanded(

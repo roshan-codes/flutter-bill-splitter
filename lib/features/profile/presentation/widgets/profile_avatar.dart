@@ -38,7 +38,7 @@ class ProfileAvatar extends StatelessWidget {
             height: 84,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.surfaceSubtle,
+              color: Colors.white,
               border: Border.all(color: AppColors.border, width: 1.5),
             ),
             child: ClipOval(
@@ -105,7 +105,7 @@ class ProfileAvatar extends StatelessWidget {
             height: 84,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.surfaceSubtle,
+              color: Colors.white,
               border: Border.all(color: AppColors.border, width: 1.5),
             ),
             child: ClipOval(

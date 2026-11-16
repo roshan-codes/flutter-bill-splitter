@@ -13,6 +13,7 @@ import 'package:flutter_bill_splitter/features/home/domain/models/recent_expense
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/active_story_card.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/home_header.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/recent_expenses_card.dart';
+import 'package:flutter_bill_splitter/features/profile/presentation/screens/profile_tab.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
 import 'package:flutter_bill_splitter/features/stories/presentation/screens/create_story_screen.dart';
@@ -33,6 +34,8 @@ class HomeTab extends StatefulWidget {
   final double? youOweAmount;
   final List<RecentExpense>? customExpenses;
   final String? userName;
+  final VoidCallback? onOpenProfile;
+  final VoidCallback? onNavigateToActivity;
 
   const HomeTab({
     super.key,
@@ -46,6 +49,8 @@ class HomeTab extends StatefulWidget {
     this.youOweAmount,
     this.customExpenses,
     this.userName,
+    this.onOpenProfile,
+    this.onNavigateToActivity,
   });
 
   @override
@@ -54,6 +59,8 @@ class HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<HomeTab> {
   String? _resolvedName;
+  int? _avatarIndex;
+  String? _avatarUrl;
 
   String get _displayName {
     if (widget.userName != null && widget.userName!.trim().isNotEmpty) {
@@ -68,16 +75,30 @@ class _HomeTabState extends State<HomeTab> {
   @override
   void initState() {
     super.initState();
-    _loadUserName();
+    _loadUserData();
   }
 
-  Future<void> _loadUserName() async {
+  Future<void> _loadUserData() async {
     final googleName = SupabaseService.userDisplayName;
     final savedName =
         await StorageService.instance.getString('user_profile_name');
     final nameToUse = googleName ?? savedName;
-    if (mounted && nameToUse != null && nameToUse.trim().isNotEmpty) {
-      setState(() => _resolvedName = nameToUse.trim().split(' ').first);
+
+    final savedAvatarIndex =
+        await StorageService.instance.getInt('user_profile_avatar_index') ??
+            SupabaseService.userAvatarIndex;
+    final savedAvatarUrl =
+        await StorageService.instance.getString('user_profile_avatar_url') ??
+            SupabaseService.userAvatarUrl;
+
+    if (mounted) {
+      setState(() {
+        if (nameToUse != null && nameToUse.trim().isNotEmpty) {
+          _resolvedName = nameToUse.trim().split(' ').first;
+        }
+        _avatarIndex = savedAvatarIndex;
+        _avatarUrl = savedAvatarUrl;
+      });
     }
   }
 
@@ -119,13 +140,15 @@ class _HomeTabState extends State<HomeTab> {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(
                 parent: BouncingScrollPhysics()),
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 150),
             child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: Greeting, user name, waving hand, and circular bell icon button
+              // Header: Greeting, user name, waving hand, and profile avatar button
               HomeHeader(
                 userName: _displayName,
+                avatarIndex: _avatarIndex,
+                avatarUrl: _avatarUrl,
                 onNotificationPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -133,6 +156,21 @@ class _HomeTabState extends State<HomeTab> {
                       duration: Duration(seconds: 2),
                     ),
                   );
+                },
+                onProfilePressed: () {
+                  if (widget.onOpenProfile != null) {
+                    widget.onOpenProfile!();
+                  } else {
+                    Navigator.of(context).push(
+                      AppTransitions.sharedAxisRoute(
+                        type: SharedAxisTransitionType.horizontal,
+                        duration: AppMotion.medium,
+                        builder: (context) => const ProfileTab(),
+                      ),
+                    ).then((_) {
+                      _loadUserData();
+                    });
+                  }
                 },
               ),
               const SizedBox(height: 24),
@@ -340,6 +378,7 @@ class _HomeTabState extends State<HomeTab> {
         // Recent Expenses Card
         RecentExpensesCard(
           customExpenses: widget.customExpenses,
+          onNavigateToActivity: widget.onNavigateToActivity,
         ),
       ],
     );

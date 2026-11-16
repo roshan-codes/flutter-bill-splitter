@@ -1,20 +1,26 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
-import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
+import 'package:flutter_bill_splitter/core/utils/avatar_resolver.dart';
+import 'package:flutter_bill_splitter/shared/widgets/app_avatar.dart';
 
-/// Top header for Home Tab: lightning badge, notification bell, and greeting.
+/// Top header for Home Tab: greeting and profile avatar button.
 /// Adheres to design.md Section 2, 3, 8 & 10.
 class HomeHeader extends StatelessWidget {
   final String userName;
+  final int? avatarIndex;
+  final String? avatarUrl;
   final VoidCallback? onNotificationPressed;
+  final VoidCallback? onProfilePressed;
 
   const HomeHeader({
     super.key,
     this.userName = 'Roshan',
+    this.avatarIndex,
+    this.avatarUrl,
     this.onNotificationPressed,
+    this.onProfilePressed,
   });
 
   String _getGreeting() {
@@ -30,8 +36,6 @@ class HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isIOS = isIOSPlatform(context);
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,27 +45,34 @@ class HomeHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // App Name: TTMM Club
-              Text(
-                'TTMM Club',
-                style: GoogleFonts.manrope(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                  letterSpacing: -0.2,
+              // App Name: TTMM Club micro-kicker badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSubtle,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'TTMM CLUB',
+                  style: GoogleFonts.manrope(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textSecondary,
+                    letterSpacing: 1.1,
+                  ),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Text(
                 _getGreeting(),
                 style: GoogleFonts.manrope(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                  letterSpacing: -0.4,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                  letterSpacing: -0.3,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Row(
                 children: [
                   Text(
@@ -84,41 +95,46 @@ class HomeHeader extends StatelessWidget {
           ),
         ),
 
-        // Notification Bell Icon Button
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.surface,
-            border: Border.all(
-              color: AppColors.border,
-              width: 1.0,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 6,
-                offset: const Offset(0, 1),
+        // Actions: Profile Avatar Button
+        Tooltip(
+          message: 'Profile',
+          child: GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              onProfilePressed?.call();
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                border: Border.all(
+                  color: AppColors.border,
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            shape: const CircleBorder(),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () {
-                HapticFeedback.lightImpact();
-                onNotificationPressed?.call();
-              },
               child: Center(
-                child: Icon(
-                  isIOS
-                      ? CupertinoIcons.bell
-                      : Icons.notifications_none_rounded,
-                  color: AppColors.textPrimary,
-                  size: 22,
+                child: ClipOval(
+                  child: AppAvatar(
+                    size: 38,
+                    name: userName,
+                    avatarIndex: avatarIndex,
+                    avatarUrl: avatarUrl ??
+                        (avatarIndex != null
+                            ? 'assets/avatars/memo_${(avatarIndex! % 35) + 1}.png'
+                            : AvatarResolver.getDefaultAvatarForName(userName)),
+                    isCurrentUser: true,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ),

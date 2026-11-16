@@ -120,10 +120,8 @@ class ActiveStoryCard extends StatelessWidget {
       ),
       child: AppAvatar(
         size: 32,
-        avatarUrl: isMe
-            ? null
-            : (member.avatar ??
-                AvatarResolver.getDefaultAvatarForName(member.name)),
+        avatarUrl: member.avatar ??
+            AvatarResolver.getDefaultAvatarForName(member.name),
         name: member.name,
         isCurrentUser: isMe,
         border: Border.all(color: Colors.white, width: 2.0),
@@ -164,6 +162,45 @@ class ActiveStoryCard extends StatelessWidget {
         ? story.summary.totalExpenses
         : story.expenses.fold<double>(0.0, (sum, e) => sum + e.amount);
     final memberCount = story.members.isNotEmpty ? story.members.length : 1;
+
+    final resolvedMeId = _resolveCurrentMemberId();
+    StoryMemberBalance? myBalance;
+    if (resolvedMeId != null && story.memberBalances.isNotEmpty) {
+      final myClean = (StorageService.instance.getStringSync('user_profile_name') ??
+              SupabaseService.userDisplayName ??
+              '')
+          .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+          .toLowerCase()
+          .trim();
+      myBalance = story.memberBalances
+          .where((b) =>
+              b.userId == resolvedMeId ||
+              b.name.toLowerCase().trim() == 'you' ||
+              (myClean.isNotEmpty && b.name.toLowerCase().trim() == myClean))
+          .firstOrNull;
+    }
+
+    Widget? personalBadge;
+    if (myBalance != null && myBalance.netBalance.abs() > 0.01) {
+      final isPositive = myBalance.netBalance > 0;
+      personalBadge = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isPositive ? const Color(0xFFE8F8EE) : const Color(0xFFFEECEB),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          isPositive
+              ? 'Gets ₹${_formatAmount(myBalance.netBalance)}'
+              : 'Owes ₹${_formatAmount(myBalance.netBalance.abs())}',
+          style: GoogleFonts.manrope(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: isPositive ? const Color(0xFF1E8E3E) : const Color(0xFFDC2626),
+          ),
+        ),
+      );
+    }
 
     return Material(
       color: Colors.transparent,
@@ -300,29 +337,38 @@ class ActiveStoryCard extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // Bottom Row: Overlapping Member Avatars + Active Status Pill
+              // Bottom Row: Overlapping Member Avatars + Active Status Pill & Personal Badge
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   _buildAvatarStack(),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      story.status.isNotEmpty
-                          ? '${story.status[0].toUpperCase()}${story.status.substring(1)}'
-                          : 'Active',
-                      style: GoogleFonts.manrope(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF2E7D32),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (personalBadge != null) ...[
+                        personalBadge,
+                        const SizedBox(width: 8),
+                      ],
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F5E9),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          story.status.isNotEmpty
+                              ? '${story.status[0].toUpperCase()}${story.status.substring(1)}'
+                              : 'Active',
+                          style: GoogleFonts.manrope(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF2E7D32),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),

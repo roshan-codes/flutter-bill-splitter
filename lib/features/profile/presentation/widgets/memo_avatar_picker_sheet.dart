@@ -173,11 +173,14 @@ class _MemoAvatarPickerSheetState extends State<MemoAvatarPickerSheet> {
                           // High-fidelity Memoji image (behind)
                           IgnorePointer(
                             child: ClipOval(
-                              child: Image.asset(
-                                'assets/avatars/memo_${(index % 35) + 1}.png',
-                                width: 56,
-                                height: 56,
-                                fit: BoxFit.cover,
+                              child: Container(
+                                color: Colors.white,
+                                child: Image.asset(
+                                  'assets/avatars/memo_${(index % 35) + 1}.png',
+                                  width: 56,
+                                  height: 56,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
                           ),

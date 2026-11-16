@@ -50,7 +50,12 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
 
   late final String _storyId;
   String _creatorName = 'You';
+  String _selectedCoverEmoji = '🌴';
   final List<String> _selectedMembers = [];
+
+  static const List<String> _popularEmojis = [
+    '🌴', '✈️', '🏖️', '🏔️', '🎉', '🍕', '🚗', '⛺', '🏠', '🎬', '☕', '🍻'
+  ];
 
   @override
   void initState() {
@@ -660,7 +665,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
       storyId: _storyId,
       title: name,
       description: desc,
-      coverEmoji: '🌴',
+      coverEmoji: _selectedCoverEmoji,
       currency: 'INR',
       status: 'active',
       createdBy: currentUserId,
@@ -771,6 +776,64 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Field 0: Cover Icon
+                    Text(
+                      'Cover Icon',
+                      style: GoogleFonts.manrope(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF111111),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 48,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _popularEmojis.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final emoji = _popularEmojis[index];
+                          final isSelected = emoji == _selectedCoverEmoji;
+                          return GestureDetector(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              setState(() => _selectedCoverEmoji = emoji);
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? const Color(0xFFE8EEFF)
+                                    : Colors.white,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? const Color(0xFF5B4DFF)
+                                      : const Color(0xFFE5E7EB),
+                                  width: isSelected ? 2 : 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.025),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Text(emoji,
+                                    style: const TextStyle(fontSize: 20)),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
                     // Field 1: Story name
                     Text(
                       'Story name',
@@ -799,12 +862,21 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.people_outline_rounded,
-                            size: 22,
-                            color: Color(0xFF6B7280),
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Center(
+                              child: Text(
+                                _selectedCoverEmoji,
+                                style: const TextStyle(fontSize: 18),
+                              ),
+                            ),
                           ),
-                          const SizedBox(width: 14),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: TextField(
                               controller: _nameController,
@@ -816,11 +888,17 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                               decoration: InputDecoration(
                                 isDense: true,
                                 border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                errorBorder: InputBorder.none,
+                                disabledBorder: InputBorder.none,
+                                filled: false,
+                                contentPadding: EdgeInsets.zero,
                                 hintText: 'Mumbai Trip',
                                 hintStyle: GoogleFonts.manrope(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF111111),
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF9CA3AF),
                                 ),
                               ),
                             ),
@@ -867,6 +945,12 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                           decoration: InputDecoration(
                             isDense: true,
                             border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            errorBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            filled: false,
+                            contentPadding: EdgeInsets.zero,
                             hintText: 'Trip, stay, food, travel etc.',
                             hintStyle: GoogleFonts.manrope(
                               fontSize: 15,
@@ -1037,80 +1121,6 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 8),
-                              minimumSize: const Size(0, 38),
-                              side: const BorderSide(color: Color(0xFFE5E7EB)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              foregroundColor: const Color(0xFF374151),
-                            ),
-                            icon: const Icon(Icons.contacts_rounded,
-                                size: 15, color: Color(0xFF111111)),
-                            label: Text(
-                              'Contacts',
-                              style: GoogleFonts.manrope(
-                                  fontSize: 12, fontWeight: FontWeight.w700),
-                            ),
-                            onPressed: () => _openContactsPicker(),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 8),
-                              minimumSize: const Size(0, 38),
-                              side: const BorderSide(color: Color(0xFFE5E7EB)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              foregroundColor: const Color(0xFF374151),
-                            ),
-                            icon: const Icon(Icons.edit_outlined,
-                                size: 15, color: Color(0xFF111111)),
-                            label: Text(
-                              'Manual',
-                              style: GoogleFonts.manrope(
-                                  fontSize: 12, fontWeight: FontWeight.w700),
-                            ),
-                            onPressed: _showAddMemberModal,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 8),
-                              minimumSize: const Size(0, 38),
-                              side: const BorderSide(color: Color(0xFFBBF7D0)),
-                              backgroundColor: const Color(0xFFF0FDF4),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              foregroundColor: const Color(0xFF15803D),
-                            ),
-                            icon: const Icon(Icons.link_rounded,
-                                size: 16, color: Color(0xFF16A34A)),
-                            label: Text(
-                              'Invite Link',
-                              style: GoogleFonts.manrope(
-                                  fontSize: 12, fontWeight: FontWeight.w700),
-                            ),
-                            onPressed: _copyInviteLink,
-                          ),
-                        ),
-                      ],
-                    ),
                     const SizedBox(height: 32),
                   ],
                 ),
@@ -1168,9 +1178,10 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
     return AppAvatar(
       size: 40,
       name: name,
+      avatarUrl: AvatarResolver.getDefaultAvatarForName(name),
       isCurrentUser: isMe,
       border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
-      backgroundColor: const Color(0xFF111111),
+      backgroundColor: Colors.white,
       textColor: Colors.white,
       fontSize: 15,
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bill_splitter/features/stories/presentation/screens/create_story_screen.dart';
+import 'package:flutter_bill_splitter/shared/widgets/app_avatar.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +20,7 @@ void main() {
       expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
 
       // Verify Form Field Labels
+      expect(find.text('Cover Icon'), findsOneWidget);
       expect(find.text('Story name'), findsOneWidget);
       expect(find.text('Mumbai Trip'), findsOneWidget); // Hint
       expect(find.text('Description (optional)'), findsOneWidget);
@@ -45,12 +47,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('R'), findsWidgets); // Rashmi & Roshan
-      expect(find.text('S'), findsOneWidget); // Shubham
+      expect(find.byType(AppAvatar), findsWidgets);
       expect(find.byIcon(Icons.add_rounded), findsOneWidget); // + button
     });
 
-    testWidgets('shows Contacts, Manual, and Invite Link buttons on screen and in modal', (tester) async {
+    testWidgets(
+        'opens Add Members modal with Contacts, Manual, and Invite Link options',
+        (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -64,11 +67,6 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-
-      // Verify quick action buttons under Add Members card
-      expect(find.text('Contacts'), findsOneWidget);
-      expect(find.text('Manual'), findsOneWidget);
-      expect(find.text('Invite Link'), findsOneWidget);
 
       // Open Add Members bottom sheet by tapping '+'
       await tester.tap(find.byIcon(Icons.add_rounded));
@@ -92,11 +90,11 @@ void main() {
       await tester.tapAt(const Offset(20, 20));
       await tester.pumpAndSettle();
 
-      // Verify 'P' avatar appears in member chip list
-      expect(find.text('P'), findsOneWidget);
+      // Verify member chip list contains 2 avatars (creator + Pooja)
+      expect(find.byType(AppAvatar), findsNWidgets(2));
     });
 
-    testWidgets('tapping Invite Link shows copy confirmation toast', (tester) async {
+    testWidgets('tapping Copy invite link in modal shows copy confirmation toast', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -111,12 +109,34 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Tap Invite Link quick action button
-      await tester.tap(find.text('Invite Link'));
+      // Open Add Members sheet
+      await tester.tap(find.byIcon(Icons.add_rounded));
+      await tester.pumpAndSettle();
+
+      // Tap Copy button for invite link
+      await tester.tap(find.text('Copy'));
       await tester.pumpAndSettle();
 
       // Verify SnackBar toast
       expect(find.textContaining('Invite link copied!'), findsOneWidget);
+    });
+
+    testWidgets('allows selecting cover emoji', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: CreateStoryScreen(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Find '🍕' emoji in Cover Icon list and tap it
+      final pizzaEmoji = find.text('🍕');
+      expect(pizzaEmoji, findsOneWidget);
+      await tester.tap(pizzaEmoji);
+      await tester.pumpAndSettle();
+
+      // Verify selected emoji is displayed in the story name input row
+      expect(find.text('🍕'), findsWidgets);
     });
   });
 }

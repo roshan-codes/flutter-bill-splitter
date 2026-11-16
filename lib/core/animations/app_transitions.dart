@@ -72,6 +72,10 @@ class AppTransitions {
     return PageTransitionSwitcher(
       duration: effectiveDuration,
       reverse: reverse,
+      layoutBuilder: (entries) => Stack(
+        alignment: Alignment.topCenter,
+        children: entries,
+      ),
       transitionBuilder: (child, primaryAnimation, secondaryAnimation) {
         return SharedAxisTransition(
           animation: primaryAnimation,

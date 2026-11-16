@@ -87,13 +87,13 @@ class _ProfileTabState extends State<ProfileTab> {
 
     if (mounted) {
       setState(() {
-        _avatarIndex ??= savedAvatar ?? dbAvatarIndex;
-        _avatarUrl = googleAvatar ?? savedAvatarUrl;
-
         final resolvedName = widget.initialUserName ?? googleName ?? savedName;
         if (resolvedName != null && resolvedName.isNotEmpty) {
           _userName = resolvedName;
         }
+
+        _avatarIndex ??= savedAvatar ?? dbAvatarIndex;
+        _avatarUrl = googleAvatar ?? savedAvatarUrl;
 
         final resolvedEmail = widget.initialEmail ?? googleEmail ?? savedEmail;
         if (resolvedEmail != null && resolvedEmail.isNotEmpty) {

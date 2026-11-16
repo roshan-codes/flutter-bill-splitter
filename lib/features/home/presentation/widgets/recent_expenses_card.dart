@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
+import 'package:flutter_bill_splitter/core/utils/expense_icon_resolver.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_detail_sheet.dart';
@@ -16,11 +17,13 @@ import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 class RecentExpensesCard extends StatelessWidget {
   final List<RecentExpense>? customExpenses;
   final void Function(RecentExpense expense)? onExpenseTap;
+  final VoidCallback? onNavigateToActivity;
 
   const RecentExpensesCard({
     super.key,
     this.customExpenses,
     this.onExpenseTap,
+    this.onNavigateToActivity,
   });
 
   /// Sample expenses available for tests or preview.
@@ -32,8 +35,8 @@ class RecentExpensesCard extends StatelessWidget {
       memberCount: 3,
       amount: 549.0,
       icon: Icons.restaurant_rounded,
-      iconBgColor: AppColors.surfaceSubtle,
-      iconColor: AppColors.textPrimary,
+      iconBgColor: Color(0xFFFFF3E0),
+      iconColor: Color(0xFFE65100),
     ),
     RecentExpense(
       id: 'sample_2',
@@ -42,8 +45,8 @@ class RecentExpensesCard extends StatelessWidget {
       memberCount: 4,
       amount: 2800.0,
       icon: Icons.local_gas_station_rounded,
-      iconBgColor: AppColors.warningSoft,
-      iconColor: AppColors.warning,
+      iconBgColor: Color(0xFFFFF8E1),
+      iconColor: Color(0xFFF57F17),
     ),
     RecentExpense(
       id: 'sample_3',
@@ -52,8 +55,8 @@ class RecentExpensesCard extends StatelessWidget {
       memberCount: 2,
       amount: 620.0,
       icon: Icons.shopping_bag_outlined,
-      iconBgColor: AppColors.surfaceSubtle,
-      iconColor: AppColors.textPrimary,
+      iconBgColor: Color(0xFFE0F2F1),
+      iconColor: Color(0xFF00695C),
     ),
   ];
 
@@ -62,15 +65,51 @@ class RecentExpensesCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section Header
-        Text(
-          'Recent Expenses',
-          style: GoogleFonts.manrope(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-            letterSpacing: -0.3,
-          ),
+        // Section Header Row: Title + "View all →"
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Recent Expenses',
+              style: GoogleFonts.manrope(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+                letterSpacing: -0.3,
+              ),
+            ),
+            if (onNavigateToActivity != null)
+              InkWell(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  onNavigateToActivity!();
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'View all',
+                        style: GoogleFonts.manrope(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF5B4DFF),
+                        ),
+                      ),
+                      const SizedBox(width: 3),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 14,
+                        color: Color(0xFF5B4DFF),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 14),
 
@@ -80,15 +119,31 @@ class RecentExpensesCard extends StatelessWidget {
           builder: (context, _) {
             final activities = ActivityRepository.instance.activities;
             final dynamicExpenses = activities.map((a) {
+              final icon = ExpenseIconResolver.resolveIcon(a.groupName);
+              final iconBg = ExpenseIconResolver.resolveBgColor(icon);
+              final iconColor = ExpenseIconResolver.resolveIconColor(icon);
+
+              // Find primary payer
+              String? payer;
+              if (a.memberExpenses.isNotEmpty) {
+                final sorted = a.memberExpenses.entries.toList()
+                  ..sort((x, y) => y.value.compareTo(x.value));
+                if (sorted.isNotEmpty && sorted.first.value > 0) {
+                  payer = sorted.first.key;
+                }
+              }
+
               return RecentExpense(
                 id: a.id,
                 title: a.groupName,
                 category: 'Split',
                 memberCount: a.members.length,
                 amount: a.totalAmount,
-                icon: Icons.receipt_long_rounded,
-                iconBgColor: AppColors.successSoft,
-                iconColor: AppColors.success,
+                icon: icon,
+                iconBgColor: iconBg,
+                iconColor: iconColor,
+                payerName: payer,
+                timestamp: a.timestamp,
               );
             }).toList();
 
@@ -169,7 +224,8 @@ class RecentExpensesCard extends StatelessWidget {
                               members: const [],
                               memberExpenses: const {},
                               settlements: const [],
-                              timestamp: DateTime.now(),
+                              timestamp: displayExpenses[i].timestamp ??
+                                  DateTime.now(),
                             ),
                           );
                           ActivityDetailSheet.show(context, activity);

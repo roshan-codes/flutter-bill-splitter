@@ -10,6 +10,8 @@ class RecentExpense {
   final IconData icon;
   final Color iconBgColor;
   final Color iconColor;
+  final String? payerName;
+  final DateTime? timestamp;
 
   const RecentExpense({
     required this.id,
@@ -20,5 +22,7 @@ class RecentExpense {
     required this.icon,
     required this.iconBgColor,
     required this.iconColor,
+    this.payerName,
+    this.timestamp,
   });
 }

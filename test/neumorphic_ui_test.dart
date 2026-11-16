@@ -127,7 +127,7 @@ void main() {
     });
 
     testWidgets(
-        'MainScreen renders FloatingPillNavBar on Android with Add Story hero pill',
+        'MainScreen renders FloatingPillNavBar on Android without create pill',
         (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -139,18 +139,19 @@ void main() {
       expect(find.byType(FloatingPillNavBar), findsOneWidget);
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('Activity'), findsOneWidget);
-      expect(find.text('Profile'), findsOneWidget);
+      expect(find.byTooltip('Profile'), findsOneWidget);
 
-      // Verify Add Story hero pill action button
-      expect(find.byTooltip('Add Story'), findsOneWidget);
-      await tester.tap(find.byTooltip('Add Story'));
+      // Verify opening Create Story from empty state button
+      final addStoryBtn = find.text('Create Story');
+      expect(addStoryBtn, findsOneWidget);
+      await tester.tap(addStoryBtn);
       await tester.pumpAndSettle();
 
       expect(find.byType(CreateStoryScreen), findsOneWidget);
     });
 
     testWidgets(
-        'MainScreen renders FloatingPillNavBar on iOS with Add Story hero pill',
+        'MainScreen renders FloatingPillNavBar on iOS without create pill',
         (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -162,8 +163,7 @@ void main() {
       expect(find.byType(FloatingPillNavBar), findsOneWidget);
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('Activity'), findsOneWidget);
-      expect(find.text('Profile'), findsOneWidget);
-      expect(find.byTooltip('Add Story'), findsOneWidget);
+      expect(find.byTooltip('Profile'), findsOneWidget);
     });
 
     testWidgets('HomeTab renders screenshot-matching UI elements',
@@ -183,7 +183,7 @@ void main() {
       expect(find.text('Friend'), findsOneWidget);
       expect(find.text('👋'), findsOneWidget);
       expect(find.byIcon(Icons.bolt_rounded), findsNothing);
-      expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.notifications_none_rounded), findsNothing);
 
       // Verify Scan Bill and Settle Up are removed from Home tab
       expect(find.text('Scan Bill'), findsNothing);
@@ -530,7 +530,7 @@ void main() {
       expect(find.textContaining('Good'), findsOneWidget);
       expect(find.text('Friend'), findsOneWidget);
       expect(find.text('👋'), findsOneWidget);
-      expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.notifications_none_rounded), findsNothing);
 
       // Verify Empty State Title & Copy
       expect(find.text('Create your first story'), findsOneWidget);

@@ -20,6 +20,35 @@ class RecentExpenseItem extends StatelessWidget {
   String _formatAmount(double amount) =>
       CurrencyFormatter.format(amount, includeSymbol: true);
 
+  String _formatSubtitle() {
+    if (expense.payerName != null && expense.payerName!.isNotEmpty) {
+      if (expense.timestamp != null) {
+        final now = DateTime.now();
+        final dt = expense.timestamp!;
+        final diffDays = DateTime(now.year, now.month, now.day)
+            .difference(DateTime(dt.year, dt.month, dt.day))
+            .inDays;
+
+        String dateStr;
+        if (diffDays == 0) {
+          dateStr = 'Today';
+        } else if (diffDays == 1) {
+          dateStr = 'Yesterday';
+        } else {
+          const months = [
+            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+          ];
+          dateStr = '${dt.day} ${months[dt.month - 1]}';
+        }
+        return 'Paid by ${expense.payerName}  •  $dateStr';
+      }
+      return 'Paid by ${expense.payerName}  •  ${expense.memberCount} members';
+    }
+
+    return '${expense.category}  •  ${expense.memberCount} members';
+  }
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -29,7 +58,7 @@ class RecentExpenseItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
         child: Row(
           children: [
-            // Colored Squircle Icon Container
+            // Colored Squircle Icon Container with Category Visual
             Container(
               width: 46,
               height: 46,
@@ -45,7 +74,7 @@ class RecentExpenseItem extends StatelessWidget {
             ),
             const SizedBox(width: 14),
 
-            // Title & Subtitle (Category • Members)
+            // Title & Contextual Subtitle (Paid by Who • Date / Category)
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,7 +92,7 @@ class RecentExpenseItem extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '${expense.category}  •  ${expense.memberCount} members',
+                    _formatSubtitle(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.manrope(

@@ -32,7 +32,6 @@ class _MainScreenState extends State<MainScreen> {
   final List<String> _tabTitles = const [
     'Home',
     'Activity',
-    'Profile',
   ];
 
   @override
@@ -80,13 +79,26 @@ class _MainScreenState extends State<MainScreen> {
       onAddExpense: () => _openCreateStoryScreen(),
       onAddExpenseWithTitle: (title) =>
           _openCreateStoryScreen(initialTitle: title),
+      onOpenProfile: () => _openProfileScreen(),
+      onNavigateToActivity: () => _onNavTap(1),
     ),
     ActivityTab(
       onCreateStory: () => _openCreateStoryScreen(),
       showMockupFeed: false,
     ),
-    const ProfileTab(),
   ];
+
+  void _openProfileScreen() {
+    Navigator.of(context).push(
+      AppTransitions.sharedAxisRoute(
+        type: SharedAxisTransitionType.horizontal,
+        duration: AppMotion.medium,
+        builder: (context) => const ProfileTab(),
+      ),
+    ).then((_) {
+      if (mounted) setState(() {});
+    });
+  }
 
   void _openCreateStoryScreen({String? initialTitle}) {
     Navigator.of(context).push(
@@ -111,7 +123,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hasCustomHeader = _currentIndex >= 0 && _currentIndex <= 2;
+    final hasCustomHeader = _currentIndex >= 0 && _currentIndex <= 1;
     final isIOS = isIOSPlatform(context);
 
     return PopScope(
@@ -147,7 +159,6 @@ class _MainScreenState extends State<MainScreen> {
             final double bottomMargin =
                 bottomPadding > 0 ? bottomPadding + 6 : (kIsWeb ? 26.0 : 12.0);
             final double horizontalMargin = screenWidth < 380 ? 12.0 : 16.0;
-            final double actionGap = screenWidth < 380 ? 6.0 : 8.0;
 
             return FloatingPillNavBar(
               selectedIndex: _currentIndex,
@@ -165,7 +176,6 @@ class _MainScreenState extends State<MainScreen> {
               unselectedFontSize: 11,
               margin: EdgeInsets.fromLTRB(
                   horizontalMargin, 0, horizontalMargin, bottomMargin),
-              actionButtonGap: actionGap,
               useSafeArea: false,
               elevation: 0,
               boxShadow: [
@@ -193,23 +203,7 @@ class _MainScreenState extends State<MainScreen> {
                   selectedIcon: Icons.access_time_filled_rounded,
                   label: 'Activity',
                 ),
-                FloatingPillDestination(
-                  icon: Icons.person_outline_rounded,
-                  selectedIcon: Icons.person_rounded,
-                  label: 'Profile',
-                ),
               ],
-              actionButton: FloatingPillAction(
-                heroTag: 'add_story_hero_pill',
-                icon: Icons.add_rounded,
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                tooltip: 'Add Story',
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  _openCreateStoryScreen();
-                },
-              ),
             );
           },
         ),

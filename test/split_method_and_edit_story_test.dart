@@ -179,5 +179,125 @@ void main() {
       expect(find.text('Food & Drinks'), findsNothing);
       expect(find.text('Transport'), findsNothing);
     });
+
+    testWidgets(
+        'Tapping a member in Members tab opens action sheet with Edit and Remove options, and allows editing name/number',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final story = Story.sampleGoaTrip();
+      await StoryRepository.instance.addStory(story);
+
+      await tester.pumpWidget(buildTestableWidget(story));
+      await tester.pumpAndSettle();
+
+      // Switch to Members tab
+      await tester.tap(find.text('Members'));
+      await tester.pumpAndSettle();
+
+      // Tap on member "Rahul" (a non-owner member)
+      expect(find.text('Rahul'), findsOneWidget);
+      await tester.tap(find.text('Rahul'));
+      await tester.pumpAndSettle();
+
+      // Verify member options sheet
+      expect(find.text('Edit name or number'), findsOneWidget);
+      expect(find.text('Remove from group'), findsOneWidget);
+
+      // Tap "Edit name or number"
+      await tester.tap(find.text('Edit name or number'));
+      await tester.pumpAndSettle();
+
+      // Verify edit form
+      expect(find.text('Edit Member Details'), findsOneWidget);
+      final nameField = find.widgetWithText(TextFormField, 'Rahul');
+      expect(nameField, findsOneWidget);
+      await tester.enterText(nameField, 'Rahul Sharma');
+      await tester.pumpAndSettle();
+
+      // Tap Save Changes
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Save Changes'));
+      await tester.pumpAndSettle();
+
+      // Verify Rahul Sharma is now displayed in the Members list
+      expect(find.text('Rahul Sharma'), findsOneWidget);
+    });
+
+    testWidgets('Tapping Remove from group confirms and removes member from story',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final story = Story.sampleGoaTrip();
+      await StoryRepository.instance.addStory(story);
+
+      await tester.pumpWidget(buildTestableWidget(story));
+      await tester.pumpAndSettle();
+
+      // Switch to Members tab
+      await tester.tap(find.text('Members'));
+      await tester.pumpAndSettle();
+
+      // Tap on member "Amit"
+      expect(find.text('Amit'), findsOneWidget);
+      await tester.tap(find.text('Amit'));
+      await tester.pumpAndSettle();
+
+      // Tap "Remove from group"
+      await tester.tap(find.text('Remove from group'));
+      await tester.pumpAndSettle();
+
+      // Verify confirmation dialog
+      expect(find.text('Remove Amit?'), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Remove'), findsOneWidget);
+
+      // Confirm removal
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Remove'));
+      await tester.pumpAndSettle();
+
+      // Verify Amit is no longer in Members list
+      expect(find.text('Amit'), findsNothing);
+    });
+
+    testWidgets('Scrolling down hides Settle Up and Add Expense buttons, scrolling up shows buttons',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final story = Story.sampleGoaTrip();
+      await StoryRepository.instance.addStory(story);
+
+      await tester.pumpWidget(buildTestableWidget(story));
+      await tester.pumpAndSettle();
+
+      // Initially buttons are visible
+      expect(find.text('Settle Up'), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Add Expense'), findsOneWidget);
+
+      // Scroll down (drag upwards by offset -300)
+      final scrollable = find.byType(SingleChildScrollView).first;
+      await tester.drag(scrollable, const Offset(0, -300));
+      await tester.pumpAndSettle();
+
+      // Verify bottom bar height collapsed to 0
+      final animatedContainers = tester.widgetList<AnimatedContainer>(
+        find.byType(AnimatedContainer),
+      );
+      final bottomBarContainer = animatedContainers.firstWhere(
+        (c) => c.constraints?.maxHeight == 0.0,
+      );
+      expect(bottomBarContainer.constraints?.maxHeight, 0.0);
+
+      // Scroll up (drag downwards by offset +300)
+      await tester.drag(scrollable, const Offset(0, 300));
+      await tester.pumpAndSettle();
+
+      // Verify buttons are visible again
+      expect(find.text('Settle Up'), findsOneWidget);
+    });
   });
 }

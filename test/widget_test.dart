@@ -35,9 +35,9 @@ void main() {
       (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp(home: MainScreen()));
 
-    // Switch to profile tab and tap Friends
-    final profileTab = find.byIcon(Icons.person_outline_rounded);
-    await tester.tap(profileTab);
+    // Tap profile button in top header and tap Friends
+    final profileBtn = find.byTooltip('Profile');
+    await tester.tap(profileBtn);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Friends'));
@@ -89,9 +89,9 @@ void main() {
       (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp(home: MainScreen()));
 
-    // Switch to profile tab and tap Friends
-    final profileTab = find.byIcon(Icons.person_outline_rounded);
-    await tester.tap(profileTab);
+    // Tap profile button in top header and tap Friends
+    final profileBtn = find.byTooltip('Profile');
+    await tester.tap(profileBtn);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Friends'));
@@ -130,9 +130,9 @@ void main() {
       (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp(home: MainScreen()));
 
-    // Switch to profile tab and tap Friends
-    final profileTab = find.byIcon(Icons.person_outline_rounded);
-    await tester.tap(profileTab);
+    // Tap profile button in top header and tap Friends
+    final profileBtn = find.byTooltip('Profile');
+    await tester.tap(profileBtn);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Friends'));
@@ -193,8 +193,8 @@ void main() {
 
     await tester.pumpWidget(const MyApp(home: MainScreen()));
 
-    // Tap Add Story hero action pill to open CreateStoryScreen
-    final addStoryButton = find.byTooltip('Add Story');
+    // Tap Create Story button on Home tab empty state to open CreateStoryScreen
+    final addStoryButton = find.text('Create Story');
     expect(addStoryButton, findsOneWidget);
     await tester.tap(addStoryButton);
     await tester.pumpAndSettle();
@@ -208,8 +208,10 @@ void main() {
     await tester.enterText(nameInput, 'Friday Dinner');
     await tester.pumpAndSettle();
 
-    // Tap Add Member '+' icon to open member sheet
+    // Scroll to and tap Add Member '+' icon to open member sheet
     final addMemberBtn = find.byIcon(Icons.add_rounded);
+    await tester.ensureVisible(addMemberBtn);
+    await tester.pumpAndSettle();
     expect(addMemberBtn, findsOneWidget);
     await tester.tap(addMemberBtn);
     await tester.pumpAndSettle();
@@ -321,18 +323,18 @@ void main() {
   });
 
   testWidgets(
-      'MainScreen has 3 tabs and Profile tab has Friends and Groups options',
+      'MainScreen has Home & Activity in nav bar and top Profile button navigates to Profile with Friends and Groups options',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp(home: MainScreen()));
 
-    // Verify only 3 tabs in bottom nav: Home, Activity, Profile (Friends removed)
+    // Verify 2 tabs in bottom nav: Home, Activity (Profile moved to top bar near notification bell)
     expect(find.text('Home'), findsWidgets);
     expect(find.text('Activity'), findsWidgets);
-    expect(find.text('Profile'), findsWidgets);
+    expect(find.byTooltip('Profile'), findsOneWidget);
     expect(find.byIcon(Icons.people_outline_rounded), findsNothing);
 
-    // Switch to Profile tab
-    await tester.tap(find.byIcon(Icons.person_outline_rounded));
+    // Tap Profile button in top header
+    await tester.tap(find.byTooltip('Profile'));
     await tester.pumpAndSettle();
 
     // Verify Friends and Groups options are in ProfileMenuCard

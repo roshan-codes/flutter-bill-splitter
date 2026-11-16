@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
+import 'package:flutter_bill_splitter/core/utils/avatar_resolver.dart';
 
 /// Universal avatar widget for BillSplit that renders:
 /// 1. Memo avatars ('assets/avatars/memo_X.png' or avatarIndex)
@@ -72,6 +73,9 @@ class AppAvatar extends StatelessWidget {
                 SupabaseService.userAvatarUrl;
         if (savedUrl != null && savedUrl.trim().isNotEmpty) {
           effectiveAvatar = savedUrl.trim();
+        } else {
+          effectiveAvatar =
+              avatarUrl ?? AvatarResolver.getDefaultAvatarForName(name);
         }
       }
     }
@@ -114,12 +118,26 @@ class AppAvatar extends StatelessWidget {
       imageContent = _buildFallbackInitial(letter);
     }
 
+    final bool hasImage = effectiveIndex != null ||
+        (effectiveAvatar != null && effectiveAvatar.trim().isNotEmpty);
+    // Memo avatars and profile images render on clean white backgrounds instead of dark/black
+    final Color effectiveBg = hasImage
+        ? (backgroundColor == null ||
+                backgroundColor == const Color(0xFF1E1E1E) ||
+                backgroundColor == const Color(0xFF111111) ||
+                backgroundColor == const Color(0xFF24272D) ||
+                backgroundColor == const Color(0xFF22262E) ||
+                backgroundColor == Colors.black
+            ? Colors.white
+            : backgroundColor!)
+        : (backgroundColor ?? const Color(0xFF111111));
+
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: backgroundColor ?? const Color(0xFF111111),
+        color: effectiveBg,
         border: border,
       ),
       child: ClipOval(child: imageContent),
