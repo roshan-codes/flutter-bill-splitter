@@ -183,7 +183,13 @@ class _HomeTabState extends State<HomeTab> {
                 ]),
                 builder: (context, _) {
                   final stories = StoryRepository.instance.stories;
-                  final activities = ActivityRepository.instance.activities;
+                  final activeTitles = stories
+                      .map((s) => s.title.trim().toLowerCase())
+                      .toSet();
+                  final activities = ActivityRepository.instance.activities
+                      .where((a) => activeTitles
+                          .contains(a.groupName.trim().toLowerCase()))
+                      .toList();
                   final hasCustomExpenses = widget.customExpenses != null &&
                       widget.customExpenses!.isNotEmpty;
                   final hasData = stories.isNotEmpty ||

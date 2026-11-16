@@ -33,6 +33,8 @@ class InviteService {
 
   /// String tracking the in-flight story ID to prevent duplicate dialogs or route loops
   static String? _activeProcessingStoryId;
+  static String? _lastHandledStoryId;
+  static int _lastHandledTimestamp = 0;
 
   /// Parses an invited story ID or token from any Uri (query, fragment, or path segment).
   static String? parseStoryIdFromUri(Uri? uri) {
@@ -88,10 +90,18 @@ class InviteService {
     return parseStoryIdFromUri(Uri.base);
   }
 
+  static bool isTesting = false;
+  static Uri? initialUriForTesting;
   static Timer? _debounceTimer;
 
   /// Retrieves initial launch URI using AppLinks.
   static Future<Uri?> getInitialUri() async {
+    if (initialUriForTesting != null) {
+      return initialUriForTesting;
+    }
+    if (isTesting) {
+      return null;
+    }
     try {
       return await _appLinks.getInitialLink().timeout(
             const Duration(milliseconds: 150),
@@ -105,7 +115,7 @@ class InviteService {
 
   /// Initializes listening for incoming deep links while app is running (foreground or background).
   static void initDeepLinkListener() {
-    if (_listenerInitialized) return;
+    if (_listenerInitialized || isTesting) return;
     _listenerInitialized = true;
 
     try {
@@ -127,9 +137,15 @@ class InviteService {
     final storyId = parseStoryIdFromUri(uri);
     if (storyId == null || storyId.isEmpty) return;
 
+    final now = DateTime.now().millisecondsSinceEpoch;
     // Prevent duplicate processing of the same story link
     if (_activeProcessingStoryId == storyId) return;
+    if (_lastHandledStoryId == storyId && (now - _lastHandledTimestamp < 2000)) {
+      return;
+    }
     _activeProcessingStoryId = storyId;
+    _lastHandledStoryId = storyId;
+    _lastHandledTimestamp = now;
 
     try {
       // Preserve invitation data
@@ -162,13 +178,17 @@ class InviteService {
         );
       }
     } finally {
-      // Clear in-flight guard after debounce delay
-      _debounceTimer?.cancel();
-      _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-        if (_activeProcessingStoryId == storyId) {
-          _activeProcessingStoryId = null;
-        }
-      });
+      if (isTesting) {
+        _activeProcessingStoryId = null;
+      } else {
+        // Clear in-flight guard after debounce delay
+        _debounceTimer?.cancel();
+        _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+          if (_activeProcessingStoryId == storyId) {
+            _activeProcessingStoryId = null;
+          }
+        });
+      }
     }
   }
 
@@ -225,8 +245,12 @@ class InviteService {
 
   /// Resets internal handled story set and in-flight tracking (useful in tests).
   static void resetForTesting() {
+    isTesting = true;
+    initialUriForTesting = null;
     _handledStoryIds.clear();
     _activeProcessingStoryId = null;
+    _lastHandledStoryId = null;
+    _lastHandledTimestamp = 0;
     _debounceTimer?.cancel();
     _debounceTimer = null;
   }

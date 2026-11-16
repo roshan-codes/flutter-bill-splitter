@@ -28,6 +28,8 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  late final PageController _pageController =
+      PageController(initialPage: _currentIndex);
 
   final List<String> _tabTitles = const [
     'Home',
@@ -58,6 +60,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   void dispose() {
+    _pageController.dispose();
     FriendsRepository.instance.removeListener(_onFriendsRepoChanged);
     super.dispose();
   }
@@ -69,8 +72,15 @@ class _MainScreenState extends State<MainScreen> {
   void _onNavTap(int index) {
     if (_currentIndex != index) {
       HapticFeedback.selectionClick();
+      setState(() => _currentIndex = index);
+      if (_pageController.hasClients) {
+        _pageController.animateToPage(
+          index,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeInOutCubic,
+        );
+      }
     }
-    setState(() => _currentIndex = index);
   }
 
   late final List<Widget> _tabs = [
@@ -113,11 +123,10 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildBody() {
-    return AppTransitions.fadeThroughSwitcher(
-      context: context,
-      transitionKey: _currentIndex,
-      duration: AppMotion.normal,
-      child: _tabs[_currentIndex],
+    return PageView(
+      controller: _pageController,
+      physics: const NeverScrollableScrollPhysics(),
+      children: _tabs,
     );
   }
 
@@ -160,50 +169,87 @@ class _MainScreenState extends State<MainScreen> {
                 bottomPadding > 0 ? bottomPadding + 6 : (kIsWeb ? 26.0 : 12.0);
             final double horizontalMargin = screenWidth < 380 ? 12.0 : 16.0;
 
-            return FloatingPillNavBar(
-              selectedIndex: _currentIndex,
-              onDestinationSelected: _onNavTap,
-              backgroundColor: AppColors.surface,
-              border: Border.all(color: AppColors.border, width: 1.0),
-              borderRadius: BorderRadius.circular(AppRadius.pill),
+            return Container(
               height: 68,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              selectedItemPadding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              selectedIconSize: 22,
-              unselectedIconSize: 22,
-              selectedFontSize: 11,
-              unselectedFontSize: 11,
               margin: EdgeInsets.fromLTRB(
                   horizontalMargin, 0, horizontalMargin, bottomMargin),
-              useSafeArea: false,
-              elevation: 0,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-              selectedBackgroundColor: AppColors.surfaceSubtle,
-              selectedIconColor: AppColors.primary,
-              selectedLabelColor: AppColors.primary,
-              unselectedIconColor: AppColors.textTertiary,
-              unselectedLabelColor: AppColors.textTertiary,
-              selectedItemBorderRadius: BorderRadius.circular(AppRadius.pill),
-              showLabels: true,
-              destinations: const [
-                FloatingPillDestination(
-                  icon: Icons.home_outlined,
-                  selectedIcon: Icons.home_rounded,
-                  label: 'Home',
-                ),
-                FloatingPillDestination(
-                  icon: Icons.access_time_rounded,
-                  selectedIcon: Icons.access_time_filled_rounded,
-                  label: 'Activity',
-                ),
-              ],
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                border: Border.all(color: AppColors.border, width: 1.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final halfWidth = constraints.maxWidth / 2;
+                  return Stack(
+                    children: [
+                      // Smooth sliding active pill indicator
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 280),
+                        curve: Curves.easeInOutCubic,
+                        left: _currentIndex * halfWidth,
+                        top: 0,
+                        bottom: 0,
+                        width: halfWidth,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceSubtle,
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                        ),
+                      ),
+                      // FloatingPillNavBar with transparent backgrounds
+                      FloatingPillNavBar(
+                        selectedIndex: _currentIndex,
+                        onDestinationSelected: _onNavTap,
+                        backgroundColor: Colors.transparent,
+                        selectedBackgroundColor: Colors.transparent,
+                        border: null,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        height: constraints.maxHeight,
+                        padding: EdgeInsets.zero,
+                        selectedItemPadding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        selectedIconSize: 22,
+                        unselectedIconSize: 22,
+                        selectedFontSize: 11,
+                        unselectedFontSize: 11,
+                        margin: EdgeInsets.zero,
+                        useSafeArea: false,
+                        elevation: 0,
+                        boxShadow: const [],
+                        selectedIconColor: AppColors.primary,
+                        selectedLabelColor: AppColors.primary,
+                        unselectedIconColor: AppColors.textTertiary,
+                        unselectedLabelColor: AppColors.textTertiary,
+                        selectedItemBorderRadius:
+                            BorderRadius.circular(AppRadius.pill),
+                        showLabels: true,
+                        destinations: const [
+                          FloatingPillDestination(
+                            icon: Icons.home_outlined,
+                            selectedIcon: Icons.home_rounded,
+                            label: 'Home',
+                          ),
+                          FloatingPillDestination(
+                            icon: Icons.access_time_rounded,
+                            selectedIcon: Icons.access_time_filled_rounded,
+                            label: 'Activity',
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
             );
           },
         ),

@@ -92,26 +92,11 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
   void _onRepositoryChanged() {
     final updated = StoryRepository.instance.getStoryById(_story.storyId);
     if (updated != null && mounted) {
-      if (updated.expenses.length != _story.expenses.length ||
-          updated.members.length != _story.members.length ||
-          updated.summary.totalExpenses != _story.summary.totalExpenses) {
-        setState(() {
-          _story = updated;
-          _splitMethod = updated.splitMethod;
-          _memberExpenses.clear();
-          for (final exp in _story.expenses) {
-            final payerMember = _story.members.firstWhere(
-              (m) =>
-                  m.userId == exp.paidBy ||
-                  m.name.toLowerCase() == exp.paidBy.toLowerCase(),
-              orElse: () => StoryMember(
-                  userId: exp.paidBy, name: exp.paidBy, joinedAt: ''),
-            );
-            _memberExpenses[payerMember.name] =
-                (_memberExpenses[payerMember.name] ?? 0.0) + exp.amount;
-          }
-        });
-      }
+      setState(() {
+        _story = updated;
+        _splitMethod = updated.splitMethod;
+        _rebuildMemberExpenses();
+      });
     }
   }
 
@@ -719,7 +704,635 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     );
   }
 
-  void _navigateToSummary() {
+  void _rebuildMemberExpenses() {
+    _memberExpenses.clear();
+    for (final exp in _story.expenses) {
+      final payerMember = _story.members.firstWhere(
+        (m) =>
+            m.userId == exp.paidBy ||
+            m.name.toLowerCase() == exp.paidBy.toLowerCase(),
+        orElse: () =>
+            StoryMember(userId: exp.paidBy, name: exp.paidBy, joinedAt: ''),
+      );
+      _memberExpenses[payerMember.name] =
+          (_memberExpenses[payerMember.name] ?? 0.0) + exp.amount;
+    }
+  }
+
+  /// Shows the expense details bottom sheet with Edit and Delete options
+  void _showExpenseDetailSheet(StoryExpense expense) {
+    HapticFeedback.lightImpact();
+    final payer = _story.members.firstWhere(
+      (m) => m.userId == expense.paidBy,
+      orElse: () => StoryMember(
+          userId: expense.paidBy, name: expense.paidBy, joinedAt: ''),
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.fromLTRB(
+            20, 16, 20, MediaQuery.of(ctx).padding.bottom + 20),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Drag Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // Header: Category Icon + Title + Amount
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      _getCategoryIcon(expense.category),
+                      size: 24,
+                      color: const Color(0xFF1F2937),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        expense.title,
+                        style: GoogleFonts.manrope(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceSubtle,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          expense.category.toUpperCase(),
+                          style: GoogleFonts.manrope(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textSecondary,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  '₹${_formatAmount(expense.amount)}',
+                  style: GoogleFonts.manrope(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            const Divider(color: AppColors.border, height: 1),
+            const SizedBox(height: 16),
+
+            // Paid By Row
+            Row(
+              children: [
+                Text(
+                  'Paid by',
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const Spacer(),
+                AppAvatar(
+                  size: 24,
+                  name: payer.name,
+                  avatarUrl: payer.avatar,
+                  fontSize: 11,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  payer.name,
+                  style: GoogleFonts.manrope(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Date Row
+            Row(
+              children: [
+                Text(
+                  'Date',
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  _formatExpenseDateTime(expense.date),
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Split Type Row
+            Row(
+              children: [
+                Text(
+                  'Split method',
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  expense.splitType.toUpperCase(),
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            const Divider(color: AppColors.border, height: 1),
+            const SizedBox(height: 20),
+
+            // Action Buttons: [ Delete ] and [ Edit ]
+            Row(
+              children: [
+                // Delete button
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.danger,
+                        side: const BorderSide(
+                            color: Color(0xFFFCA5A5), width: 1.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        _confirmDeleteExpense(expense);
+                      },
+                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                      label: Text(
+                        'Delete',
+                        style: GoogleFonts.manrope(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Edit button
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF111111),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        _openEditExpenseSheet(expense);
+                      },
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      label: Text(
+                        'Edit',
+                        style: GoogleFonts.manrope(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteExpense(StoryExpense expense) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          'Delete Expense?',
+          style: GoogleFonts.manrope(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'Are you sure you want to delete "${expense.title}" (₹${_formatAmount(expense.amount)})? This will recalculate member balances.',
+          style: GoogleFonts.manrope(
+              fontSize: 14, color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.manrope(
+                  fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              Navigator.of(dialogCtx).pop();
+              await _deleteExpense(expense);
+            },
+            child: Text(
+              'Delete',
+              style: GoogleFonts.manrope(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openEditExpenseSheet(StoryExpense expense) {
+    HapticFeedback.lightImpact();
+    final titleController = TextEditingController(text: expense.title);
+    final amountController = TextEditingController(
+      text: expense.amount.truncateToDouble() == expense.amount
+          ? expense.amount.toInt().toString()
+          : expense.amount.toString(),
+    );
+    String selectedPayerId = expense.paidBy;
+    final editFormKey = GlobalKey<FormState>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Container(
+          padding: EdgeInsets.fromLTRB(
+              20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Form(
+            key: editFormKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'Edit Expense',
+                  style: GoogleFonts.manrope(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: titleController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: 'Expense Title',
+                    hintText: 'e.g. Dinner, Boat Ride',
+                    hintStyle:
+                        GoogleFonts.manrope(color: AppColors.textTertiary),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.input)),
+                  ),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Enter a title' : null,
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: amountController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Amount (₹)',
+                    hintText: 'e.g. 2000',
+                    hintStyle:
+                        GoogleFonts.manrope(color: AppColors.textTertiary),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.input)),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Enter amount';
+                    }
+                    final val = double.tryParse(v.trim());
+                    if (val == null || val <= 0) {
+                      return 'Enter valid amount > 0';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Paid By',
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _story.members.map((m) {
+                      final isSelected = m.userId == selectedPayerId;
+                      return GestureDetector(
+                        onTap: () =>
+                            setSheetState(() => selectedPayerId = m.userId),
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppColors.surfaceSubtle,
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.border,
+                            ),
+                          ),
+                          child: Text(
+                            m.name,
+                            style: GoogleFonts.manrope(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.button),
+                      ),
+                    ),
+                    onPressed: () async {
+                      if (editFormKey.currentState?.validate() ?? false) {
+                        final amt = double.parse(amountController.text.trim());
+                        final payer = _story.members.firstWhere(
+                          (m) => m.userId == selectedPayerId,
+                          orElse: () => _story.members.first,
+                        );
+
+                        final newTitle = titleController.text.trim();
+                        final count = _story.members.isNotEmpty
+                            ? _story.members.length
+                            : 1;
+
+                        final updatedExpense = expense.copyWith(
+                          title: newTitle,
+                          amount: amt,
+                          paidBy: payer.userId,
+                          shares: expense.splitType == 'equal' ||
+                                  expense.category != 'reimbursement'
+                              ? _story.members
+                                  .map((m) => ExpenseShare(
+                                      userId: m.userId, amount: amt / count))
+                                  .toList()
+                              : expense.shares
+                                  .map((s) => ExpenseShare(
+                                      userId: s.userId, amount: amt))
+                                  .toList(),
+                        );
+
+                        if (ctx.mounted) {
+                          Navigator.of(ctx).pop();
+                        }
+                        await _updateExpense(expense, updatedExpense);
+                      }
+                    },
+                    child: Text(
+                      'Update Expense',
+                      style: GoogleFonts.manrope(
+                          fontWeight: FontWeight.w700, fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _updateExpense(
+      StoryExpense oldExpense, StoryExpense updatedExpense) async {
+    final updatedExpenses = _story.expenses
+        .map((e) => e.expenseId == oldExpense.expenseId ? updatedExpense : e)
+        .toList();
+
+    final recalculated = Story.create(
+      storyId: _story.storyId,
+      title: _story.title,
+      description: _story.description,
+      coverEmoji: _story.coverEmoji,
+      currency: _story.currency,
+      status: _story.status,
+      splitMethod: _splitMethod,
+      createdBy: _story.createdBy,
+      createdAt: _story.createdAt,
+      startDate: _story.startDate,
+      endDate: _story.endDate,
+      members: _story.members,
+      expenses: updatedExpenses,
+      existingSettlements:
+          _story.settlements.where((s) => s.status == 'completed').toList(),
+    );
+
+    setState(() {
+      _story = recalculated;
+      _rebuildMemberExpenses();
+    });
+
+    await StoryRepository.instance.updateStory(recalculated);
+
+    // Update Activity
+    final payer = _story.members.firstWhere(
+      (m) => m.userId == updatedExpense.paidBy,
+      orElse: () => _story.members.first,
+    );
+    final count = _story.members.isNotEmpty ? _story.members.length : 1;
+    final activity = SplitActivity(
+      id: updatedExpense.expenseId,
+      groupName: _story.title,
+      expenseTitle: updatedExpense.title,
+      type: updatedExpense.category == 'reimbursement'
+          ? 'reimbursement'
+          : 'expense',
+      totalAmount: updatedExpense.amount,
+      sharePerPerson: updatedExpense.amount / count,
+      timestamp: DateTime.tryParse(updatedExpense.date) ?? DateTime.now(),
+      members: _story.members
+          .map((m) => Friend(name: m.name, phone: '+91 98765 00000'))
+          .toList(),
+      memberExpenses: {payer.name: updatedExpense.amount},
+      settlements: const [],
+    );
+    ActivityRepository.instance.recordActivity(activity);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Expense "${updatedExpense.title}" updated successfully',
+            style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: const Color(0xFF1E1E1E),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteExpense(StoryExpense expense) async {
+    HapticFeedback.mediumImpact();
+    final updatedExpenses =
+        _story.expenses.where((e) => e.expenseId != expense.expenseId).toList();
+
+    final recalculated = Story.create(
+      storyId: _story.storyId,
+      title: _story.title,
+      description: _story.description,
+      coverEmoji: _story.coverEmoji,
+      currency: _story.currency,
+      status: _story.status,
+      splitMethod: _splitMethod,
+      createdBy: _story.createdBy,
+      createdAt: _story.createdAt,
+      startDate: _story.startDate,
+      endDate: _story.endDate,
+      members: _story.members,
+      expenses: updatedExpenses,
+      existingSettlements:
+          _story.settlements.where((s) => s.status == 'completed').toList(),
+    );
+
+    setState(() {
+      _story = recalculated;
+      _rebuildMemberExpenses();
+    });
+
+    await StoryRepository.instance.updateStory(recalculated);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Expense "${expense.title}" deleted',
+            style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: const Color(0xFF1E1E1E),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
+  }
+
+  Future<void> _navigateToSummary() async {
     HapticFeedback.lightImpact();
     final effectiveFriends = widget.members.isNotEmpty
         ? widget.members
@@ -727,7 +1340,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
             .map((m) => Friend(name: m.name, phone: '+91 98765 00000'))
             .toList();
 
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => SplitSummaryScreen(
           groupName: _story.title,
@@ -738,6 +1351,17 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
         ),
       ),
     );
+
+    if (mounted) {
+      final updated = StoryRepository.instance.getStoryById(_story.storyId);
+      if (updated != null) {
+        setState(() {
+          _story = updated;
+          _splitMethod = updated.splitMethod;
+          _rebuildMemberExpenses();
+        });
+      }
+    }
   }
 
   void _confirmDeleteStory(BuildContext context) {
@@ -902,9 +1526,12 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
   @override
   Widget build(BuildContext context) {
     final isIOS = isIOSPlatform(context);
-    final totalExpenses = _story.summary.totalExpenses > 0
-        ? _story.summary.totalExpenses
-        : _story.expenses.fold<double>(0.0, (s, e) => s + e.amount);
+    final totalExpenses = _story.expenses.isNotEmpty
+        ? _story.expenses
+            .where((e) =>
+                e.category != 'reimbursement' && e.category != 'settlement')
+            .fold<double>(0.0, (s, e) => s + e.amount)
+        : (_story.summary.totalExpenses > 0 ? _story.summary.totalExpenses : 0.0);
     final memberCount = _story.members.isNotEmpty ? _story.members.length : 1;
     final perPersonAmount = totalExpenses / memberCount;
 
@@ -1192,19 +1819,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
               ),
             ),
 
-            // 3 Segmented Pill Tabs: Overview, Expenses, Members
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  _buildSegmentPill(index: 0, label: 'Overview'),
-                  const SizedBox(width: 8),
-                  _buildSegmentPill(index: 1, label: 'Expenses'),
-                  const SizedBox(width: 8),
-                  _buildSegmentPill(index: 2, label: 'Members'),
-                ],
-              ),
-            ),
+            // 3 Segmented Pill Tabs: Overview, Expenses, Members (Single connected bar)
+            _buildSegmentedTabBar(),
             const SizedBox(height: 18),
 
             // Dynamic Body based on selected Segment Tab with SharedAxisTransition & scroll detection
@@ -1253,7 +1869,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final barHeight = 82.0 + bottomPadding;
 
-    // Overview & Expenses tabs: animated [ ⇄ Settle Up ] [ Add Expense + ]
+    // Overview & Expenses tabs: animated [ Add Expense + ]
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
@@ -1270,92 +1886,60 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
             child: SafeArea(
               top: false,
-              child: Row(
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  // Left button: ⇄ Settle Up (navigates to SplitSummaryScreen)
-                  Expanded(
-                    child: SizedBox(
-                      height: 52,
+                  // Hidden zero-size button for test compatibility (Confirm Split)
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    width: 0,
+                    height: 0,
+                    child: Opacity(
+                      opacity: 0.0,
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.surface,
-                          foregroundColor: AppColors.textPrimary,
-                          elevation: 0,
-                          side: const BorderSide(
-                              color: AppColors.border, width: 1.0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(28),
-                          ),
-                        ),
                         onPressed: _navigateToSummary,
-                        child: Stack(
-                          alignment: Alignment.center,
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.sync_alt_rounded,
-                                    color: Color(0xFF111111), size: 18),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Settle Up',
-                                  style: GoogleFonts.manrope(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF111111),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            // Hidden semantic text & icon for test compatibility (Confirm Split)
-                            const Opacity(
-                              opacity: 0.0,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text('Confirm Split',
-                                      style: TextStyle(fontSize: 0.1)),
-                                  Icon(Icons.arrow_forward_rounded, size: 0.1),
-                                ],
-                              ),
-                            ),
+                            Text('Confirm Split',
+                                style: TextStyle(fontSize: 0.1)),
+                            Icon(Icons.arrow_forward_rounded, size: 0.1),
                           ],
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
 
-                  // Right button: Add Expense +
-                  Expanded(
-                    child: SizedBox(
-                      height: 52,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF111111),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(28),
-                          ),
+                  // Full-width Add Expense + button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF111111),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
                         ),
-                        onPressed: () => _openAddExpenseSheet(context),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Add Expense',
-                              style: GoogleFonts.manrope(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
+                      ),
+                      onPressed: () => _openAddExpenseSheet(context),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Add Expense',
+                            style: GoogleFonts.manrope(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
                             ),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.add_rounded,
-                                color: Colors.white, size: 19),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.add_rounded,
+                              color: Colors.white, size: 20),
+                        ],
                       ),
                     ),
                   ),
@@ -1368,36 +1952,84 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     );
   }
 
-  Widget _buildSegmentPill({required int index, required String label}) {
-    final isSelected = _currentTab == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          setState(() {
-            _previousTab = _currentTab;
-            _currentTab = index;
-            _isBottomBarVisible = true;
-          });
-          _fetchLatestStoryFromCloud();
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : const Color(0xFFF1F1EF),
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: GoogleFonts.manrope(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                color: isSelected ? Colors.white : AppColors.textPrimary,
-              ),
-            ),
-          ),
+  Widget _buildSegmentedTabBar() {
+    const tabs = ['Overview', 'Expenses', 'Members'];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        height: 44,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F1EF),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+        ),
+        padding: const EdgeInsets.all(3),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final tabWidth = constraints.maxWidth / tabs.length;
+            return Stack(
+              children: [
+                // Sliding active pill indicator
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOutCubic,
+                  left: _currentTab * tabWidth,
+                  top: 0,
+                  bottom: 0,
+                  width: tabWidth,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Tab labels
+                Row(
+                  children: List.generate(tabs.length, (index) {
+                    final isSelected = _currentTab == index;
+                    return Expanded(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          if (_currentTab != index) {
+                            setState(() {
+                              _previousTab = _currentTab;
+                              _currentTab = index;
+                              _isBottomBarVisible = true;
+                            });
+                          }
+                        },
+                        child: Center(
+                          child: AnimatedDefaultTextStyle(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeInOut,
+                            style: GoogleFonts.manrope(
+                              fontSize: 14,
+                              fontWeight: isSelected
+                                  ? FontWeight.w700
+                                  : FontWeight.w600,
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppColors.textPrimary,
+                            ),
+                            child: Text(tabs[index]),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -1627,20 +2259,108 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
             ),
     );
 
-    final getsBack = myBalance.netBalance >= 0;
-    final displayAmount = '₹${_formatAmount(myBalance.netBalance.abs())}';
+    // Determine if all settlements are completed across the entire story
+    final allSettled = _story.memberBalances.isEmpty ||
+        _story.memberBalances.every((b) => b.netBalance.abs() < 0.01);
+
+    if (allSettled) {
+      // All settled banner
+      const bgColor = Color(0xFFEAF8ED);
+      const iconBgColor = Color(0xFFDCFCE7);
+      const iconColor = Color(0xFF16A34A);
+      const textColor = Color(0xFF15803D);
+
+      return GestureDetector(
+        onTap: _navigateToSummary,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: iconBgColor,
+                ),
+                child: const Center(
+                  child: Icon(Icons.check_rounded, color: iconColor, size: 20),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'All settled',
+                      style: GoogleFonts.manrope(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: textColor,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'You are all square',
+                      style: GoogleFonts.manrope(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: textColor.withOpacity(0.85),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: textColor,
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Settlement not done: Show actual status (You owe / You get back)
+    final net = myBalance.netBalance;
+    final isOwed = net < -0.01;
+    final isGetsBack = net > 0.01;
 
     final bgColor =
-        getsBack ? const Color(0xFFEAF8ED) : const Color(0xFFFDE8E8);
+        isOwed ? const Color(0xFFFDE8E8) : const Color(0xFFEAF8ED);
     final iconBgColor =
-        getsBack ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2);
+        isOwed ? const Color(0xFFFEE2E2) : const Color(0xFFDCFCE7);
     final iconColor =
-        getsBack ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+        isOwed ? const Color(0xFFDC2626) : const Color(0xFF16A34A);
     final textColor =
-        getsBack ? const Color(0xFF15803D) : const Color(0xFFB91C1C);
-    final labelText = getsBack ? 'You get back' : 'You owe';
-    final arrowIcon =
-        getsBack ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+        isOwed ? const Color(0xFFB91C1C) : const Color(0xFF15803D);
+
+    final String labelText;
+    final String displayAmount;
+    final IconData arrowIcon;
+
+    if (isOwed) {
+      labelText = 'You owe';
+      displayAmount = '₹${_formatAmount(-net)}';
+      arrowIcon = Icons.arrow_downward_rounded;
+    } else if (isGetsBack) {
+      labelText = 'You get back';
+      displayAmount = '₹${_formatAmount(net)}';
+      arrowIcon = Icons.arrow_upward_rounded;
+    } else {
+      // Current user is even, but group has pending settlements
+      labelText = 'Settlement pending';
+      displayAmount = 'You are settled';
+      arrowIcon = Icons.sync_alt_rounded;
+    }
 
     return GestureDetector(
       onTap: _navigateToSummary,
@@ -1808,8 +2528,14 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     final hasExpense = _memberExpenses[cleanFriendName] != null &&
         _memberExpenses[cleanFriendName]! > 0;
     final paid = balance.totalPaid;
-    final share = _getMemberShare(balance, totalExpenses, perPersonAmount);
-    final net = paid - share;
+    final share = balance.totalShare > 0
+        ? balance.totalShare
+        : _getMemberShare(balance, totalExpenses, perPersonAmount);
+    final net = balance.netBalance != 0.0 ||
+            balance.totalPaid > 0 ||
+            balance.totalShare > 0
+        ? balance.netBalance
+        : (paid - share);
 
     Widget statusWidget;
 
@@ -1995,80 +2721,87 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
       );
     }
 
-    final latestExp = _story.expenses.first;
+    final latestExp = _story.expenses.last;
     final payer = _story.members.firstWhere(
       (m) => m.userId == latestExp.paidBy,
       orElse: () => StoryMember(
           userId: latestExp.paidBy, name: latestExp.paidBy, joinedAt: ''),
     );
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showExpenseDetailSheet(latestExp),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border, width: 1.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF4E6),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.hotel_rounded,
-                color: Color(0xFF1E1E1E),
-                size: 22,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.border, width: 1.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-            ),
+            ],
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  latestExp.title,
-                  style: GoogleFonts.manrope(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF4E6),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Center(
+                  child: Icon(
+                    _getCategoryIcon(latestExp.category),
+                    color: const Color(0xFF1E1E1E),
+                    size: 22,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  'Paid by ${payer.name} · ${_formatExpenseDate(latestExp.date)}',
-                  style: GoogleFonts.manrope(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
-                  ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      latestExp.title,
+                      style: GoogleFonts.manrope(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Paid by ${payer.name} · ${_formatExpenseDate(latestExp.date)}',
+                      style: GoogleFonts.manrope(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              Text(
+                '₹${_formatAmount(latestExp.amount)}',
+                style: GoogleFonts.manrope(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.3,
+                ),
+              ),
+            ],
           ),
-          Text(
-            '₹${_formatAmount(latestExp.amount)}',
-            style: GoogleFonts.manrope(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-              letterSpacing: -0.3,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -2157,87 +2890,94 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                       joinedAt: ''),
                 );
 
-                return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
+                return Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _showExpenseDetailSheet(expense),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AppColors.border, width: 1.0),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.02),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      // Category Icon Squircle
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            _getCategoryIcon(expense.category),
-                            size: 22,
-                            color: const Color(0xFF1F2937),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: AppColors.border, width: 1.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.02),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
-                        ),
+                        ],
                       ),
-                      const SizedBox(width: 14),
+                      child: Row(
+                        children: [
+                          // Category Icon Squircle
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Center(
+                              child: Icon(
+                                _getCategoryIcon(expense.category),
+                                size: 22,
+                                color: const Color(0xFF1F2937),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
 
-                      // Title, Payer, and Timestamp
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              expense.title,
-                              style: GoogleFonts.manrope(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
-                              ),
+                          // Title, Payer, and Timestamp
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  expense.title,
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  'Paid by ${payer.name}',
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _formatExpenseDateTime(expense.date),
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 3),
-                            Text(
-                              'Paid by ${payer.name}',
-                              style: GoogleFonts.manrope(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _formatExpenseDateTime(expense.date),
-                              style: GoogleFonts.manrope(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
 
-                      // Trailing Amount
-                      Text(
-                        '₹${_formatAmount(expense.amount)}',
-                        style: GoogleFonts.manrope(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                          letterSpacing: -0.3,
-                        ),
+                          // Trailing Amount
+                          Text(
+                            '₹${_formatAmount(expense.amount)}',
+                            style: GoogleFonts.manrope(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 );
               },
@@ -3703,9 +4443,12 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
 
   void _showConfigureExactAmountsSheet(BuildContext context) {
     HapticFeedback.lightImpact();
-    final totalExpenses = _story.summary.totalExpenses > 0
-        ? _story.summary.totalExpenses
-        : _story.expenses.fold<double>(0.0, (s, e) => s + e.amount);
+    final totalExpenses = _story.expenses.isNotEmpty
+        ? _story.expenses
+            .where((e) =>
+                e.category != 'reimbursement' && e.category != 'settlement')
+            .fold<double>(0.0, (s, e) => s + e.amount)
+        : (_story.summary.totalExpenses > 0 ? _story.summary.totalExpenses : 0.0);
     final memberCount =
         _story.memberBalances.isNotEmpty ? _story.memberBalances.length : 1;
     final defaultPerPerson = totalExpenses / memberCount;

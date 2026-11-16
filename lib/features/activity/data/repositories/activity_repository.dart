@@ -32,13 +32,16 @@ class ActivityRepository extends ChangeNotifier {
     SupabaseService.saveActivity(activity).ignore();
   }
 
-  /// Deletes recorded activities associated with a given story by title or ID.
-  void deleteActivitiesForStory(String storyTitle, {String? storyId}) {
+  /// Deletes recorded activities associated with a given story by title, ID, or expense IDs.
+  void deleteActivitiesForStory(String storyTitle,
+      {String? storyId, Set<String>? expenseIds}) {
     _activities.removeWhere((a) {
       final matchesTitle =
           a.groupName.trim().toLowerCase() == storyTitle.trim().toLowerCase();
-      final matchesId = storyId != null && a.id.contains(storyId);
-      return matchesTitle || matchesId;
+      final matchesStoryId = storyId != null &&
+          (a.id.contains(storyId) || a.groupName.contains(storyId));
+      final matchesExpenseId = expenseIds != null && expenseIds.contains(a.id);
+      return matchesTitle || matchesStoryId || matchesExpenseId;
     });
     notifyListeners();
   }

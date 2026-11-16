@@ -24,6 +24,7 @@ class AppConstants {
   static const String keySavedStories = 'saved_stories_key';
   static const String keySavedFriends = 'saved_friends_key';
   static const String keySavedActivities = 'saved_activities_key';
+  static const String keyHasSeededSampleStory = 'has_seeded_sample_story';
 
   // Fallback defaults
   static const String defaultUserName = 'Friend';

@@ -116,9 +116,20 @@ class RecentExpensesCard extends StatelessWidget {
 
         // Platform Adaptive Container
         AnimatedBuilder(
-          animation: ActivityRepository.instance,
+          animation: Listenable.merge([
+            ActivityRepository.instance,
+            StoryRepository.instance,
+          ]),
           builder: (context, _) {
-            final activities = ActivityRepository.instance.activities;
+            final activeStoryTitles = StoryRepository.instance.stories
+                .map((s) => s.title.trim().toLowerCase())
+                .toSet();
+            final activities = ActivityRepository.instance.activities
+                .where((a) =>
+                    activeStoryTitles.isEmpty ||
+                    activeStoryTitles
+                        .contains(a.groupName.trim().toLowerCase()))
+                .toList();
             final dynamicExpenses = activities.map((a) {
               // 1. Resolve Expense Title vs Story Name
               String displayTitle =

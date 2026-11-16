@@ -262,7 +262,7 @@ void main() {
       expect(find.text('Amit'), findsNothing);
     });
 
-    testWidgets('Scrolling down hides Settle Up and Add Expense buttons, scrolling up shows buttons',
+    testWidgets('Scrolling down hides Add Expense button, scrolling up shows button',
         (tester) async {
       tester.view.physicalSize = const Size(800, 800);
       tester.view.devicePixelRatio = 1.0;
@@ -274,8 +274,8 @@ void main() {
       await tester.pumpWidget(buildTestableWidget(story));
       await tester.pumpAndSettle();
 
-      // Initially buttons are visible
-      expect(find.text('Settle Up'), findsOneWidget);
+      // Settle Up button is removed; Add Expense button is visible
+      expect(find.text('Settle Up'), findsNothing);
       expect(find.widgetWithText(ElevatedButton, 'Add Expense'), findsOneWidget);
 
       // Scroll down (drag upwards by offset -300)
@@ -296,8 +296,8 @@ void main() {
       await tester.drag(scrollable, const Offset(0, 300));
       await tester.pumpAndSettle();
 
-      // Verify buttons are visible again
-      expect(find.text('Settle Up'), findsOneWidget);
+      // Verify button is visible again
+      expect(find.widgetWithText(ElevatedButton, 'Add Expense'), findsOneWidget);
     });
   });
 }

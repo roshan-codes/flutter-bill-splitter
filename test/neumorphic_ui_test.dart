@@ -17,12 +17,16 @@ import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/o
 import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/splash_screen.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/screens/profile_tab.dart';
 import 'package:flutter_bill_splitter/features/profile/presentation/widgets/profile_logout_button.dart';
+import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
+import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/shared/widgets/empty_state_view.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 void main() {
-  setUp(() {
+  setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    await StoryRepository.instance.clearAll();
+    ActivityRepository.instance.clearActivities();
     FriendsRepository.instance.clearAll();
   });
 

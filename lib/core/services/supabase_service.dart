@@ -437,6 +437,34 @@ class SupabaseService {
     return deletedFromDb || deletedFromStorage;
   }
 
+  /// Deletes activities belonging to a deleted story from the Supabase database.
+  static Future<void> deleteActivitiesForStory({
+    required String storyTitle,
+    String? storyId,
+    List<String>? expenseIds,
+  }) async {
+    final cli = client;
+    if (cli == null) return;
+
+    try {
+      await cli.from('activities').delete().eq('group_name', storyTitle);
+    } catch (_) {}
+
+    if (storyId != null && storyId.isNotEmpty) {
+      try {
+        await cli.from('activities').delete().eq('story_id', storyId);
+      } catch (_) {}
+    }
+
+    if (expenseIds != null && expenseIds.isNotEmpty) {
+      for (final expId in expenseIds) {
+        try {
+          await cli.from('activities').delete().eq('id', expId);
+        } catch (_) {}
+      }
+    }
+  }
+
   /// Fetches a specific Story by its unique ID (used for invite link joins).
   static Future<Story?> fetchStoryById(String storyId) async {
     final cli = client;

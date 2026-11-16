@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_bill_splitter/core/constants/app_constants.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
+import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
@@ -21,6 +23,7 @@ class StoryRepository extends ChangeNotifier {
   Future<void> init() async {
     try {
       await _syncFromSupabase();
+      await _seedSampleStoryIfFirstTime();
       final currentAvatar = SupabaseService.resolvedUserAvatar;
       if (currentAvatar != null) {
         _applyAvatarToUserMembers(currentAvatar);
@@ -31,11 +34,51 @@ class StoryRepository extends ChangeNotifier {
     }
   }
 
+  /// Adds a sample starter story for first-time users so they can explore TTMM immediately.
+  /// Users can edit or delete this story at any time.
+  Future<void> _seedSampleStoryIfFirstTime() async {
+    try {
+      final alreadySeeded = await StorageService.instance
+              .getBool(AppConstants.keyHasSeededSampleStory) ??
+          false;
+      if (!alreadySeeded && _stories.isEmpty) {
+        final sampleStory = Story.sampleGoaTrip();
+        _stories.add(sampleStory);
+        await StorageService.instance
+            .setBool(AppConstants.keyHasSeededSampleStory, true);
+        await SupabaseService.saveStory(sampleStory);
+
+        // Seed corresponding sample activities so Activity & Recent Expenses show realistic data
+        for (final exp in sampleStory.expenses) {
+          final act = SplitActivity(
+            id: exp.expenseId,
+            groupName: sampleStory.title,
+            expenseTitle: exp.title,
+            totalAmount: exp.amount,
+            sharePerPerson: exp.amount /
+                (sampleStory.members.isEmpty ? 1 : sampleStory.members.length),
+            members: sampleStory.members
+                .map((m) => Friend(name: m.name, phone: ''))
+                .toList(),
+            memberExpenses: {exp.paidBy: exp.amount},
+            settlements: const [],
+            timestamp: DateTime.tryParse(exp.date) ?? DateTime.now(),
+          );
+          ActivityRepository.instance.recordActivity(act);
+        }
+      }
+    } catch (e) {
+      debugPrint('StoryRepository sample seed error: $e');
+    }
+  }
+
   Future<void> _syncFromSupabase() async {
     try {
       final remote = await SupabaseService.fetchStories();
-      _stories.clear();
-      _stories.addAll(remote);
+      if (remote.isNotEmpty) {
+        _stories.clear();
+        _stories.addAll(remote);
+      }
       final currentAvatar = SupabaseService.resolvedUserAvatar;
       if (currentAvatar != null) {
         _applyAvatarToUserMembers(currentAvatar);
@@ -399,20 +442,32 @@ class StoryRepository extends ChangeNotifier {
   /// Deletes a story by its identifier from Supabase and cleans up in-memory state.
   Future<void> deleteStory(String storyId) async {
     final storyIndex = _stories.indexWhere((s) => s.storyId == storyId);
-    String? storyTitle;
+    Story? storyToDelete;
     if (storyIndex != -1) {
-      storyTitle = _stories[storyIndex].title;
+      storyToDelete = _stories[storyIndex];
       _stories.removeAt(storyIndex);
     } else {
+      storyToDelete = _stories.where((s) => s.storyId == storyId).firstOrNull;
       _stories.removeWhere((s) => s.storyId == storyId);
     }
 
     notifyListeners();
     await SupabaseService.deleteStory(storyId);
 
-    if (storyTitle != null && storyTitle.isNotEmpty) {
-      ActivityRepository.instance
-          .deleteActivitiesForStory(storyTitle, storyId: storyId);
+    if (storyToDelete != null) {
+      final storyTitle = storyToDelete.title;
+      final expenseIds =
+          storyToDelete.expenses.map((e) => e.expenseId).toSet();
+      ActivityRepository.instance.deleteActivitiesForStory(
+        storyTitle,
+        storyId: storyId,
+        expenseIds: expenseIds,
+      );
+      await SupabaseService.deleteActivitiesForStory(
+        storyTitle: storyTitle,
+        storyId: storyId,
+        expenseIds: expenseIds.toList(),
+      );
     }
   }
 

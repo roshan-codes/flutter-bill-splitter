@@ -23,7 +23,7 @@ import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 /// - Settlement plan card showing who pays whom with initials, arrows, and payment amounts
 /// - Member breakdown card showing Member, Paid, Share, and Net status pills (Gets / Owes)
 /// - Bottom black pill button: "Save & Track Settlement"
-class SplitSummaryScreen extends StatelessWidget {
+class SplitSummaryScreen extends StatefulWidget {
   final String groupName;
   final List<Friend> members;
   final Map<String, double> memberExpenses;
@@ -39,17 +39,168 @@ class SplitSummaryScreen extends StatelessWidget {
     this.existingStory,
   });
 
+  @override
+  State<SplitSummaryScreen> createState() => _SplitSummaryScreenState();
+}
+
+class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
+  late Story? _currentStory;
+  late Map<String, double> _currentMemberExpenses;
+  final Set<String> _paidKeys = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _currentStory = widget.existingStory ??
+        (widget.storyId != null
+            ? StoryRepository.instance.getStoryById(widget.storyId!)
+            : null);
+    _currentMemberExpenses = Map<String, double>.from(widget.memberExpenses);
+  }
+
   String _formatAmount(double amount) => CurrencyFormatter.format(amount);
+
+  Future<void> _markAsPaid(SettlementTransaction st) async {
+    HapticFeedback.mediumImpact();
+
+    Story? story = _currentStory ??
+        (widget.storyId != null
+            ? StoryRepository.instance.getStoryById(widget.storyId!)
+            : null) ??
+        widget.existingStory;
+
+    if (story == null && StoryRepository.instance.stories.isNotEmpty) {
+      story = StoryRepository.instance.stories.first;
+    }
+
+    final payerName = st.from.name;
+    final recipientName = st.to.name;
+
+    final payerMember = story != null
+        ? story.members.firstWhere(
+            (m) =>
+                m.name.toLowerCase().trim() == payerName.toLowerCase().trim(),
+            orElse: () => StoryMember(
+              userId:
+                  'user_${payerName.toLowerCase().replaceAll(RegExp(r'\s+'), '_')}',
+              name: payerName,
+              joinedAt: DateTime.now().toIso8601String(),
+            ),
+          )
+        : StoryMember(
+            userId:
+                'user_${payerName.toLowerCase().replaceAll(RegExp(r'\s+'), '_')}',
+            name: payerName,
+            joinedAt: DateTime.now().toIso8601String(),
+          );
+
+    final recipientMember = story != null
+        ? story.members.firstWhere(
+            (m) =>
+                m.name.toLowerCase().trim() ==
+                recipientName.toLowerCase().trim(),
+            orElse: () => StoryMember(
+              userId:
+                  'user_${recipientName.toLowerCase().replaceAll(RegExp(r'\s+'), '_')}',
+              name: recipientName,
+              joinedAt: DateTime.now().toIso8601String(),
+            ),
+          )
+        : StoryMember(
+            userId:
+                'user_${recipientName.toLowerCase().replaceAll(RegExp(r'\s+'), '_')}',
+            name: recipientName,
+            joinedAt: DateTime.now().toIso8601String(),
+          );
+
+    // Exact title format requested by user: Reimbursement transfer to Roshan by Rahul
+    final expenseTitle =
+        'Reimbursement transfer to ${recipientMember.name} by ${payerMember.name}';
+
+    final reimbursementExpense = StoryExpense(
+      expenseId: 'exp_reimb_${DateTime.now().millisecondsSinceEpoch}',
+      title: expenseTitle,
+      category: 'reimbursement',
+      amount: st.amount,
+      paidBy: payerMember.userId,
+      splitType: 'exact',
+      participants: [recipientMember.userId],
+      shares: [
+        ExpenseShare(
+          userId: recipientMember.userId,
+          amount: st.amount,
+        ),
+      ],
+      date: DateTime.now().toIso8601String(),
+    );
+
+    final key = '${st.from.name}_${st.to.name}_${st.amount}';
+
+    if (story != null) {
+      await StoryRepository.instance
+          .addExpenseToStory(story.storyId, reimbursementExpense);
+      final updated =
+          StoryRepository.instance.getStoryById(story.storyId) ?? story;
+      setState(() {
+        _currentStory = updated;
+        _paidKeys.add(key);
+        _currentMemberExpenses[payerName] =
+            (_currentMemberExpenses[payerName] ?? 0.0) + st.amount;
+      });
+    } else {
+      setState(() {
+        _paidKeys.add(key);
+        _currentMemberExpenses[payerName] =
+            (_currentMemberExpenses[payerName] ?? 0.0) + st.amount;
+      });
+    }
+
+    // Record activity for recent expenses / activity feeds
+    final activity = SplitActivity(
+      id: reimbursementExpense.expenseId,
+      groupName: story?.title ?? widget.groupName,
+      expenseTitle: expenseTitle,
+      type: 'reimbursement',
+      totalAmount: st.amount,
+      sharePerPerson: st.amount,
+      timestamp: DateTime.now(),
+      members: [
+        Friend(name: payerMember.name, phone: ''),
+        Friend(name: recipientMember.name, phone: ''),
+      ],
+      memberExpenses: {payerMember.name: st.amount},
+      settlements: const [],
+    );
+    ActivityRepository.instance.recordActivity(activity);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Reimbursement of ₹${_formatAmount(st.amount)} marked as paid',
+            style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: const Color(0xFF1E1E1E),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final title = groupName.isNotEmpty ? groupName : 'Shared Expense';
-    final totalExpense = ExpenseCalculator.calculateTotal(memberExpenses);
-    final sharePerPerson =
-        ExpenseCalculator.calculateSharePerPerson(totalExpense, members.length);
+    final title =
+        widget.groupName.isNotEmpty ? widget.groupName : 'Shared Expense';
+    final totalExpense =
+        ExpenseCalculator.calculateTotal(_currentMemberExpenses);
+    final sharePerPerson = ExpenseCalculator.calculateSharePerPerson(
+        totalExpense, widget.members.length);
     final settlements = ExpenseCalculator.calculateSettlements(
-      members: members,
-      paidAmounts: memberExpenses,
+      members: widget.members,
+      paidAmounts: widget.memberExpenses,
     );
     final isIOS = isIOSPlatform(context);
 
@@ -196,7 +347,7 @@ class SplitSummaryScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 3),
                                 Text(
-                                  '${members.length} members',
+                                  '${widget.members.length} members',
                                   style: GoogleFonts.manrope(
                                     fontSize: 13,
                                     color: AppColors.textSecondary,
@@ -422,21 +573,21 @@ class SplitSummaryScreen extends StatelessWidget {
                   groupName: title,
                   totalAmount: totalExpense,
                   sharePerPerson: sharePerPerson,
-                  members: List.unmodifiable(members),
-                  memberExpenses: Map.unmodifiable(memberExpenses),
+                  members: List.unmodifiable(widget.members),
+                  memberExpenses: Map.unmodifiable(_currentMemberExpenses),
                   settlements: settlements,
                   timestamp: DateTime.now(),
                 );
                 ActivityRepository.instance.recordActivity(activity);
 
                 // Build and persist Story adhering to standard Story JSON schema
-                final storyMembers = members.map((m) {
+                final storyMembers = widget.members.map((m) {
                   final safeId =
                       'user_${m.name.toLowerCase().replaceAll(RegExp(r'\s+'), '_')}';
                   return StoryMember(
                     userId: safeId,
                     name: m.name,
-                    role: m == members.first ? 'admin' : 'member',
+                    role: m == widget.members.first ? 'admin' : 'member',
                     joinedAt: DateTime.now().toIso8601String(),
                   );
                 }).toList();
@@ -445,7 +596,7 @@ class SplitSummaryScreen extends StatelessWidget {
                   for (var sm in storyMembers) sm.name: sm.userId,
                 };
 
-                final storyShares = members.map((m) {
+                final storyShares = widget.members.map((m) {
                   return ExpenseShare(
                     userId: memberIdByName[m.name] ?? 'user_${m.name}',
                     amount: sharePerPerson,
@@ -454,7 +605,7 @@ class SplitSummaryScreen extends StatelessWidget {
 
                 final List<StoryExpense> storyExpenses = [];
                 int expCount = 1;
-                memberExpenses.forEach((payerName, paidAmount) {
+                _currentMemberExpenses.forEach((payerName, paidAmount) {
                   if (paidAmount > 0) {
                     storyExpenses.add(
                       StoryExpense(
@@ -475,9 +626,9 @@ class SplitSummaryScreen extends StatelessWidget {
                 });
 
                 // Resolve existing story to update rather than creating a duplicate story
-                final existing = existingStory ??
-                    (storyId != null
-                        ? StoryRepository.instance.getStoryById(storyId!)
+                final existing = _currentStory ??
+                    (widget.storyId != null
+                        ? StoryRepository.instance.getStoryById(widget.storyId!)
                         : null) ??
                     StoryRepository.instance.stories
                         .where((s) =>
@@ -555,11 +706,20 @@ class SplitSummaryScreen extends StatelessWidget {
     );
   }
 
-  /// Settlement Plan row: Avatar + Name + "Pays ₹X"  →  Avatar + Name
+  /// Settlement Plan row: Avatar + Name + "Pays ₹X"  →  Avatar + Name  +  [Mark as paid]
   Widget _buildSettlementRow(SettlementTransaction st) {
     final fromInitial =
-        st.from.name.isNotEmpty ? st.from.name[0] : '?';
-    final toInitial = st.to.name.isNotEmpty ? st.to.name[0] : '?';
+        st.from.name.isNotEmpty ? st.from.name[0].toUpperCase() : '?';
+    final toInitial =
+        st.to.name.isNotEmpty ? st.to.name[0].toUpperCase() : '?';
+    final key = '${st.from.name}_${st.to.name}_${st.amount}';
+    final isPaid = _paidKeys.contains(key) ||
+        (_currentStory?.expenses.any((e) =>
+                e.category == 'reimbursement' &&
+                e.title.toLowerCase().contains(st.to.name.toLowerCase()) &&
+                e.title.toLowerCase().contains(st.from.name.toLowerCase()) &&
+                (e.amount - st.amount).abs() < 0.01) ??
+            false);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -584,17 +744,19 @@ class SplitSummaryScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
 
-          // Debtor Name & Amount
-          Expanded(
+          // Debtor Name & Amount (no huge gap before arrow)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 80),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   st.from.name,
                   style: GoogleFonts.manrope(
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
@@ -605,10 +767,12 @@ class SplitSummaryScreen extends StatelessWidget {
                 Text(
                   'Pays ₹${_formatAmount(st.amount)}',
                   style: GoogleFonts.manrope(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFFE53935),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 // Hidden semantic alias for test compatibility
                 Semantics(
@@ -626,14 +790,15 @@ class SplitSummaryScreen extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 8),
 
-          // Arrow in center
+          // Arrow directly between first person and second person
           const Icon(
             Icons.arrow_forward_rounded,
-            size: 18,
+            size: 16,
             color: Color(0xFF1E1E1E),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 8),
 
           // Creditor Circle (soft green)
           Container(
@@ -654,14 +819,15 @@ class SplitSummaryScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
 
           // Creditor Name
-          Expanded(
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 75),
             child: Text(
               st.to.name,
               style: GoogleFonts.manrope(
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               ),
@@ -669,6 +835,58 @@ class SplitSummaryScreen extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
+
+          const Spacer(),
+
+          // Mark as paid button / Paid badge
+          if (isPaid)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F8EE),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFF86EFAC), width: 1.0),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.check_circle_rounded,
+                      size: 13, color: Color(0xFF16A34A)),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Paid',
+                    style: GoogleFonts.manrope(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF16A34A),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                minimumSize: const Size(0, 32),
+                visualDensity: VisualDensity.compact,
+                side: const BorderSide(color: Color(0xFF111111), width: 1.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                backgroundColor: Colors.transparent,
+                foregroundColor: const Color(0xFF111111),
+              ),
+              onPressed: () => _markAsPaid(st),
+              child: Text(
+                'Mark as paid',
+                style: GoogleFonts.manrope(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -750,12 +968,13 @@ class SplitSummaryScreen extends StatelessWidget {
           const SizedBox(height: 12),
 
           // Member Rows
-          for (int i = 0; i < members.length; i++) ...[
-            _buildMemberBreakdownRow(members[i], sharePerPerson),
-            if (i < members.length - 1)
+          for (int i = 0; i < widget.members.length; i++) ...[
+            _buildMemberBreakdownRow(widget.members[i], sharePerPerson),
+            if (i < widget.members.length - 1)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
-                child: Divider(color: AppColors.border, height: 1, thickness: 0.5),
+                child:
+                    Divider(color: AppColors.border, height: 1, thickness: 0.5),
               ),
           ],
         ],
@@ -764,7 +983,7 @@ class SplitSummaryScreen extends StatelessWidget {
   }
 
   Widget _buildMemberBreakdownRow(Friend member, double sharePerPerson) {
-    final paid = memberExpenses[member.name] ?? 0.0;
+    final paid = _currentMemberExpenses[member.name] ?? 0.0;
     final net = paid - sharePerPerson;
     final currentUserName = SupabaseService.userDisplayName ??
         StorageService.instance.getStringSync('user_profile_name');

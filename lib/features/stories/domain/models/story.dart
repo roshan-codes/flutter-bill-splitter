@@ -120,6 +120,32 @@ class StoryExpense {
         'date': date,
         if (note != null) 'note': note,
       };
+
+  StoryExpense copyWith({
+    String? expenseId,
+    String? title,
+    String? category,
+    double? amount,
+    String? paidBy,
+    String? splitType,
+    List<String>? participants,
+    List<ExpenseShare>? shares,
+    String? date,
+    String? note,
+  }) {
+    return StoryExpense(
+      expenseId: expenseId ?? this.expenseId,
+      title: title ?? this.title,
+      category: category ?? this.category,
+      amount: amount ?? this.amount,
+      paidBy: paidBy ?? this.paidBy,
+      splitType: splitType ?? this.splitType,
+      participants: participants ?? this.participants,
+      shares: shares ?? this.shares,
+      date: date ?? this.date,
+      note: note ?? this.note,
+    );
+  }
 }
 
 /// Domain model representing high-level Story Summary figures.

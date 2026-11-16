@@ -39,10 +39,8 @@ class _AppAuthGateState extends State<AppAuthGate> {
   }
 
   Future<void> _resolveAuthStateAndDeepLink() async {
-    // 1. Initialize deep link stream listener for runtime links
     InviteService.initDeepLinkListener();
 
-    // 2. Resolve initial launch deep-link (if any)
     final initialUri = await InviteService.getInitialUri();
     String? deepLinkStoryId = InviteService.parseStoryIdFromUri(initialUri);
     deepLinkStoryId ??= InviteService.getInviteStoryIdFromUri();
@@ -57,7 +55,6 @@ class _AppAuthGateState extends State<AppAuthGate> {
     final storedPendingStoryId = await InviteService.getPendingInvite();
     final effectiveStoryId = deepLinkStoryId ?? storedPendingStoryId;
 
-    // 3. Resolve Authentication State
     final authenticated = await InviteService.isUserAuthenticated();
 
     if (!mounted) return;

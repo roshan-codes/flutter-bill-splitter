@@ -34,6 +34,9 @@ class ExpenseCategories {
       case 'entertainment':
       case 'movies':
         return Icons.movie_rounded;
+      case 'reimbursement':
+      case 'settlement':
+        return Icons.currency_exchange_rounded;
       default:
         return Icons.receipt_long_rounded;
     }
