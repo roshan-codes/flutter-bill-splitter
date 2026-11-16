@@ -21,6 +21,7 @@ class ActivityDisplayItem {
   final String? trailingText;
   final Color? trailingColor;
   final String type; // 'expense', 'settlement', 'member'
+  final String? subtitle;
 
   const ActivityDisplayItem({
     required this.id,
@@ -40,6 +41,7 @@ class ActivityDisplayItem {
     this.trailingText,
     this.trailingColor,
     this.type = 'expense',
+    this.subtitle,
   });
 
   /// Sample feed matching the design mockup (media_1794729268088_39ebec66.jpg)

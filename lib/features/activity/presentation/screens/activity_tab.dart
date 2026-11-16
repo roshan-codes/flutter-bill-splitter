@@ -3,17 +3,18 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/animations/app_motion.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
+import 'package:flutter_bill_splitter/core/utils/expense_icon_resolver.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/activity_display_item.dart';
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_section_card.dart';
+import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/shared/widgets/empty_state_illustration.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Activity Tab displaying platform-adaptive activity feed matching the mockup:
 /// - Header: "Activity" title + circular filter button on right
-/// - Horizontal filter chips: All, Expenses, Settlements, Members
-/// - Feed sections: Today (Shubham settled, You added Dinner, Rashmi added Hotel Stay)
-///                 Yesterday (Roshan added Fuel, Priya joined Delhi)
+/// - Horizontal filter chips: All, Expenses, Settlements
+/// - Feed sections: Today, Yesterday, Recent Activity
 /// - Empty state when no records exist
 class ActivityTab extends StatefulWidget {
   final ActivityRepository? repository;
@@ -98,7 +99,6 @@ class _ActivityTabState extends State<ActivityTab> {
     'All',
     'Expenses',
     'Settlements',
-    'Members',
   ];
 
   void _showFilterSheet(BuildContext context) {
@@ -260,35 +260,125 @@ class _ActivityTabState extends State<ActivityTab> {
                   if (recordedActivities.isNotEmpty) {
                     final dynamicItems = recordedActivities
                         .where((act) {
+                          final isSettlement = act.type == 'settlement' ||
+                              act.settlements.isNotEmpty;
                           if (_selectedFilterIndex == 1) {
-                            return act.settlements.isNotEmpty;
+                            // Expenses tab: only expenses
+                            return !isSettlement;
                           } else if (_selectedFilterIndex == 2) {
-                            return act.settlements.isEmpty;
+                            // Settlements tab: only settlements
+                            return isSettlement;
                           }
-                          return true;
+                          return true; // All
                         })
                         .map((act) {
-                          final isSettled = act.settlements.isEmpty;
+                          final isSettlement = act.type == 'settlement' ||
+                              act.settlements.isNotEmpty;
+
+                          // 1. Resolve Expense Title vs Story Name
+                          String displayTitle = (act.expenseTitle != null &&
+                                  act.expenseTitle!.isNotEmpty)
+                              ? act.expenseTitle!
+                              : '';
+                          String storyName = act.groupName;
+
+                          if (displayTitle.isEmpty) {
+                            // Search StoryRepository for matching expense by ID
+                            for (final story in StoryRepository.instance.stories) {
+                              final matchById = story.expenses
+                                  .where((e) => e.expenseId == act.id)
+                                  .firstOrNull;
+                              if (matchById != null &&
+                                  matchById.title.isNotEmpty &&
+                                  !matchById.title.startsWith('Expense by ')) {
+                                displayTitle = matchById.title;
+                                storyName = story.title;
+                                break;
+                              }
+                            }
+                          }
+
+                          if (displayTitle.isEmpty) {
+                            displayTitle = storyName;
+                          }
+
+                          // 2. Subtitle: show story name if title is expense name, else members count
+                          final String subtitle;
+                          if (displayTitle.toLowerCase().trim() !=
+                              storyName.toLowerCase().trim()) {
+                            subtitle =
+                                '$storyName  •  ${act.members.length} members';
+                          } else {
+                            subtitle = '${act.members.length} members';
+                          }
+
+                          // 3. Status text, status color, and icons
+                          final String statusText;
+                          final Color statusColor;
+                          final IconData icon;
+                          final Color iconBg;
+                          final Color iconColor;
+
+                          if (isSettlement) {
+                            statusText = 'Settled';
+                            statusColor = const Color(0xFF16A34A);
+                            icon = Icons.check_circle_outline_rounded;
+                            iconBg = const Color(0xFFE8F8EE);
+                            iconColor = const Color(0xFF16A34A);
+                          } else {
+                            // Find primary payer
+                            String? payer;
+                            if (act.memberExpenses.isNotEmpty) {
+                              final sorted = act.memberExpenses.entries.toList()
+                                ..sort((x, y) => y.value.compareTo(x.value));
+                              if (sorted.isNotEmpty && sorted.first.value > 0) {
+                                payer = sorted.first.key;
+                              }
+                            }
+
+                            // Check if story is settled
+                            final story = StoryRepository.instance.stories
+                                .where((s) =>
+                                    s.title.trim().toLowerCase() ==
+                                    storyName.trim().toLowerCase())
+                                .firstOrNull;
+                            final isStorySettled = story?.status == 'settled';
+
+                            if (isStorySettled) {
+                              statusText = 'Settled';
+                              statusColor = AppColors.textSecondary;
+                            } else if (payer != null && payer.isNotEmpty) {
+                              final isMe =
+                                  payer.toLowerCase().trim() == 'you' ||
+                                      payer.toLowerCase().contains('(you)');
+                              statusText = isMe ? 'You paid' : 'Paid by $payer';
+                              statusColor = isMe
+                                  ? const Color(0xFF16A34A)
+                                  : AppColors.textSecondary;
+                            } else {
+                              statusText = 'Split';
+                              statusColor = AppColors.textSecondary;
+                            }
+
+                            icon = ExpenseIconResolver.resolveIcon(displayTitle);
+                            iconBg = ExpenseIconResolver.resolveBgColor(icon);
+                            iconColor =
+                                ExpenseIconResolver.resolveIconColor(icon);
+                          }
+
                           return ActivityDisplayItem(
                             id: act.id,
-                            title: act.groupName,
+                            title: displayTitle,
+                            subtitle: subtitle,
                             memberCount: act.members.length,
                             totalAmount: act.totalAmount,
-                            statusText: isSettled
-                                ? 'Settled'
-                                : 'You get ₹${act.sharePerPerson.toInt()}',
-                            statusColor: isSettled
-                                ? AppColors.textSecondary
-                                : AppColors.success,
-                            icon: Icons.receipt_long_rounded,
-                            iconBgColor: isSettled
-                                ? AppColors.surfaceSubtle
-                                : AppColors.successSoft,
-                            iconColor: isSettled
-                                ? AppColors.textPrimary
-                                : AppColors.success,
+                            statusText: statusText,
+                            statusColor: statusColor,
+                            icon: icon,
+                            iconBgColor: iconBg,
+                            iconColor: iconColor,
                             section: 'Recent Activity',
-                            isSettlement: isSettled,
+                            isSettlement: isSettlement,
                             splitActivity: act,
                           );
                         })
@@ -311,9 +401,6 @@ class _ActivityTabState extends State<ActivityTab> {
                       }
                       if (_selectedFilterIndex == 2) {
                         return it.type == 'settlement';
-                      }
-                      if (_selectedFilterIndex == 3) {
-                        return it.type == 'member';
                       }
                       return true; // 0: All
                     }).toList();

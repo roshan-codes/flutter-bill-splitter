@@ -47,18 +47,19 @@ class HomeHeader extends StatelessWidget {
             children: [
               // App Name: TTMM Club micro-kicker badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceSubtle,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   'TTMM CLUB',
                   style: GoogleFonts.manrope(
-                    fontSize: 10.5,
+                    fontSize: 13,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textSecondary,
-                    letterSpacing: 1.1,
+                    color: AppColors.textPrimary,
+                    letterSpacing: 0.8,
                   ),
                 ),
               ),

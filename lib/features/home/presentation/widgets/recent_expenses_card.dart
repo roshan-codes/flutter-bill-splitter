@@ -9,6 +9,7 @@ import 'package:flutter_bill_splitter/features/activity/domain/models/split_acti
 import 'package:flutter_bill_splitter/features/activity/presentation/widgets/activity_detail_sheet.dart';
 import 'package:flutter_bill_splitter/features/home/domain/models/recent_expense.dart';
 import 'package:flutter_bill_splitter/features/home/presentation/widgets/recent_expense_item.dart';
+import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 
 /// Platform-adaptive Card container displaying "Recent Expenses".
@@ -72,10 +73,10 @@ class RecentExpensesCard extends StatelessWidget {
             Text(
               'Recent Expenses',
               style: GoogleFonts.manrope(
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
-                letterSpacing: -0.3,
+                letterSpacing: -0.4,
               ),
             ),
             if (onNavigateToActivity != null)
@@ -87,23 +88,23 @@ class RecentExpensesCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         'View all',
                         style: GoogleFonts.manrope(
-                          fontSize: 13,
+                          fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF5B4DFF),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(width: 3),
                       const Icon(
                         Icons.arrow_forward_rounded,
                         size: 14,
-                        color: Color(0xFF5B4DFF),
+                        color: AppColors.textPrimary,
                       ),
                     ],
                   ),
@@ -119,7 +120,47 @@ class RecentExpensesCard extends StatelessWidget {
           builder: (context, _) {
             final activities = ActivityRepository.instance.activities;
             final dynamicExpenses = activities.map((a) {
-              final icon = ExpenseIconResolver.resolveIcon(a.groupName);
+              // 1. Resolve Expense Title vs Story Name
+              String displayTitle =
+                  (a.expenseTitle != null && a.expenseTitle!.isNotEmpty)
+                      ? a.expenseTitle!
+                      : '';
+              String storyName = a.groupName;
+
+              if (displayTitle.isEmpty) {
+                for (final story in StoryRepository.instance.stories) {
+                  final matchById = story.expenses
+                      .where((e) => e.expenseId == a.id)
+                      .firstOrNull;
+                  if (matchById != null &&
+                      matchById.title.isNotEmpty &&
+                      !matchById.title.startsWith('Expense by ')) {
+                    displayTitle = matchById.title;
+                    storyName = story.title;
+                    break;
+                  }
+                  if (story.title.trim().toLowerCase() ==
+                      a.groupName.trim().toLowerCase()) {
+                    final matchByAmount = story.expenses
+                        .where((e) =>
+                            (e.amount - a.totalAmount).abs() < 0.01 &&
+                            !e.title.startsWith('Expense by '))
+                        .firstOrNull;
+                    if (matchByAmount != null &&
+                        matchByAmount.title.isNotEmpty) {
+                      displayTitle = matchByAmount.title;
+                      storyName = story.title;
+                      break;
+                    }
+                  }
+                }
+              }
+
+              if (displayTitle.isEmpty) {
+                displayTitle = storyName;
+              }
+
+              final icon = ExpenseIconResolver.resolveIcon(displayTitle);
               final iconBg = ExpenseIconResolver.resolveBgColor(icon);
               final iconColor = ExpenseIconResolver.resolveIconColor(icon);
 
@@ -135,8 +176,8 @@ class RecentExpensesCard extends StatelessWidget {
 
               return RecentExpense(
                 id: a.id,
-                title: a.groupName,
-                category: 'Split',
+                title: displayTitle,
+                category: storyName,
                 memberCount: a.members.length,
                 amount: a.totalAmount,
                 icon: icon,

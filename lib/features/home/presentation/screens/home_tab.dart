@@ -173,7 +173,7 @@ class _HomeTabState extends State<HomeTab> {
                   }
                 },
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
 
               // Dynamic content: Empty state or Active Stories + Recent Expenses
               AnimatedBuilder(
@@ -327,18 +327,23 @@ class _HomeTabState extends State<HomeTab> {
               Text(
                 'Active Stories',
                 style: GoogleFonts.manrope(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
-                  letterSpacing: -0.3,
+                  letterSpacing: -0.4,
                 ),
               ),
               TextButton(
                 onPressed: () => _navigateToCreateStory(),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
                 child: Text(
                   '+ New Story',
                   style: GoogleFonts.manrope(
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
@@ -346,7 +351,7 @@ class _HomeTabState extends State<HomeTab> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           for (int index = 0; index < uniqueStories.length; index++) ...[
             AppTransitions.openContainer(
               context: context,
@@ -373,6 +378,7 @@ class _HomeTabState extends State<HomeTab> {
             ),
             if (index < uniqueStories.length - 1) const SizedBox(height: 14),
           ],
+          const SizedBox(height: 28),
         ],
 
         // Recent Expenses Card

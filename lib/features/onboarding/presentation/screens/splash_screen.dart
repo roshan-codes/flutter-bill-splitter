@@ -9,6 +9,7 @@ import 'package:flutter_bill_splitter/features/activity/data/repositories/activi
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
 import 'package:flutter_bill_splitter/features/navigation/presentation/screens/main_screen.dart';
+import 'package:flutter_bill_splitter/features/stories/presentation/screens/join_story_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/splash_wave_painter.dart';
 
@@ -70,11 +71,22 @@ class _SplashScreenState extends State<SplashScreen> {
     // Strict authentication gate: do not allow entering app without active Supabase authentication
     if (hasCompletedOnboarding && isSupabaseSignedIn) {
       // Authenticated user who has completed onboarding -> directly enter app
-      // Any pending invite will be prompted in MainScreen via JoinStoryDialog
       if (!mounted) return;
+      if (pendingInvite != null && pendingInvite.isNotEmpty) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) =>
+                JoinStoryScreen(storyId: pendingInvite),
+            transitionsBuilder: (_, animation, __, child) =>
+                FadeTransition(opacity: animation, child: child),
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+        return;
+      }
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => MainScreen(pendingInviteStoryId: pendingInvite),
+          pageBuilder: (_, __, ___) => const MainScreen(),
           transitionsBuilder: (_, animation, __, child) =>
               FadeTransition(opacity: animation, child: child),
           transitionDuration: const Duration(milliseconds: 500),

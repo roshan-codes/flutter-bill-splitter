@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bill_splitter/core/routing/app_auth_gate.dart';
+import 'package:flutter_bill_splitter/core/services/invite_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_theme.dart';
-import 'package:flutter_bill_splitter/features/onboarding/presentation/screens/splash_screen.dart';
 
 /// Root Application Widget.
 class MyApp extends StatelessWidget {
@@ -11,10 +12,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: InviteService.navigatorKey,
       title: 'TTMM',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: home ?? const SplashScreen(),
+      home: home ?? const AppAuthGate(),
     );
   }
 }

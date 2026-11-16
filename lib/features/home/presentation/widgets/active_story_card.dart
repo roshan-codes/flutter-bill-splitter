@@ -113,7 +113,8 @@ class ActiveStoryCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
-            blurRadius: 4,
+            blurRadius: 5,
+            spreadRadius: 0.5,
             offset: const Offset(0, 1),
           ),
         ],
@@ -124,9 +125,12 @@ class ActiveStoryCard extends StatelessWidget {
             AvatarResolver.getDefaultAvatarForName(member.name),
         name: member.name,
         isCurrentUser: isMe,
-        border: Border.all(color: Colors.white, width: 2.0),
-        backgroundColor: const Color(0xFF24272D),
-        textColor: Colors.white,
+        border: Border.all(
+          color: const Color(0xFFE5E5E5),
+          width: 1.0,
+        ),
+        backgroundColor: Colors.white,
+        textColor: AppColors.textPrimary,
         fontSize: 12,
       ),
     );
@@ -253,8 +257,8 @@ class ActiveStoryCard extends StatelessWidget {
                         Text(
                           story.title,
                           style: GoogleFonts.manrope(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary,
                             letterSpacing: -0.3,
                           ),
@@ -264,7 +268,7 @@ class ActiveStoryCard extends StatelessWidget {
                           _formatDateSubtitle(),
                           style: GoogleFonts.manrope(
                             fontSize: 13,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w400,
                             color: AppColors.textSecondary,
                           ),
                         ),
@@ -301,7 +305,7 @@ class ActiveStoryCard extends StatelessWidget {
                         'Total expenses',
                         style: GoogleFonts.manrope(
                           fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w400,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -326,7 +330,7 @@ class ActiveStoryCard extends StatelessWidget {
                           'Members',
                           style: GoogleFonts.manrope(
                             fontSize: 13,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w400,
                             color: AppColors.textSecondary,
                           ),
                         ),
@@ -337,39 +341,13 @@ class ActiveStoryCard extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // Bottom Row: Overlapping Member Avatars + Active Status Pill & Personal Badge
+              // Bottom Row: Overlapping Member Avatars + Personal Badge (if any)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   _buildAvatarStack(),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (personalBadge != null) ...[
-                        personalBadge,
-                        const SizedBox(width: 8),
-                      ],
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE8F5E9),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          story.status.isNotEmpty
-                              ? '${story.status[0].toUpperCase()}${story.status.substring(1)}'
-                              : 'Active',
-                          style: GoogleFonts.manrope(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF2E7D32),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  if (personalBadge != null) personalBadge,
                 ],
               ),
             ],

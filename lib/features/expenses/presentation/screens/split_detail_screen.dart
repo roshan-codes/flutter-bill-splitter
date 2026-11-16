@@ -278,6 +278,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     final activity = SplitActivity(
       id: expense.expenseId,
       groupName: _story.title,
+      expenseTitle: expense.title,
+      type: 'expense',
       totalAmount: expense.amount,
       sharePerPerson: expense.amount / count,
       timestamp: DateTime.tryParse(expense.date) ?? DateTime.now(),

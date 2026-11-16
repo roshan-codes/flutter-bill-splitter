@@ -33,8 +33,8 @@ void main() {
       expect(find.text('4'), findsOneWidget);
       expect(find.text('Members'), findsOneWidget);
 
-      // Verify Status Pill
-      expect(find.text('Active'), findsOneWidget);
+      // Verify Status Pill removed per design update
+      expect(find.text('Active'), findsNothing);
 
       // Verify Chevron icon
       expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);

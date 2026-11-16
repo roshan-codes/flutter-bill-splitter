@@ -20,6 +20,7 @@ class AppConstants {
   static const String keyUserProfileAvatarUrl = 'user_profile_avatar_url';
   static const String keyUserProfileAvatarIndex = 'user_profile_avatar_index';
   static const String keyPendingInviteStoryId = 'pending_invite_story_id';
+  static const String keyPendingInviteUrl = 'pending_invite_url';
   static const String keySavedStories = 'saved_stories_key';
   static const String keySavedFriends = 'saved_friends_key';
   static const String keySavedActivities = 'saved_activities_key';

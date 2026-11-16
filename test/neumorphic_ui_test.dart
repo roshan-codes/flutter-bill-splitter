@@ -575,7 +575,7 @@ void main() {
       expect(find.text('All'), findsOneWidget);
       expect(find.text('Expenses'), findsOneWidget);
       expect(find.text('Settlements'), findsOneWidget);
-      expect(find.text('Members'), findsOneWidget);
+      expect(find.text('Members'), findsNothing);
 
       // Verify Empty State Title & Copy
       expect(find.text('No activity yet'), findsOneWidget);

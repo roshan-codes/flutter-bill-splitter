@@ -6,6 +6,7 @@ import 'package:flutter_bill_splitter/core/services/invite_service.dart';
 import 'package:flutter_bill_splitter/core/services/storage_service.dart';
 import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/features/navigation/presentation/screens/main_screen.dart';
+import 'package:flutter_bill_splitter/features/stories/presentation/screens/join_story_screen.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/onboarding_illustrations.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/onboarding_page_indicator.dart';
 import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/splash_wave_painter.dart';
@@ -98,10 +99,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
 
     if (!context.mounted) return;
+    if (pendingInvite != null && pendingInvite.isNotEmpty) {
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) =>
+              JoinStoryScreen(storyId: pendingInvite),
+          transitionsBuilder: (_, animation, __, child) =>
+              FadeTransition(opacity: animation, child: child),
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
+      );
+      return;
+    }
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) =>
-            MainScreen(pendingInviteStoryId: pendingInvite),
+        pageBuilder: (_, __, ___) => const MainScreen(),
         transitionsBuilder: (_, animation, __, child) =>
             FadeTransition(opacity: animation, child: child),
         transitionDuration: const Duration(milliseconds: 500),
@@ -166,10 +179,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
 
     if (!context.mounted) return;
+    if (pendingInvite != null && pendingInvite.isNotEmpty) {
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) =>
+              JoinStoryScreen(storyId: pendingInvite),
+          transitionsBuilder: (_, animation, __, child) =>
+              FadeTransition(opacity: animation, child: child),
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
+      );
+      return;
+    }
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) =>
-            MainScreen(pendingInviteStoryId: pendingInvite),
+        pageBuilder: (_, __, ___) => const MainScreen(),
         transitionsBuilder: (_, animation, __, child) =>
             FadeTransition(opacity: animation, child: child),
         transitionDuration: const Duration(milliseconds: 500),

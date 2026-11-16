@@ -105,7 +105,7 @@ class ActivityItemRow extends StatelessWidget {
                       ] else ...[
                         const SizedBox(height: 3),
                         Text(
-                          '${item.memberCount} members',
+                          item.subtitle ?? '${item.memberCount} members',
                           style: GoogleFonts.manrope(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w400,

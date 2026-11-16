@@ -25,7 +25,7 @@ void main() {
       expect(find.text('All'), findsOneWidget);
       expect(find.text('Expenses'), findsOneWidget);
       expect(find.text('Settlements'), findsOneWidget);
-      expect(find.text('Members'), findsOneWidget);
+      expect(find.text('Members'), findsNothing);
 
       // Verify Section Headers
       expect(find.text('Today'), findsOneWidget);
@@ -68,12 +68,12 @@ void main() {
       expect(find.text('Roshan added Fuel'), findsOneWidget);
       expect(find.text('Shubham settled'), findsNothing);
 
-      // Tap Members
-      await tester.tap(find.text('Members'));
+      // Tap All to restore full list
+      await tester.tap(find.text('All'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Priya joined Delhi'), findsOneWidget);
-      expect(find.text('You added Dinner'), findsNothing);
+      expect(find.text('You added Dinner'), findsOneWidget);
+      expect(find.text('Shubham settled'), findsOneWidget);
     });
   });
 }

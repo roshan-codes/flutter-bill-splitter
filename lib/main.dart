@@ -32,6 +32,8 @@ export 'features/home/presentation/screens/home_tab.dart';
 export 'features/profile/presentation/screens/profile_tab.dart';
 export 'features/onboarding/presentation/screens/splash_screen.dart';
 export 'features/onboarding/presentation/screens/onboarding_screen.dart';
+export 'features/stories/presentation/screens/join_story_screen.dart';
+export 'core/routing/app_auth_gate.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
