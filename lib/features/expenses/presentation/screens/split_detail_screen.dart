@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:animations/animations.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -48,6 +49,20 @@ class SplitDetailScreen extends StatefulWidget {
 
   @override
   State<SplitDetailScreen> createState() => _SplitDetailScreenState();
+}
+
+class _ExpenseQuickTag {
+  final String label;
+  final IconData icon;
+  final String category;
+  final bool isFrequent;
+
+  const _ExpenseQuickTag({
+    required this.label,
+    required this.icon,
+    required this.category,
+    this.isFrequent = false,
+  });
 }
 
 class _SplitDetailScreenState extends State<SplitDetailScreen>
@@ -464,6 +479,165 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     );
   }
 
+  String _inferCategoryFromTitle(String title) {
+    final lowerTitle = title.toLowerCase();
+    if (lowerTitle.contains('food') ||
+        lowerTitle.contains('dinner') ||
+        lowerTitle.contains('lunch') ||
+        lowerTitle.contains('breakfast') ||
+        lowerTitle.contains('drink') ||
+        lowerTitle.contains('coffee') ||
+        lowerTitle.contains('tea') ||
+        lowerTitle.contains('cafe') ||
+        lowerTitle.contains('snack') ||
+        lowerTitle.contains('pizza') ||
+        lowerTitle.contains('burger') ||
+        lowerTitle.contains('grocer') ||
+        lowerTitle.contains('restaurant')) {
+      return 'food';
+    } else if (lowerTitle.contains('hotel') ||
+        lowerTitle.contains('stay') ||
+        lowerTitle.contains('resort') ||
+        lowerTitle.contains('villa') ||
+        lowerTitle.contains('airbnb') ||
+        lowerTitle.contains('room')) {
+      return 'stay';
+    } else if (lowerTitle.contains('cab') ||
+        lowerTitle.contains('uber') ||
+        lowerTitle.contains('ola') ||
+        lowerTitle.contains('flight') ||
+        lowerTitle.contains('petrol') ||
+        lowerTitle.contains('fuel') ||
+        lowerTitle.contains('diesel') ||
+        lowerTitle.contains('train') ||
+        lowerTitle.contains('travel') ||
+        lowerTitle.contains('toll') ||
+        lowerTitle.contains('bus') ||
+        lowerTitle.contains('taxi') ||
+        lowerTitle.contains('auto') ||
+        lowerTitle.contains('metro')) {
+      return 'transport';
+    } else if (lowerTitle.contains('scuba') ||
+        lowerTitle.contains('surf') ||
+        lowerTitle.contains('ticket') ||
+        lowerTitle.contains('movie') ||
+        lowerTitle.contains('entry') ||
+        lowerTitle.contains('museum') ||
+        lowerTitle.contains('park') ||
+        lowerTitle.contains('trek') ||
+        lowerTitle.contains('game')) {
+      return 'activities';
+    } else if (lowerTitle.contains('shop') ||
+        lowerTitle.contains('mall') ||
+        lowerTitle.contains('cloth') ||
+        lowerTitle.contains('souvenir')) {
+      return 'shopping';
+    }
+    return 'general';
+  }
+
+  List<_ExpenseQuickTag> _getFrequentAndQuickTags() {
+    final baseTags = <_ExpenseQuickTag>[
+      const _ExpenseQuickTag(label: 'Food', icon: Icons.restaurant_rounded, category: 'food'),
+      const _ExpenseQuickTag(label: 'Travel', icon: Icons.directions_car_rounded, category: 'transport'),
+      const _ExpenseQuickTag(label: 'Stay', icon: Icons.hotel_rounded, category: 'stay'),
+      const _ExpenseQuickTag(label: 'Fuel', icon: Icons.local_gas_station_rounded, category: 'transport'),
+      const _ExpenseQuickTag(label: 'Drinks', icon: Icons.local_bar_rounded, category: 'food'),
+      const _ExpenseQuickTag(label: 'Activities', icon: Icons.confirmation_number_rounded, category: 'activities'),
+      const _ExpenseQuickTag(label: 'Groceries', icon: Icons.shopping_cart_rounded, category: 'food'),
+      const _ExpenseQuickTag(label: 'Shopping', icon: Icons.shopping_bag_rounded, category: 'shopping'),
+      const _ExpenseQuickTag(label: 'Flight', icon: Icons.flight_takeoff_rounded, category: 'transport'),
+      const _ExpenseQuickTag(label: 'Cafe', icon: Icons.local_cafe_rounded, category: 'food'),
+    ];
+
+    final frequencyMap = <String, int>{};
+
+    try {
+      final raw = StorageService.instance.getStringSync('frequent_expense_tags');
+      if (raw != null && raw.isNotEmpty) {
+        final decoded = jsonDecode(raw) as Map<String, dynamic>;
+        decoded.forEach((k, v) {
+          if (v is num) frequencyMap[k.toLowerCase().trim()] = v.toInt();
+        });
+      }
+    } catch (_) {}
+
+    for (final s in StoryRepository.instance.stories) {
+      for (final exp in s.expenses) {
+        if (exp.category == 'reimbursement' ||
+            exp.category == 'settlement' ||
+            exp.category == 'advance') continue;
+        final key = exp.title.trim().toLowerCase();
+        if (key.isNotEmpty) {
+          frequencyMap[key] = (frequencyMap[key] ?? 0) + 1;
+        }
+      }
+    }
+
+    final frequentCustomTags = <_ExpenseQuickTag>[];
+    final baseLabelsLower = baseTags.map((t) => t.label.toLowerCase()).toSet();
+
+    final sortedKeys = frequencyMap.keys.toList()
+      ..sort((a, b) => (frequencyMap[b] ?? 0).compareTo(frequencyMap[a] ?? 0));
+
+    for (final key in sortedKeys) {
+      if ((frequencyMap[key] ?? 0) >= 1 && !baseLabelsLower.contains(key)) {
+        final displayLabel = key.split(' ').map((word) {
+          if (word.isEmpty) return word;
+          return word[0].toUpperCase() + word.substring(1);
+        }).join(' ');
+
+        final inferredCat = _inferCategoryFromTitle(displayLabel);
+        final icon = _getCategoryIcon(inferredCat);
+        frequentCustomTags.add(
+          _ExpenseQuickTag(
+            label: displayLabel,
+            icon: icon,
+            category: inferredCat,
+            isFrequent: true,
+          ),
+        );
+        if (frequentCustomTags.length >= 4) break;
+      }
+    }
+
+    final enrichedBaseTags = baseTags.map((t) {
+      final count = frequencyMap[t.label.toLowerCase()] ?? 0;
+      return _ExpenseQuickTag(
+        label: t.label,
+        icon: t.icon,
+        category: t.category,
+        isFrequent: count > 0,
+      );
+    }).toList();
+
+    final result = <_ExpenseQuickTag>[...frequentCustomTags];
+    for (final t in enrichedBaseTags) {
+      if (t.isFrequent) result.add(t);
+    }
+    for (final t in enrichedBaseTags) {
+      if (!t.isFrequent) result.add(t);
+    }
+    return result;
+  }
+
+  Future<void> _recordTagUsage(String title) async {
+    try {
+      final key = title.trim().toLowerCase();
+      if (key.isEmpty) return;
+      final raw = StorageService.instance.getStringSync('frequent_expense_tags');
+      final map = <String, int>{};
+      if (raw != null && raw.isNotEmpty) {
+        final decoded = jsonDecode(raw) as Map<String, dynamic>;
+        decoded.forEach((k, v) {
+          if (v is num) map[k] = v.toInt();
+        });
+      }
+      map[key] = (map[key] ?? 0) + 1;
+      await StorageService.instance.setString('frequent_expense_tags', jsonEncode(map));
+    } catch (_) {}
+  }
+
   void _openAddExpenseSheet(BuildContext context) {
     HapticFeedback.lightImpact();
     final titleController = TextEditingController();
@@ -473,7 +647,15 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
         .firstOrNull;
     String selectedPayerId = myMember?.userId ??
         (_story.members.isNotEmpty ? _story.members.first.userId : 'user_001');
+    String? selectedRecipientId = _story.members
+        .where((m) => m.userId != selectedPayerId)
+        .map((m) => m.userId)
+        .firstOrNull;
+    bool isAdvanceMode = false;
     final sheetFormKey = GlobalKey<FormState>();
+    final quickTags = _getFrequentAndQuickTags();
+    String? selectedTagLabel;
+    String? selectedCategory;
 
     showModalBottomSheet(
       context: context,
@@ -481,222 +663,650 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) => Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.88,
+          ),
           padding: EdgeInsets.fromLTRB(
               20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
           decoration: const BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          child: Form(
-            key: sheetFormKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(2),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Form(
+              key: sheetFormKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  'Add New Expense',
-                  style: GoogleFonts.manrope(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                  const SizedBox(height: 16),
+                  Text(
+                    isAdvanceMode ? 'Record Advance Payment' : 'Add New Expense',
+                    style: GoogleFonts.manrope(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: titleController,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    labelText: 'Expense Title',
-                    hintText: 'e.g. Dinner, Boat Ride',
-                    hintStyle:
-                        GoogleFonts.manrope(color: AppColors.textTertiary),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.input)),
-                  ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Enter a title' : null,
-                ),
-                const SizedBox(height: 14),
-                TextFormField(
-                  controller: amountController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText: 'Amount (₹)',
-                    hintText: 'e.g. 2000',
-                    hintStyle:
-                        GoogleFonts.manrope(color: AppColors.textTertiary),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.input)),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) {
-                      return 'Enter amount';
-                    }
-                    final val = double.tryParse(v.trim());
-                    if (val == null || val <= 0) {
-                      return 'Enter valid amount > 0';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Paid By',
-                  style: GoogleFonts.manrope(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: _story.members.map((m) {
-                      final isSelected = m.userId == selectedPayerId;
-                      return GestureDetector(
-                        onTap: () =>
-                            setSheetState(() => selectedPayerId = m.userId),
-                        child: Container(
-                          margin: const EdgeInsets.only(right: 8),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primary
-                                : AppColors.surfaceSubtle,
-                            borderRadius: BorderRadius.circular(AppRadius.pill),
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : AppColors.border,
-                            ),
-                          ),
-                          child: Text(
-                            m.name,
-                            style: GoogleFonts.manrope(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: isSelected
-                                  ? Colors.white
-                                  : AppColors.textPrimary,
+                  const SizedBox(height: 14),
+
+                  // Segmented Mode Switcher: Expense vs Advance / Transfer
+                  Container(
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.all(3),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            key: const ValueKey('expense_mode_tab'),
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              setSheetState(() => isAdvanceMode = false);
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              decoration: BoxDecoration(
+                                color: !isAdvanceMode
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(9),
+                                boxShadow: !isAdvanceMode
+                                    ? [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.06),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Center(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.receipt_long_rounded,
+                                      size: 15,
+                                      color: !isAdvanceMode
+                                          ? AppColors.textPrimary
+                                          : AppColors.textSecondary,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Expense',
+                                      style: GoogleFonts.manrope(
+                                        fontSize: 13,
+                                        fontWeight: !isAdvanceMode
+                                            ? FontWeight.w700
+                                            : FontWeight.w600,
+                                        color: !isAdvanceMode
+                                            ? AppColors.textPrimary
+                                            : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      );
-                    }).toList(),
+                        Expanded(
+                          child: GestureDetector(
+                            key: const ValueKey('advance_mode_tab'),
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              setSheetState(() {
+                                isAdvanceMode = true;
+                                if (selectedRecipientId == null ||
+                                    selectedRecipientId == selectedPayerId) {
+                                  selectedRecipientId = _story.members
+                                      .where((m) => m.userId != selectedPayerId)
+                                      .map((m) => m.userId)
+                                      .firstOrNull;
+                                }
+                              });
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              decoration: BoxDecoration(
+                                color: isAdvanceMode
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(9),
+                                boxShadow: isAdvanceMode
+                                    ? [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.06),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Center(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.currency_exchange_rounded,
+                                      size: 15,
+                                      color: isAdvanceMode
+                                          ? AppColors.textPrimary
+                                          : AppColors.textSecondary,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Advance / Transfer',
+                                      style: GoogleFonts.manrope(
+                                        fontSize: 13,
+                                        fontWeight: isAdvanceMode
+                                            ? FontWeight.w700
+                                            : FontWeight.w600,
+                                        color: isAdvanceMode
+                                            ? AppColors.textPrimary
+                                            : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.button),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: isAdvanceMode
+                          ? 'Note / Purpose (Optional)'
+                          : 'Expense Title',
+                      hintText: isAdvanceMode
+                          ? 'e.g. Hotel advance, Flight booking'
+                          : 'e.g. Dinner, Boat Ride',
+                      hintStyle:
+                          GoogleFonts.manrope(color: AppColors.textTertiary),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.input)),
+                    ),
+                    validator: isAdvanceMode
+                        ? null
+                        : (v) => (v == null || v.trim().isEmpty)
+                            ? 'Enter a title'
+                            : null,
+                  ),
+                  if (!isAdvanceMode) ...[
+                    const SizedBox(height: 10),
+                    // Quick Tags horizontal list with travel and frequently used tags
+                    SizedBox(
+                      height: 38,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: quickTags.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final tag = quickTags[index];
+                          final isSelected = selectedTagLabel == tag.label;
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                setSheetState(() {
+                                  if (isSelected) {
+                                    selectedTagLabel = null;
+                                    selectedCategory = null;
+                                  } else {
+                                    selectedTagLabel = tag.label;
+                                    selectedCategory = tag.category;
+                                    final currentTitle =
+                                        titleController.text.trim();
+                                    if (currentTitle.isEmpty ||
+                                        quickTags.any((t) =>
+                                            t.label.toLowerCase() ==
+                                            currentTitle.toLowerCase())) {
+                                      titleController.text = tag.label;
+                                      titleController.selection =
+                                          TextSelection.fromPosition(
+                                        TextPosition(offset: tag.label.length),
+                                      );
+                                    }
+                                  }
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(20),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : (tag.isFrequent
+                                          ? const Color(0xFFF3F4F6)
+                                          : AppColors.surfaceSubtle),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : (tag.isFrequent
+                                            ? const Color(0xFFD1D5DB)
+                                            : AppColors.border),
+                                    width: 1.0,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (tag.isFrequent && !isSelected) ...[
+                                      const Icon(
+                                        Icons.auto_awesome_rounded,
+                                        size: 13,
+                                        color: Color(0xFFEAB308),
+                                      ),
+                                      const SizedBox(width: 4),
+                                    ],
+                                    Icon(
+                                      tag.icon,
+                                      size: 14,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : AppColors.textPrimary,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      tag.label,
+                                      style: GoogleFonts.manrope(
+                                        fontSize: 12,
+                                        fontWeight: isSelected
+                                            ? FontWeight.w700
+                                            : FontWeight.w600,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
-                    onPressed: () async {
-                      if (sheetFormKey.currentState?.validate() ?? false) {
-                        final amt = double.parse(amountController.text.trim());
-                        final payer = _story.members.firstWhere(
-                          (m) => m.userId == selectedPayerId,
-                          orElse: () => _story.members.first,
-                        );
-
-                        final expenseTitle = titleController.text.trim();
-                        final lowerTitle = expenseTitle.toLowerCase();
-                        String inferredCategory = 'general';
-                        if (lowerTitle.contains('food') ||
-                            lowerTitle.contains('dinner') ||
-                            lowerTitle.contains('lunch') ||
-                            lowerTitle.contains('breakfast') ||
-                            lowerTitle.contains('drink') ||
-                            lowerTitle.contains('coffee') ||
-                            lowerTitle.contains('tea') ||
-                            lowerTitle.contains('cafe')) {
-                          inferredCategory = 'food';
-                        } else if (lowerTitle.contains('hotel') ||
-                            lowerTitle.contains('stay') ||
-                            lowerTitle.contains('resort') ||
-                            lowerTitle.contains('room')) {
-                          inferredCategory = 'accommodation';
-                        } else if (lowerTitle.contains('cab') ||
-                            lowerTitle.contains('uber') ||
-                            lowerTitle.contains('ola') ||
-                            lowerTitle.contains('flight') ||
-                            lowerTitle.contains('petrol') ||
-                            lowerTitle.contains('fuel') ||
-                            lowerTitle.contains('train') ||
-                            lowerTitle.contains('travel') ||
-                            lowerTitle.contains('bus')) {
-                          inferredCategory = 'transport';
-                        } else if (lowerTitle.contains('scuba') ||
-                            lowerTitle.contains('surf') ||
-                            lowerTitle.contains('ticket') ||
-                            lowerTitle.contains('movie') ||
-                            lowerTitle.contains('game')) {
-                          inferredCategory = 'activities';
-                        }
-
-                        final newExpense = StoryExpense(
-                          expenseId:
-                              'exp_${DateTime.now().millisecondsSinceEpoch}',
-                          title: expenseTitle,
-                          category: inferredCategory,
-                          amount: amt,
-                          paidBy: payer.userId,
-                          splitType: 'equal',
-                          participants:
-                              _story.members.map((m) => m.userId).toList(),
-                          shares: _story.members
-                              .map((m) => ExpenseShare(
-                                    userId: m.userId,
-                                    amount: amt /
-                                        (_story.members.isNotEmpty
-                                            ? _story.members.length
-                                            : 1),
-                                  ))
-                              .toList(),
-                          date: DateTime.now().toIso8601String(),
-                        );
-
-                        setState(() {
-                          _story = _story.copyWith(
-                              expenses: [..._story.expenses, newExpense]);
-                          _memberExpenses[payer.name] =
-                              (_memberExpenses[payer.name] ?? 0.0) + amt;
-                        });
-
-                        await _persistExpense(newExpense, payer.name);
-                        if (ctx.mounted) {
-                          Navigator.of(ctx).pop();
-                        }
+                  ],
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: amountController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: 'Amount (₹)',
+                      hintText: 'e.g. 2000',
+                      hintStyle:
+                          GoogleFonts.manrope(color: AppColors.textTertiary),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.input)),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) {
+                        return 'Enter amount';
                       }
+                      final val = double.tryParse(v.trim());
+                      if (val == null || val <= 0) {
+                        return 'Enter valid amount > 0';
+                      }
+                      return null;
                     },
-                    child: Text(
-                      'Save Expense',
+                  ),
+                  const SizedBox(height: 16),
+                  if (!isAdvanceMode) ...[
+                    Text(
+                      'Paid By',
                       style: GoogleFonts.manrope(
-                          fontWeight: FontWeight.w700, fontSize: 16),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _story.members.map((m) {
+                          final isSelected = m.userId == selectedPayerId;
+                          return GestureDetector(
+                            onTap: () =>
+                                setSheetState(() => selectedPayerId = m.userId),
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.surfaceSubtle,
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.pill),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : AppColors.border,
+                                ),
+                              ),
+                              child: Text(
+                                m.name,
+                                style: GoogleFonts.manrope(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ] else ...[
+                    Text(
+                      'From (Who Paid in Advance)',
+                      style: GoogleFonts.manrope(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _story.members.map((m) {
+                          final isSelected = m.userId == selectedPayerId;
+                          return GestureDetector(
+                            onTap: () => setSheetState(() {
+                              selectedPayerId = m.userId;
+                              if (selectedRecipientId == selectedPayerId) {
+                                selectedRecipientId = _story.members
+                                    .where((other) => other.userId != m.userId)
+                                    .map((other) => other.userId)
+                                    .firstOrNull;
+                              }
+                            }),
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.surfaceSubtle,
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.pill),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : AppColors.border,
+                                ),
+                              ),
+                              child: Text(
+                                m.name,
+                                style: GoogleFonts.manrope(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      'To (Who Received Advance)',
+                      style: GoogleFonts.manrope(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _story.members.map((m) {
+                          final isSelected = m.userId == selectedRecipientId;
+                          final isSender = m.userId == selectedPayerId;
+                          return GestureDetector(
+                            onTap: isSender
+                                ? null
+                                : () => setSheetState(
+                                    () => selectedRecipientId = m.userId),
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? const Color(0xFF16A34A)
+                                    : (isSender
+                                        ? const Color(0xFFF3F4F6)
+                                        : AppColors.surfaceSubtle),
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.pill),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? const Color(0xFF16A34A)
+                                      : (isSender
+                                          ? const Color(0xFFE5E7EB)
+                                          : AppColors.border),
+                                ),
+                              ),
+                              child: Text(
+                                m.name,
+                                style: GoogleFonts.manrope(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : (isSender
+                                          ? const Color(0xFF9CA3AF)
+                                          : AppColors.textPrimary),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.button),
+                        ),
+                      ),
+                      onPressed: () async {
+                        if (sheetFormKey.currentState?.validate() ?? false) {
+                          final amt = double.parse(amountController.text.trim());
+
+                          if (isAdvanceMode) {
+                            final sender = _story.members.firstWhere(
+                              (m) => m.userId == selectedPayerId,
+                              orElse: () => _story.members.first,
+                            );
+                            final recipient = _story.members.firstWhere(
+                              (m) =>
+                                  m.userId ==
+                                  (selectedRecipientId ??
+                                      _story.members
+                                          .where((m) =>
+                                              m.userId != selectedPayerId)
+                                          .map((m) => m.userId)
+                                          .firstOrNull ??
+                                      ''),
+                              orElse: () => _story.members.last,
+                            );
+
+                            if (sender.userId == recipient.userId) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Sender and recipient cannot be the same member'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                              return;
+                            }
+
+                            final rawTitle = titleController.text.trim();
+                            final note =
+                                rawTitle.isNotEmpty ? ' ($rawTitle)' : '';
+                            final advanceTitle =
+                                'Advance to ${recipient.name} by ${sender.name}$note';
+
+                            final newExpense = StoryExpense(
+                              expenseId:
+                                  'exp_adv_${DateTime.now().millisecondsSinceEpoch}',
+                              title: advanceTitle,
+                              category: 'advance',
+                              amount: amt,
+                              paidBy: sender.userId,
+                              splitType: 'exact',
+                              participants: [recipient.userId],
+                              shares: [
+                                ExpenseShare(
+                                  userId: recipient.userId,
+                                  amount: amt,
+                                ),
+                              ],
+                              date: DateTime.now().toIso8601String(),
+                              note: rawTitle.isNotEmpty ? rawTitle : null,
+                            );
+
+                            final updatedStory = _story.addExpense(newExpense);
+                            setState(() {
+                              _story = updatedStory;
+                            });
+
+                            await StoryRepository.instance
+                                .updateStory(updatedStory);
+
+                            final activity = SplitActivity(
+                              id: newExpense.expenseId,
+                              groupName: _story.title,
+                              expenseTitle: advanceTitle,
+                              type: 'reimbursement',
+                              totalAmount: amt,
+                              sharePerPerson: amt,
+                              timestamp: DateTime.now(),
+                              members: _story.members
+                                  .map((m) => Friend(
+                                      name: m.name, phone: '+91 98765 00000'))
+                                  .toList(),
+                              memberExpenses: {sender.name: amt},
+                              settlements: const [],
+                            );
+                            ActivityRepository.instance.recordActivity(activity);
+
+                            if (ctx.mounted) {
+                              Navigator.of(ctx).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      'Advance payment of ₹${_formatAmount(amt)} recorded'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                            return;
+                          }
+
+                          // Normal Expense mode
+                          final payer = _story.members.firstWhere(
+                            (m) => m.userId == selectedPayerId,
+                            orElse: () => _story.members.first,
+                          );
+
+                          final expenseTitle = titleController.text.trim();
+                          final finalCategory = selectedCategory ??
+                              _inferCategoryFromTitle(expenseTitle);
+
+                          final newExpense = StoryExpense(
+                            expenseId:
+                                'exp_${DateTime.now().millisecondsSinceEpoch}',
+                            title: expenseTitle,
+                            category: finalCategory,
+                            amount: amt,
+                            paidBy: payer.userId,
+                            splitType: 'equal',
+                            participants:
+                                _story.members.map((m) => m.userId).toList(),
+                            shares: _story.members
+                                .map((m) => ExpenseShare(
+                                      userId: m.userId,
+                                      amount: amt /
+                                          (_story.members.isNotEmpty
+                                              ? _story.members.length
+                                              : 1),
+                                    ))
+                                .toList(),
+                            date: DateTime.now().toIso8601String(),
+                          );
+
+                          setState(() {
+                            _story = _story.copyWith(
+                                expenses: [..._story.expenses, newExpense]);
+                            _memberExpenses[payer.name] =
+                                (_memberExpenses[payer.name] ?? 0.0) + amt;
+                          });
+
+                          await _recordTagUsage(expenseTitle);
+                          await _persistExpense(newExpense, payer.name);
+                          if (ctx.mounted) {
+                            Navigator.of(ctx).pop();
+                          }
+                        }
+                      },
+                      child: Text(
+                        isAdvanceMode
+                            ? 'Record Advance Payment'
+                            : 'Save Expense',
+                        style: GoogleFonts.manrope(
+                            fontWeight: FontWeight.w700, fontSize: 16),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -707,6 +1317,11 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
   void _rebuildMemberExpenses() {
     _memberExpenses.clear();
     for (final exp in _story.expenses) {
+      if (exp.category == 'reimbursement' ||
+          exp.category == 'settlement' ||
+          exp.category == 'advance') {
+        continue;
+      }
       final payerMember = _story.members.firstWhere(
         (m) =>
             m.userId == exp.paidBy ||
@@ -1028,6 +1643,14 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     );
     String selectedPayerId = expense.paidBy;
     final editFormKey = GlobalKey<FormState>();
+    final quickTags = _getFrequentAndQuickTags();
+    String? selectedCategory = expense.category;
+    String? selectedTagLabel = quickTags
+        .where((t) =>
+            t.label.toLowerCase() == expense.title.toLowerCase().trim() ||
+            t.category == expense.category)
+        .firstOrNull
+        ?.label;
 
     showModalBottomSheet(
       context: context,
@@ -1080,6 +1703,104 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                   ),
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Enter a title' : null,
+                ),
+                const SizedBox(height: 10),
+                // Quick Tags horizontal list
+                SizedBox(
+                  height: 38,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: quickTags.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final tag = quickTags[index];
+                      final isSelected = selectedTagLabel == tag.label;
+                      return Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setSheetState(() {
+                              if (isSelected) {
+                                selectedTagLabel = null;
+                                selectedCategory = null;
+                              } else {
+                                selectedTagLabel = tag.label;
+                                selectedCategory = tag.category;
+                                final currentTitle = titleController.text.trim();
+                                if (currentTitle.isEmpty ||
+                                    quickTags.any((t) =>
+                                        t.label.toLowerCase() ==
+                                        currentTitle.toLowerCase())) {
+                                  titleController.text = tag.label;
+                                  titleController.selection =
+                                      TextSelection.fromPosition(
+                                    TextPosition(offset: tag.label.length),
+                                  );
+                                }
+                              }
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : (tag.isFrequent
+                                      ? const Color(0xFFF3F4F6)
+                                      : AppColors.surfaceSubtle),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : (tag.isFrequent
+                                        ? const Color(0xFFD1D5DB)
+                                        : AppColors.border),
+                                width: 1.0,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (tag.isFrequent && !isSelected) ...[
+                                  const Icon(
+                                    Icons.auto_awesome_rounded,
+                                    size: 13,
+                                    color: Color(0xFFEAB308),
+                                  ),
+                                  const SizedBox(width: 4),
+                                ],
+                                Icon(
+                                  tag.icon,
+                                  size: 14,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppColors.textPrimary,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  tag.label,
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 12,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : AppColors.textPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
                 const SizedBox(height: 14),
                 TextFormField(
@@ -1174,12 +1895,15 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                         );
 
                         final newTitle = titleController.text.trim();
+                        final finalCategory = selectedCategory ??
+                            _inferCategoryFromTitle(newTitle);
                         final count = _story.members.isNotEmpty
                             ? _story.members.length
                             : 1;
 
                         final updatedExpense = expense.copyWith(
                           title: newTitle,
+                          category: finalCategory,
                           amount: amt,
                           paidBy: payer.userId,
                           shares: expense.splitType == 'equal' ||
@@ -1197,6 +1921,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                         if (ctx.mounted) {
                           Navigator.of(ctx).pop();
                         }
+                        await _recordTagUsage(newTitle);
                         await _updateExpense(expense, updatedExpense);
                       }
                     },
@@ -1529,7 +2254,9 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     final totalExpenses = _story.expenses.isNotEmpty
         ? _story.expenses
             .where((e) =>
-                e.category != 'reimbursement' && e.category != 'settlement')
+                e.category != 'reimbursement' &&
+                e.category != 'settlement' &&
+                e.category != 'advance')
             .fold<double>(0.0, (s, e) => s + e.amount)
         : (_story.summary.totalExpenses > 0 ? _story.summary.totalExpenses : 0.0);
     final memberCount = _story.members.isNotEmpty ? _story.members.length : 1;
@@ -1636,20 +2363,45 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                                       ),
                                     ),
                                     ListTile(
-                                      leading: const Icon(
-                                        Icons.calculate_outlined,
+                                      key: const ValueKey('close_story_tile'),
+                                      leading: Icon(
+                                        _story.status.toLowerCase() == 'inactive'
+                                            ? Icons.lock_open_rounded
+                                            : Icons.lock_outline_rounded,
                                         color: AppColors.textPrimary,
                                       ),
                                       title: Text(
-                                        'Finalize & Settle Split',
+                                        _story.status.toLowerCase() == 'inactive'
+                                            ? 'Reopen Story'
+                                            : 'Close Story',
                                         style: GoogleFonts.manrope(
                                           fontWeight: FontWeight.w600,
                                           color: AppColors.textPrimary,
                                         ),
                                       ),
-                                      onTap: () {
+                                      onTap: () async {
+                                        final messenger =
+                                            ScaffoldMessenger.of(context);
                                         Navigator.of(ctx).pop();
-                                        _navigateToSummary();
+                                        final isCurrentlyInactive =
+                                            _story.status.toLowerCase() == 'inactive';
+                                        final newStatus =
+                                            isCurrentlyInactive ? 'active' : 'inactive';
+                                        final updatedStory =
+                                            _story.copyWith(status: newStatus);
+                                        setState(() => _story = updatedStory);
+                                        await StoryRepository.instance
+                                            .updateStory(updatedStory);
+                                        if (mounted) {
+                                          messenger.showSnackBar(
+                                            SnackBar(
+                                              content: Text(isCurrentlyInactive
+                                                  ? 'Story reopened'
+                                                  : 'Story closed and marked inactive'),
+                                              behavior: SnackBarBehavior.floating,
+                                            ),
+                                          );
+                                        }
                                       },
                                     ),
                                     ListTile(
@@ -1803,15 +2555,23 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE8F8EE),
+                      color: _story.status.toLowerCase() == 'inactive'
+                          ? const Color(0xFFF3F4F6)
+                          : const Color(0xFFE8F8EE),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      'Active',
+                      _story.status.toLowerCase() == 'inactive'
+                          ? 'Inactive'
+                          : (_story.status.toLowerCase() == 'settled'
+                              ? 'Settled'
+                              : 'Active'),
                       style: GoogleFonts.manrope(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1E8E3E),
+                        color: _story.status.toLowerCase() == 'inactive'
+                            ? AppColors.textSecondary
+                            : const Color(0xFF1E8E3E),
                       ),
                     ),
                   ),
@@ -2597,6 +3357,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
       String pillTitle;
       String pillAmount;
 
+      final isSettled = net.abs() <= 0.001;
+
       if (net > 0.001) {
         pillBg = const Color(0xFFE8F8EE);
         pillTextColor = const Color(0xFF16A34A);
@@ -2611,58 +3373,51 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
         pillBg = const Color(0xFFF4F4F5);
         pillTextColor = AppColors.textSecondary;
         pillTitle = 'Settled';
-        pillAmount = '₹0';
+        pillAmount = '';
       }
 
-      statusWidget = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (!isSampleGoaTrip && hasExpense) ...[
-            GestureDetector(
-              onTap: () => _showAddExpenseDialog(friend),
-              child: Text(
-                'Edit expense',
+      statusWidget = Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: isSettled ? 6 : 4,
+        ),
+        decoration: BoxDecoration(
+          color: pillBg,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: isSettled
+            ? Text(
+                'Settled',
                 style: GoogleFonts.manrope(
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w700,
+                  color: pillTextColor,
                 ),
+              )
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    pillTitle,
+                    style: GoogleFonts.manrope(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: pillTextColor,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    pillAmount,
+                    style: GoogleFonts.manrope(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: pillTextColor,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(width: 8),
-          ],
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: pillBg,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  pillTitle,
-                  style: GoogleFonts.manrope(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: pillTextColor,
-                  ),
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  pillAmount,
-                  style: GoogleFonts.manrope(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: pillTextColor,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       );
     }
 
@@ -2704,7 +3459,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Paid ₹${_formatAmount(paid)} · Share ₹${_formatAmount(share)}',
+                  'Paid ₹${_formatAmount(paid)}',
                   style: GoogleFonts.manrope(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -2753,7 +3508,13 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
       );
     }
 
-    final latestExp = _story.expenses.last;
+    final latestExp = _story.expenses.lastWhere(
+      (e) =>
+          e.category != 'reimbursement' &&
+          e.category != 'settlement' &&
+          e.category != 'advance',
+      orElse: () => _story.expenses.last,
+    );
     final payer = _story.members.firstWhere(
       (m) => m.userId == latestExp.paidBy,
       orElse: () => StoryMember(
@@ -2853,14 +3614,28 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Sub-header: "₹10,500 total · 3 expenses"
-          Text(
-            '₹${_formatAmount(totalExpenses)} total · ${_story.expenses.length} expenses',
-            style: GoogleFonts.manrope(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
+          // Sub-header: "₹1,000 total · 1 expense"
+          Builder(
+            builder: (context) {
+              final actualCount = _story.expenses
+                  .where((e) =>
+                      e.category != 'reimbursement' &&
+                      e.category != 'settlement' &&
+                      e.category != 'advance')
+                  .length;
+              final transferCount = _story.expenses.length - actualCount;
+              final countText = transferCount > 0
+                  ? '$actualCount expense${actualCount == 1 ? '' : 's'} · $transferCount transfer${transferCount == 1 ? '' : 's'}'
+                  : '$actualCount expense${actualCount == 1 ? '' : 's'}';
+              return Text(
+                '₹${_formatAmount(totalExpenses)} total · $countText',
+                style: GoogleFonts.manrope(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              );
+            },
           ),
           const SizedBox(height: 14),
 
@@ -4478,7 +5253,9 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     final totalExpenses = _story.expenses.isNotEmpty
         ? _story.expenses
             .where((e) =>
-                e.category != 'reimbursement' && e.category != 'settlement')
+                e.category != 'reimbursement' &&
+                e.category != 'settlement' &&
+                e.category != 'advance')
             .fold<double>(0.0, (s, e) => s + e.amount)
         : (_story.summary.totalExpenses > 0 ? _story.summary.totalExpenses : 0.0);
     final memberCount =

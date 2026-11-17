@@ -323,10 +323,17 @@ class _HomeTabState extends State<HomeTab> {
       }
     }
 
+    final activeStories = uniqueStories
+        .where((s) => s.status.toLowerCase() != 'inactive')
+        .toList();
+    final pastStories = uniqueStories
+        .where((s) => s.status.toLowerCase() == 'inactive')
+        .toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (uniqueStories.isNotEmpty) ...[
+        if (activeStories.isNotEmpty) ...[
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -358,7 +365,7 @@ class _HomeTabState extends State<HomeTab> {
             ],
           ),
           const SizedBox(height: 14),
-          for (int index = 0; index < uniqueStories.length; index++) ...[
+          for (int index = 0; index < activeStories.length; index++) ...[
             AppTransitions.openContainer(
               context: context,
               borderRadius: BorderRadius.circular(24),
@@ -367,22 +374,143 @@ class _HomeTabState extends State<HomeTab> {
               duration: AppMotion.medium,
               closedBuilder: (context, openContainer) {
                 return ActiveStoryCard(
-                  story: uniqueStories[index],
+                  story: activeStories[index],
                   onTap: openContainer,
                 );
               },
               openBuilder: (context, closeContainer) {
                 return SplitDetailScreen(
-                  groupName: uniqueStories[index].title,
-                  members: uniqueStories[index]
+                  groupName: activeStories[index].title,
+                  members: activeStories[index]
                       .members
                       .map((m) => Friend(name: m.name, phone: ''))
                       .toList(),
-                  story: uniqueStories[index],
+                  story: activeStories[index],
                 );
               },
             ),
-            if (index < uniqueStories.length - 1) const SizedBox(height: 14),
+            if (index < activeStories.length - 1) const SizedBox(height: 14),
+          ],
+          const SizedBox(height: 28),
+        ] else if (uniqueStories.isNotEmpty) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Active Stories',
+                style: GoogleFonts.manrope(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.4,
+                ),
+              ),
+              TextButton(
+                onPressed: () => _navigateToCreateStory(),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  '+ New Story',
+                  style: GoogleFonts.manrope(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'No active stories right now',
+            style: GoogleFonts.manrope(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+
+        // Past Story / Past Stories block
+        if (pastStories.isNotEmpty) ...[
+          Text(
+            pastStories.length == 1 ? 'Past Story' : 'Past Stories',
+            style: GoogleFonts.manrope(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.4,
+            ),
+          ),
+          const SizedBox(height: 14),
+          if (pastStories.length == 1) ...[
+            AppTransitions.openContainer(
+              context: context,
+              borderRadius: BorderRadius.circular(24),
+              openColor:
+                  isIOS ? AppColors.iosBackground : AppColors.background,
+              duration: AppMotion.medium,
+              closedBuilder: (context, openContainer) {
+                return ActiveStoryCard(
+                  story: pastStories.first,
+                  onTap: openContainer,
+                );
+              },
+              openBuilder: (context, closeContainer) {
+                return SplitDetailScreen(
+                  groupName: pastStories.first.title,
+                  members: pastStories.first
+                      .members
+                      .map((m) => Friend(name: m.name, phone: ''))
+                      .toList(),
+                  story: pastStories.first,
+                );
+              },
+            ),
+          ] else ...[
+            SizedBox(
+              height: 265,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: pastStories.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 14),
+                itemBuilder: (context, index) {
+                  final story = pastStories[index];
+                  return SizedBox(
+                    width: 300,
+                    child: AppTransitions.openContainer(
+                      context: context,
+                      borderRadius: BorderRadius.circular(24),
+                      openColor: isIOS
+                          ? AppColors.iosBackground
+                          : AppColors.background,
+                      duration: AppMotion.medium,
+                      closedBuilder: (context, openContainer) {
+                        return ActiveStoryCard(
+                          story: story,
+                          width: 300,
+                          onTap: openContainer,
+                        );
+                      },
+                      openBuilder: (context, closeContainer) {
+                        return SplitDetailScreen(
+                          groupName: story.title,
+                          members: story.members
+                              .map((m) => Friend(name: m.name, phone: ''))
+                              .toList(),
+                          story: story,
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
           const SizedBox(height: 28),
         ],

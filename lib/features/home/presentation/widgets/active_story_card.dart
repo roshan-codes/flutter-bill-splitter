@@ -16,11 +16,13 @@ import 'package:flutter_bill_splitter/shared/widgets/app_avatar.dart';
 class ActiveStoryCard extends StatelessWidget {
   final Story story;
   final VoidCallback onTap;
+  final double? width;
 
   const ActiveStoryCard({
     super.key,
     required this.story,
     required this.onTap,
+    this.width,
   });
 
   String _formatAmount(num value) => CurrencyFormatter.format(value);
@@ -212,7 +214,7 @@ class ActiveStoryCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(24),
         child: Container(
-          width: double.infinity,
+          width: width ?? double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: AppColors.surface,
@@ -282,17 +284,47 @@ class ActiveStoryCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               // Metrics Row: Total expenses & Members count
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '₹${_formatAmount(totalAmount)}',
+                          style: GoogleFonts.manrope(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                            letterSpacing: -0.5,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Total expenses',
+                          style: GoogleFonts.manrope(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.textSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '₹${_formatAmount(totalAmount)}',
+                        '$memberCount',
                         style: GoogleFonts.manrope(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
@@ -302,7 +334,7 @@ class ActiveStoryCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        'Total expenses',
+                        'Members',
                         style: GoogleFonts.manrope(
                           fontSize: 13,
                           fontWeight: FontWeight.w400,
@@ -311,35 +343,9 @@ class ActiveStoryCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 32),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '$memberCount',
-                          style: GoogleFonts.manrope(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          'Members',
-                          style: GoogleFonts.manrope(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               // Bottom Row: Overlapping Member Avatars + Personal Badge (if any)
               Row(
@@ -347,7 +353,31 @@ class ActiveStoryCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   _buildAvatarStack(),
-                  if (personalBadge != null) personalBadge,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (story.status.toLowerCase() == 'inactive') ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3F4F6),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Closed',
+                            style: GoogleFonts.manrope(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                        if (personalBadge != null) const SizedBox(width: 6),
+                      ],
+                      if (personalBadge != null) personalBadge,
+                    ],
+                  ),
                 ],
               ),
             ],

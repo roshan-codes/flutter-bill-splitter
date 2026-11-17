@@ -275,4 +275,103 @@ void main() {
     // 2. Banner shows actual status: "You get back"
     expect(find.text('You get back'), findsOneWidget);
   });
+
+  testWidgets(
+      'Reimbursement does NOT corrupt shares or invent fake debt (Gunjan and Test User)',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final story = Story.create(
+      storyId: 'story_gunjan_test_user',
+      title: 'Goa',
+      description: 'Trip to Goa',
+      createdBy: 'user_gunjan',
+      members: [
+        StoryMember(
+          userId: 'user_gunjan',
+          name: 'Gunjan',
+          joinedAt: DateTime.now().toIso8601String(),
+        ),
+        StoryMember(
+          userId: 'user_test',
+          name: 'Test User',
+          joinedAt: DateTime.now().toIso8601String(),
+        ),
+      ],
+      expenses: [
+        StoryExpense(
+          expenseId: 'exp_train',
+          title: 'Train',
+          category: 'transport',
+          amount: 1000.0,
+          paidBy: 'user_gunjan',
+          splitType: 'equal',
+          participants: const ['user_gunjan', 'user_test'],
+          shares: const [
+            ExpenseShare(userId: 'user_gunjan', amount: 500.0),
+            ExpenseShare(userId: 'user_test', amount: 500.0),
+          ],
+          date: DateTime.now().toIso8601String(),
+        ),
+      ],
+    );
+
+    // Initial check: Gunjan paid 1000, share 500, net +500. Test User paid 0, share 500, net -500.
+    final gunjanBal =
+        story.memberBalances.firstWhere((b) => b.userId == 'user_gunjan');
+    final testUserBal =
+        story.memberBalances.firstWhere((b) => b.userId == 'user_test');
+    expect(gunjanBal.totalPaid, 1000.0);
+    expect(gunjanBal.totalShare, 500.0);
+    expect(gunjanBal.netBalance, 500.0);
+    expect(testUserBal.totalPaid, 0.0);
+    expect(testUserBal.totalShare, 500.0);
+    expect(testUserBal.netBalance, -500.0);
+    expect(story.summary.totalExpenses, 1000.0);
+
+    // Now record reimbursement of ₹500 from Test User to Gunjan
+    final reimbursement = StoryExpense(
+      expenseId: 'exp_reimb_500',
+      title: 'Reimbursement transfer to Gunjan by Test User',
+      category: 'reimbursement',
+      amount: 500.0,
+      paidBy: 'user_test',
+      splitType: 'exact',
+      participants: const ['user_gunjan'],
+      shares: const [
+        ExpenseShare(userId: 'user_gunjan', amount: 500.0),
+      ],
+      date: DateTime.now().toIso8601String(),
+    );
+
+    final updatedStory = story.addExpense(reimbursement);
+
+    // Verify after reimbursement:
+    // Total expenses must STAY 1,000 (NOT 1,500!)
+    expect(updatedStory.summary.totalExpenses, 1000.0);
+
+    // Gunjan's share must STAY 500 (NOT 1,000 or 1,500!)
+    final updatedGunjan = updatedStory.memberBalances
+        .firstWhere((b) => b.userId == 'user_gunjan');
+    expect(updatedGunjan.totalPaid, 1000.0);
+    expect(updatedGunjan.totalShare, 500.0);
+    expect(updatedGunjan.netBalance, 0.0);
+    expect(updatedGunjan.status, 'settled');
+
+    // Test User's share must STAY 500, paid stays 0, net is 0 (settled)
+    final updatedTestUser = updatedStory.memberBalances
+        .firstWhere((b) => b.userId == 'user_test');
+    expect(updatedTestUser.totalPaid, 0.0);
+    expect(updatedTestUser.totalShare, 500.0);
+    expect(updatedTestUser.netBalance, 0.0);
+    expect(updatedTestUser.status, 'settled');
+
+    // No pending settlements remaining
+    expect(
+      updatedStory.settlements.where((s) => s.status == 'pending'),
+      isEmpty,
+    );
+  });
 }

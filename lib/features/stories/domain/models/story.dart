@@ -712,12 +712,19 @@ class Story {
     required List<StoryExpense> expenses,
     List<StorySettlement>? existingSettlements,
   }) {
-    final totalExpenses = expenses.fold<double>(
+    final actualExpenses = expenses
+        .where((e) =>
+            e.category != 'reimbursement' &&
+            e.category != 'settlement' &&
+            e.category != 'advance')
+        .toList();
+
+    final totalExpenses = actualExpenses.fold<double>(
       0.0,
       (sum, e) => sum + e.amount,
     );
 
-    // Compute paid and share per user
+    // Compute paid and share per user strictly from actual expenses
     final Map<String, double> totalPaidByUser = {};
     final Map<String, double> totalShareByUser = {};
 
@@ -726,12 +733,74 @@ class Story {
       totalShareByUser[member.userId] = 0.0;
     }
 
-    for (final expense in expenses) {
+    for (final expense in actualExpenses) {
       totalPaidByUser[expense.paidBy] =
           (totalPaidByUser[expense.paidBy] ?? 0.0) + expense.amount;
       for (final share in expense.shares) {
         totalShareByUser[share.userId] =
             (totalShareByUser[share.userId] ?? 0.0) + share.amount;
+      }
+    }
+
+    // Process reimbursement / settlement transfers between members
+    final reimbursementExpenses = expenses
+        .where((e) =>
+            e.category == 'reimbursement' ||
+            e.category == 'settlement' ||
+            e.category == 'advance')
+        .toList();
+
+    final Map<String, double> reimbSentByUser = {};
+    final Map<String, double> reimbReceivedByUser = {};
+
+    for (final member in members) {
+      reimbSentByUser[member.userId] = 0.0;
+      reimbReceivedByUser[member.userId] = 0.0;
+    }
+
+    for (final reimb in reimbursementExpenses) {
+      String senderId = reimb.paidBy;
+      final senderMatch = members
+          .where((m) =>
+              m.userId == senderId ||
+              m.name.toLowerCase().trim() == senderId.toLowerCase().trim())
+          .firstOrNull;
+      if (senderMatch != null) senderId = senderMatch.userId;
+
+      String? recipientId = reimb.participants.isNotEmpty
+          ? reimb.participants.first
+          : (reimb.shares.isNotEmpty ? reimb.shares.first.userId : null);
+
+      if (recipientId != null) {
+        final recMatch = members
+            .where((m) =>
+                m.userId == recipientId ||
+                m.name.toLowerCase().trim() == recipientId!.toLowerCase().trim())
+            .firstOrNull;
+        if (recMatch != null) recipientId = recMatch.userId;
+      }
+
+      // If still unresolved, look for "to <Name>" in the reimbursement title
+      if (recipientId == null || recipientId == senderId) {
+        for (final m in members) {
+          if (m.userId == senderId) continue;
+          final titleLower = reimb.title.toLowerCase();
+          final nameLower = m.name.toLowerCase().trim();
+          if (titleLower.contains('to $nameLower') ||
+              titleLower.contains(nameLower)) {
+            recipientId = m.userId;
+            break;
+          }
+        }
+      }
+
+      if (senderId.isNotEmpty) {
+        reimbSentByUser[senderId] =
+            (reimbSentByUser[senderId] ?? 0.0) + reimb.amount;
+      }
+      if (recipientId != null && recipientId.isNotEmpty) {
+        reimbReceivedByUser[recipientId] =
+            (reimbReceivedByUser[recipientId] ?? 0.0) + reimb.amount;
       }
     }
 
@@ -743,7 +812,10 @@ class Story {
     for (final member in members) {
       final paid = totalPaidByUser[member.userId] ?? 0.0;
       final share = totalShareByUser[member.userId] ?? 0.0;
-      final net = paid - share;
+      // Net balance: (paid - share) + reimbSent - reimbReceived
+      final net = (paid - share) +
+          (reimbSentByUser[member.userId] ?? 0.0) -
+          (reimbReceivedByUser[member.userId] ?? 0.0);
 
       String balStatus;
       if (net > 0.001) {
@@ -814,6 +886,9 @@ class Story {
     final double totalSettled = finalSettlements.fold<double>(
       0.0,
       (sum, s) => s.status == 'completed' ? sum + s.amount : sum,
+    ) + reimbursementExpenses.fold<double>(
+      0.0,
+      (sum, r) => sum + r.amount,
     );
 
     final double pendingAmount = finalSettlements.fold<double>(
@@ -826,7 +901,7 @@ class Story {
       totalSettled: totalSettled,
       pendingAmount: pendingAmount,
       memberCount: members.length,
-      expenseCount: expenses.length,
+      expenseCount: actualExpenses.length,
     );
 
     return Story(

@@ -36,6 +36,7 @@ class ExpenseCategories {
         return Icons.movie_rounded;
       case 'reimbursement':
       case 'settlement':
+      case 'advance':
         return Icons.currency_exchange_rounded;
       default:
         return Icons.receipt_long_rounded;

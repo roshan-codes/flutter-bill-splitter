@@ -144,14 +144,10 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
       setState(() {
         _currentStory = updated;
         _paidKeys.add(key);
-        _currentMemberExpenses[payerName] =
-            (_currentMemberExpenses[payerName] ?? 0.0) + st.amount;
       });
     } else {
       setState(() {
         _paidKeys.add(key);
-        _currentMemberExpenses[payerName] =
-            (_currentMemberExpenses[payerName] ?? 0.0) + st.amount;
       });
     }
 
@@ -198,21 +194,40 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
         ExpenseCalculator.calculateTotal(_currentMemberExpenses);
     final sharePerPerson = ExpenseCalculator.calculateSharePerPerson(
         totalExpense, widget.members.length);
-    final initialSettlements = ExpenseCalculator.calculateSettlements(
-      members: widget.members,
-      paidAmounts: widget.memberExpenses,
-    );
+
+    final List<SettlementTransaction> initialSettlements;
+    if (_currentStory != null) {
+      initialSettlements = _currentStory!.settlements
+          .where((s) => s.status == 'pending')
+          .map((s) {
+        final fromM = _currentStory!.members.firstWhere(
+          (m) => m.userId == s.fromUser,
+          orElse: () => StoryMember(
+              userId: s.fromUser, name: s.fromUser, joinedAt: ''),
+        );
+        final toM = _currentStory!.members.firstWhere(
+          (m) => m.userId == s.toUser,
+          orElse: () =>
+              StoryMember(userId: s.toUser, name: s.toUser, joinedAt: ''),
+        );
+        return SettlementTransaction(
+          from: Friend(name: fromM.name, phone: ''),
+          to: Friend(name: toM.name, phone: ''),
+          amount: s.amount,
+        );
+      }).toList();
+    } else {
+      initialSettlements = ExpenseCalculator.calculateSettlements(
+        members: widget.members,
+        paidAmounts: widget.memberExpenses,
+      );
+    }
+
     // Filter out settlements that have been marked as paid so they disappear from pending list
     final settlements = initialSettlements.where((st) {
       final key = '${st.from.name}_${st.to.name}_${st.amount}';
       if (_paidKeys.contains(key)) return false;
-      final alreadyReimbursed = _currentStory?.expenses.any((e) =>
-              e.category == 'reimbursement' &&
-              e.title.toLowerCase().contains(st.to.name.toLowerCase()) &&
-              e.title.toLowerCase().contains(st.from.name.toLowerCase()) &&
-              (e.amount - st.amount).abs() < 0.01) ??
-          false;
-      return !alreadyReimbursed;
+      return true;
     }).toList();
     final isIOS = isIOSPlatform(context);
 
