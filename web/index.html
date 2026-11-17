@@ -25,7 +25,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TTMM">
-  <meta name="theme-color" content="#F8F9FA">
+  <meta name="theme-color" content="#FAF9FE">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
@@ -48,7 +48,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background-color: #F8F9FA;
+      background-color: #FAF9FE;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       -webkit-tap-highlight-color: transparent;
@@ -61,6 +61,124 @@
       height: 100% !important;
       height: 100dvh !important;
       height: -webkit-fill-available !important;
+    }
+
+    /* Professional Splash Screen */
+    #app-splash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #FAF9FE;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 999999;
+      transition: opacity 0.4s ease-out, visibility 0.4s ease-out;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .splash-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      animation: splashAppear 0.5s ease-out;
+    }
+
+    .splash-logo-card {
+      width: 88px;
+      height: 88px;
+      border-radius: 24px;
+      background: #FFFFFF;
+      box-shadow: 0 12px 32px rgba(95, 72, 232, 0.16), 0 2px 6px rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(234, 234, 239, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 22px;
+      animation: logoPulse 2.4s ease-in-out infinite;
+    }
+
+    .splash-logo-card img {
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      object-fit: contain;
+    }
+
+    .splash-title {
+      font-size: 30px;
+      font-weight: 800;
+      color: #111111;
+      letter-spacing: -0.6px;
+      margin: 0 0 6px 0;
+      line-height: 1.2;
+    }
+
+    .splash-tagline {
+      font-size: 11px;
+      font-weight: 700;
+      color: #8E8EA0;
+      letter-spacing: 2.2px;
+      text-transform: uppercase;
+      margin: 0 0 32px 0;
+    }
+
+    .splash-progress-track {
+      width: 130px;
+      height: 4px;
+      background-color: rgba(95, 72, 232, 0.12);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .splash-progress-indicator {
+      width: 45%;
+      height: 100%;
+      background: linear-gradient(90deg, #111111 0%, #4B5563 100%);
+      border-radius: 6px;
+      position: absolute;
+      animation: progressSlide 1.3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes splashAppear {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes logoPulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.035);
+      }
+    }
+
+    @keyframes progressSlide {
+      0% {
+        left: -45%;
+      }
+      50% {
+        left: 40%;
+      }
+      100% {
+        left: 100%;
+      }
     }
   </style>
   <script>
@@ -75,9 +193,55 @@
       window.visualViewport.addEventListener('scroll', syncViewportHeight);
     }
     syncViewportHeight();
+
+    function removeSplash() {
+      var splash = document.getElementById('app-splash');
+      if (splash && splash.style.opacity !== '0') {
+        splash.style.opacity = '0';
+        splash.style.pointerEvents = 'none';
+        setTimeout(function() {
+          if (splash && splash.parentNode) {
+            splash.parentNode.removeChild(splash);
+          }
+        }, 400);
+      }
+    }
+
+    // Dismiss splash screen when Flutter renders its first frame
+    window.addEventListener('flutter-first-frame', removeSplash);
+
+    // Observer fallback if flutter-first-frame event fires before listener attachment
+    var observer = new MutationObserver(function(mutations) {
+      if (document.querySelector('flutter-view, flt-glass-pane')) {
+        setTimeout(removeSplash, 150);
+        observer.disconnect();
+      }
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+      if (document.body) {
+        observer.observe(document.body, { childList: true, subtree: true });
+      }
+    });
+
+    // Safety timeout fallback
+    setTimeout(removeSplash, 7000);
   </script>
 </head>
 <body>
+  <!-- Clean Professional Splash Screen (Eliminates white loading screen on Web) -->
+  <div id="app-splash">
+    <div class="splash-content">
+      <div class="splash-logo-card">
+        <img src="icons/Icon-192.png" alt="TTMM" onerror="this.src='favicon.png'" />
+      </div>
+      <div class="splash-title">TTMM</div>
+      <div class="splash-tagline">Split · Track · Settle</div>
+      <div class="splash-progress-track">
+        <div class="splash-progress-indicator"></div>
+      </div>
+    </div>
+  </div>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

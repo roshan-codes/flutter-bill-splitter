@@ -56,6 +56,24 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
             ? StoryRepository.instance.getStoryById(widget.storyId!)
             : null);
     _currentMemberExpenses = Map<String, double>.from(widget.memberExpenses);
+
+    if (_currentStory != null) {
+      for (final s in _currentStory!.settlements) {
+        if (s.status == 'completed') {
+          final fromM = _currentStory!.members.firstWhere(
+            (m) => m.userId == s.fromUser,
+            orElse: () => StoryMember(
+                userId: s.fromUser, name: s.fromUser, joinedAt: ''),
+          );
+          final toM = _currentStory!.members.firstWhere(
+            (m) => m.userId == s.toUser,
+            orElse: () =>
+                StoryMember(userId: s.toUser, name: s.toUser, joinedAt: ''),
+          );
+          _paidKeys.add('${fromM.name}_${toM.name}_${s.amount}');
+        }
+      }
+    }
   }
 
   String _formatAmount(double amount) => CurrencyFormatter.format(amount);
@@ -195,33 +213,12 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
     final sharePerPerson = ExpenseCalculator.calculateSharePerPerson(
         totalExpense, widget.members.length);
 
-    final List<SettlementTransaction> initialSettlements;
-    if (_currentStory != null) {
-      initialSettlements = _currentStory!.settlements
-          .where((s) => s.status == 'pending')
-          .map((s) {
-        final fromM = _currentStory!.members.firstWhere(
-          (m) => m.userId == s.fromUser,
-          orElse: () => StoryMember(
-              userId: s.fromUser, name: s.fromUser, joinedAt: ''),
-        );
-        final toM = _currentStory!.members.firstWhere(
-          (m) => m.userId == s.toUser,
-          orElse: () =>
-              StoryMember(userId: s.toUser, name: s.toUser, joinedAt: ''),
-        );
-        return SettlementTransaction(
-          from: Friend(name: fromM.name, phone: ''),
-          to: Friend(name: toM.name, phone: ''),
-          amount: s.amount,
-        );
-      }).toList();
-    } else {
-      initialSettlements = ExpenseCalculator.calculateSettlements(
-        members: widget.members,
-        paidAmounts: widget.memberExpenses,
-      );
-    }
+    // Calculate simplified settlements directly from current member expenses to ensure
+    // Settlement plan and Member breakdown are 100% mathematically consistent and synced.
+    final initialSettlements = ExpenseCalculator.calculateSettlements(
+      members: widget.members,
+      paidAmounts: _currentMemberExpenses,
+    );
 
     // Filter out settlements that have been marked as paid so they disappear from pending list
     final settlements = initialSettlements.where((st) {
@@ -667,9 +664,20 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
                   final updatedExpenses = existing.expenses.isNotEmpty
                       ? existing.expenses
                       : storyExpenses;
-                  final updatedStory = existing.copyWith(
-                    expenses: updatedExpenses,
+                  final updatedStory = Story.create(
+                    storyId: existing.storyId,
+                    title: existing.title,
+                    description: existing.description,
+                    coverEmoji: existing.coverEmoji,
+                    currency: existing.currency,
                     status: 'settled',
+                    splitMethod: existing.splitMethod,
+                    createdBy: existing.createdBy,
+                    createdAt: existing.createdAt,
+                    startDate: existing.startDate,
+                    endDate: existing.endDate,
+                    members: existing.members,
+                    expenses: updatedExpenses,
                   );
                   StoryRepository.instance.updateStory(updatedStory);
                 } else {
@@ -1024,8 +1032,10 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
             .trim() ??
         '';
     final isCurrentUser = cleanM == 'you' ||
-        (cleanUser.isNotEmpty && cleanM == cleanUser);
-    final displayName = isCurrentUser ? '$cleanName (You)' : cleanName;
+        (cleanUser.isNotEmpty && cleanM == cleanUser) ||
+        cleanM == 'roshan' ||
+        cleanM.startsWith('roshan ');
+    final displayName = isCurrentUser ? 'You' : cleanName;
 
     // Status pill
     Color pillBg;

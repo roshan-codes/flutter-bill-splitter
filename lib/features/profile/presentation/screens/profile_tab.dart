@@ -1,6 +1,7 @@
 import 'package:animations/animations.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bill_splitter/core/animations/app_motion.dart';
 import 'package:flutter_bill_splitter/core/animations/app_transitions.dart';
@@ -108,24 +109,7 @@ class _ProfileTabState extends State<ProfileTab> {
     }
   }
 
-  void _openFriends(BuildContext context) {
-    if (widget.onFriendsTap != null) {
-      widget.onFriendsTap!();
-      return;
-    }
-    Navigator.of(context).push(
-      AppTransitions.sharedAxisRoute(
-        type: SharedAxisTransitionType.horizontal,
-        duration: AppMotion.medium,
-        builder: (context) => const FriendsTab(
-          initialSubTabIndex: 0,
-          showBackButton: true,
-        ),
-      ),
-    );
-  }
-
-  void _openGroups(BuildContext context) {
+  void _openCommunities(BuildContext context) {
     if (widget.onGroupsTap != null) {
       widget.onGroupsTap!();
       return;
@@ -139,6 +123,522 @@ class _ProfileTabState extends State<ProfileTab> {
           showBackButton: true,
         ),
       ),
+    );
+  }
+
+  void _openAppSettings(BuildContext context) {
+    HapticFeedback.lightImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded,
+                color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Text(
+              'App Settings is coming soon!',
+              style: GoogleFonts.manrope(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF1E1E1E),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showHelpSupportSheet(BuildContext context) {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(ctx).size.height * 0.88,
+        ),
+        padding: EdgeInsets.fromLTRB(
+            20, 16, 20, MediaQuery.of(ctx).padding.bottom + 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F0FF),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.support_agent_rounded,
+                      color: Color(0xFF5B4DFF),
+                      size: 24,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Help & Support',
+                        style: GoogleFonts.manrope(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF111111),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'We are here to assist you anytime',
+                        style: GoogleFonts.manrope(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF6B7280),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Contact Item 1: Email
+            _buildContactTile(
+              icon: Icons.mail_outline_rounded,
+              iconColor: const Color(0xFF2563EB),
+              iconBgColor: const Color(0xFFEFF6FF),
+              label: 'Email Support',
+              value: 'support@ttmm.app',
+              onTap: () {
+                Clipboard.setData(
+                    const ClipboardData(text: 'support@ttmm.app'));
+                HapticFeedback.mediumImpact();
+                _showNotice(
+                    context, 'Email copied to clipboard: support@ttmm.app');
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // Contact Item 2: Phone
+            _buildContactTile(
+              icon: Icons.phone_outlined,
+              iconColor: const Color(0xFF16A34A),
+              iconBgColor: const Color(0xFFF0FDF4),
+              label: 'Phone Support',
+              value: '+91 98765 43210',
+              onTap: () {
+                Clipboard.setData(
+                    const ClipboardData(text: '+91 98765 43210'));
+                HapticFeedback.mediumImpact();
+                _showNotice(
+                    context, 'Phone copied to clipboard: +91 98765 43210');
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // Working Hours
+            Container(
+              width: double.infinity,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFF3F4F6)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.access_time_rounded,
+                      size: 18, color: Color(0xFF9CA3AF)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Mon - Fri: 9:00 AM - 6:00 PM IST',
+                      style: GoogleFonts.manrope(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Close button
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF111111),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(
+                  'Close',
+                  style: GoogleFonts.manrope(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+  }
+
+  Widget _buildContactTile({
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBgColor,
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: iconBgColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Icon(icon, color: iconColor, size: 20),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: GoogleFonts.manrope(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: GoogleFonts.manrope(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF111111),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.copy_rounded,
+                      size: 13, color: Color(0xFF374151)),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Copy',
+                    style: GoogleFonts.manrope(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF374151),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAboutTtmmSheet(BuildContext context) {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(ctx).size.height * 0.88,
+        ),
+        padding: EdgeInsets.fromLTRB(
+            20, 16, 20, MediaQuery.of(ctx).padding.bottom + 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // App Icon Badge
+            Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                color: const Color(0xFF111111),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.12),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: Text(
+                  '🌴',
+                  style: TextStyle(fontSize: 32),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // App Name & Tagline
+            Text(
+              'TTMM',
+              style: GoogleFonts.manrope(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                color: const Color(0xFF111111),
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Tera Tu Mera Me • Bill Splitter',
+              style: GoogleFonts.manrope(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF6B7280),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Version Pill
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Version 1.0.0 (Build 2026.11)',
+                style: GoogleFonts.manrope(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF4B5563),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // Description Box
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFFF3F4F6)),
+              ),
+              child: Text(
+                'TTMM makes shared expenses effortless, transparent, and fair. Split bills on trips, outings, and events with smart settlement optimization, advance tracking, and real-time clarity.',
+                style: GoogleFonts.manrope(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF374151),
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Key Highlights
+            _buildAboutFeatureRow(
+              icon: Icons.flash_on_rounded,
+              color: const Color(0xFFEAB308),
+              title: 'Smart Settlement Paths',
+              subtitle:
+                  'Minimal transactions so everyone settles up quickly',
+            ),
+            const SizedBox(height: 10),
+            _buildAboutFeatureRow(
+              icon: Icons.payments_outlined,
+              color: const Color(0xFF16A34A),
+              title: 'Advance & Direct Transfers',
+              subtitle:
+                  'Track advances before trip expenses are finalized',
+            ),
+            const SizedBox(height: 10),
+            _buildAboutFeatureRow(
+              icon: Icons.cloud_done_outlined,
+              color: const Color(0xFF2563EB),
+              title: 'Real-Time & Offline Sync',
+              subtitle:
+                  'Works offline and synchronizes instantly across devices',
+            ),
+            const SizedBox(height: 20),
+
+            // Close button
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF111111),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(
+                  'Got it',
+                  style: GoogleFonts.manrope(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+  }
+
+  Widget _buildAboutFeatureRow({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Center(
+            child: Icon(icon, color: color, size: 18),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.manrope(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF111111),
+                ),
+              ),
+              Text(
+                subtitle,
+                style: GoogleFonts.manrope(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF6B7280),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -539,17 +1039,11 @@ class _ProfileTabState extends State<ProfileTab> {
 
               // Menu Cards grouped into SOCIAL, ACCOUNT, APP
               ProfileMenuCard(
-                onFriendsTap: () => _openFriends(context),
-                onGroupsTap: () => _openGroups(context),
+                onCommunitiesTap: () => _openCommunities(context),
                 onEditProfileTap: () => _openEditProfileSheet(context),
-                onPaymentSettlementTap: () =>
-                    _showNotice(context, 'Payment & Settlement opened'),
-                onAppSettingsTap: () =>
-                    _showNotice(context, 'App Settings opened'),
-                onHelpSupportTap: () =>
-                    _showNotice(context, 'Help & Support opened'),
-                onAboutBillSplitTap: () =>
-                    _showNotice(context, 'About TTMM opened'),
+                onAppSettingsTap: () => _openAppSettings(context),
+                onHelpSupportTap: () => _showHelpSupportSheet(context),
+                onAboutBillSplitTap: () => _showAboutTtmmSheet(context),
               ),
               const SizedBox(height: 20),
 

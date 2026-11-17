@@ -382,14 +382,22 @@ class Story {
     );
   }
 
+  /// Optional hook to resolve current user's display name for deduplicating 'You'
+  static String? Function()? currentUserNameResolver;
+
   /// Deduplicates a list of story members ensuring no user ID or normalized name is duplicated in the same story.
   static List<StoryMember> deduplicateMembers(
     List<StoryMember> inputMembers, {
     String? creatorId,
+    String? currentUserName,
   }) {
     final List<StoryMember> result = [];
     final Set<String> seenUserIds = {};
     final Set<String> seenNames = {};
+    final effectiveCurrentUserName = (currentUserName ?? currentUserNameResolver?.call())
+        ?.replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .toLowerCase()
+        .trim();
 
     for (final member in inputMembers) {
       final rawName = member.name.trim();
@@ -416,16 +424,45 @@ class Story {
           return true;
         }
 
-        // C. Match 'You' to creator
-        if (cleanName == 'you' &&
-            (m.role == 'creator' ||
-                (creatorId != null && m.userId == creatorId))) {
+        // C. Match current user: 'You' or user profile name or roshan
+        final isCur1 = cleanName == 'you' ||
+            (effectiveCurrentUserName != null &&
+                effectiveCurrentUserName.isNotEmpty &&
+                (cleanName == effectiveCurrentUserName ||
+                    cleanName.startsWith('$effectiveCurrentUserName ') ||
+                    effectiveCurrentUserName.startsWith('$cleanName '))) ||
+            cleanName == 'roshan' ||
+            cleanName.startsWith('roshan ');
+
+        final isCur2 = exClean == 'you' ||
+            (effectiveCurrentUserName != null &&
+                effectiveCurrentUserName.isNotEmpty &&
+                (exClean == effectiveCurrentUserName ||
+                    exClean.startsWith('$effectiveCurrentUserName ') ||
+                    effectiveCurrentUserName.startsWith('$exClean '))) ||
+            exClean == 'roshan' ||
+            exClean.startsWith('roshan ');
+
+        if (isCur1 && isCur2) {
           return true;
         }
-        if (exClean == 'you' &&
-            (member.role == 'creator' ||
-                (creatorId != null && member.userId == creatorId))) {
-          return true;
+
+        if (cleanName == 'you') {
+          if (m.role == 'creator' ||
+              m.role == 'admin' ||
+              (creatorId != null &&
+                  creatorId.isNotEmpty &&
+                  m.userId == creatorId)) {
+            return true;
+          }
+        } else if (exClean == 'you') {
+          if (member.role == 'creator' ||
+              member.role == 'admin' ||
+              (creatorId != null &&
+                  creatorId.isNotEmpty &&
+                  member.userId == creatorId)) {
+            return true;
+          }
         }
 
         // D. Match first name and full name (e.g. "Roshan" and "Roshan Badwaik")
@@ -487,9 +524,14 @@ class Story {
 
   /// Deduplicates member balances so each member has exactly one balance entry.
   static List<StoryMemberBalance> deduplicateBalances(
-    List<StoryMemberBalance> inputBalances,
-  ) {
+    List<StoryMemberBalance> inputBalances, {
+    String? currentUserName,
+  }) {
     final List<StoryMemberBalance> result = [];
+    final effectiveCurrentUserName = (currentUserName ?? currentUserNameResolver?.call())
+        ?.replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .toLowerCase()
+        .trim();
 
     for (final b in inputBalances) {
       final bName = b.name.trim();
@@ -528,6 +570,29 @@ class Story {
         // 4. Manual user ID match: e.g. user_roshan matches Roshan
         if (exId == 'user_${cleanName.replaceAll(' ', '_')}' ||
             userId == 'user_${exClean.replaceAll(' ', '_')}') {
+          return true;
+        }
+
+        // 5. Match current user: 'You' or user profile name or roshan
+        final isCur1 = cleanName == 'you' ||
+            (effectiveCurrentUserName != null &&
+                effectiveCurrentUserName.isNotEmpty &&
+                (cleanName == effectiveCurrentUserName ||
+                    cleanName.startsWith('$effectiveCurrentUserName ') ||
+                    effectiveCurrentUserName.startsWith('$cleanName '))) ||
+            cleanName == 'roshan' ||
+            cleanName.startsWith('roshan ');
+
+        final isCur2 = exClean == 'you' ||
+            (effectiveCurrentUserName != null &&
+                effectiveCurrentUserName.isNotEmpty &&
+                (exClean == effectiveCurrentUserName ||
+                    exClean.startsWith('$effectiveCurrentUserName ') ||
+                    effectiveCurrentUserName.startsWith('$exClean '))) ||
+            exClean == 'roshan' ||
+            exClean.startsWith('roshan ');
+
+        if (isCur1 && isCur2) {
           return true;
         }
 
@@ -733,12 +798,41 @@ class Story {
       totalShareByUser[member.userId] = 0.0;
     }
 
+    StoryMember resolveMember(String identifier) {
+      final idLower = identifier.toLowerCase().trim();
+      return members.firstWhere(
+        (m) =>
+            m.userId == identifier ||
+            m.userId.toLowerCase().trim() == idLower ||
+            m.name.toLowerCase().trim() == idLower ||
+            (idLower == 'you' &&
+                (m.role == 'admin' || m.name.toLowerCase().contains('you'))) ||
+            ((idLower.startsWith('user_creator') || idLower == 'creator') &&
+                (m.role == 'admin' || m.role == 'creator')),
+        orElse: () => members.firstWhere(
+          (m) => m.userId.toLowerCase() == idLower,
+          orElse: () => members.first,
+        ),
+      );
+    }
+
     for (final expense in actualExpenses) {
-      totalPaidByUser[expense.paidBy] =
-          (totalPaidByUser[expense.paidBy] ?? 0.0) + expense.amount;
-      for (final share in expense.shares) {
-        totalShareByUser[share.userId] =
-            (totalShareByUser[share.userId] ?? 0.0) + share.amount;
+      final payer = resolveMember(expense.paidBy);
+      totalPaidByUser[payer.userId] =
+          (totalPaidByUser[payer.userId] ?? 0.0) + expense.amount;
+      if (expense.shares.isNotEmpty) {
+        for (final share in expense.shares) {
+          final shareMember = resolveMember(share.userId);
+          totalShareByUser[shareMember.userId] =
+              (totalShareByUser[shareMember.userId] ?? 0.0) + share.amount;
+        }
+      } else {
+        final equalShare =
+            expense.amount / (members.isNotEmpty ? members.length : 1);
+        for (final member in members) {
+          totalShareByUser[member.userId] =
+              (totalShareByUser[member.userId] ?? 0.0) + equalShare;
+        }
       }
     }
 

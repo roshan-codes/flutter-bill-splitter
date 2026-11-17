@@ -6,6 +6,7 @@ import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/friends/data/repositories/friends_repository.dart';
 import 'package:flutter_bill_splitter/features/stories/data/repositories/story_repository.dart';
+import 'package:flutter_bill_splitter/features/stories/domain/models/story.dart';
 import 'app/app.dart';
 
 export 'app/app.dart';
@@ -64,6 +65,11 @@ void main() async {
   await StorageService.instance.init();
   await StorageService.instance.remove('saved_stories_key');
   await StorageService.instance.remove('split_activities_key');
+
+  Story.currentUserNameResolver = () {
+    return SupabaseService.userDisplayName ??
+        StorageService.instance.getStringSync('user_profile_name');
+  };
 
   await ActivityRepository.instance.init();
   await FriendsRepository.instance.init();

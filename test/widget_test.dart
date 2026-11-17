@@ -337,15 +337,13 @@ void main() {
     await tester.tap(find.byTooltip('Profile'));
     await tester.pumpAndSettle();
 
-    // Verify Friends and Groups options are in ProfileMenuCard
-    expect(find.text('Friends'), findsOneWidget);
-    expect(find.text('Groups'), findsOneWidget);
+    // Verify Communities option is in ProfileMenuCard
+    expect(find.text('Communities'), findsOneWidget);
 
-    // Tap Friends -> navigates to Friends screen with back button
-    await tester.tap(find.text('Friends'));
+    // Tap Communities -> navigates to FriendsTab screen with back button
+    await tester.tap(find.text('Communities'));
     await tester.pumpAndSettle();
     expect(find.byType(FriendsTab), findsOneWidget);
-    expect(find.text('No friends yet'), findsOneWidget);
 
     // Tap Back button -> returns to Profile tab
     final backBtn = find.byType(PlatformBackButton);
@@ -354,11 +352,5 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Guest User'), findsOneWidget);
-
-    // Tap Groups -> navigates to Groups list
-    await tester.tap(find.text('Groups'));
-    await tester.pumpAndSettle();
-    expect(find.byType(FriendsTab), findsOneWidget);
-    expect(find.text('No groups yet'), findsOneWidget);
   });
 }

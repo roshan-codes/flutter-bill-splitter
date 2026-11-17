@@ -15,7 +15,6 @@ import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/core/utils/currency_formatter.dart';
 import 'package:flutter_bill_splitter/core/utils/date_formatter.dart';
 import 'package:flutter_bill_splitter/core/constants/expense_categories.dart';
-import 'package:flutter_bill_splitter/core/utils/string_utils.dart';
 import 'package:flutter_bill_splitter/core/utils/avatar_resolver.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
@@ -81,6 +80,9 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
   @override
   void initState() {
     super.initState();
+    Story.currentUserNameResolver ??= () =>
+        SupabaseService.userDisplayName ??
+        StorageService.instance.getStringSync('user_profile_name');
     WidgetsBinding.instance.addObserver(this);
     _memberExpenses = {};
     _initStoryData();
@@ -125,13 +127,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
           _splitMethod = fresh.splitMethod;
           _memberExpenses.clear();
           for (final exp in _story.expenses) {
-            final payerMember = _story.members.firstWhere(
-              (m) =>
-                  m.userId == exp.paidBy ||
-                  m.name.toLowerCase() == exp.paidBy.toLowerCase(),
-              orElse: () => StoryMember(
-                  userId: exp.paidBy, name: exp.paidBy, joinedAt: ''),
-            );
+            final payerMember = _resolvePayerMember(exp.paidBy);
             _memberExpenses[payerMember.name] =
                 (_memberExpenses[payerMember.name] ?? 0.0) + exp.amount;
           }
@@ -175,18 +171,26 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
   }
 
   void _initStoryData() {
+    Story.currentUserNameResolver ??= () =>
+        SupabaseService.userDisplayName ??
+        StorageService.instance.getStringSync('user_profile_name');
+    final currentUserName = SupabaseService.userDisplayName ??
+        StorageService.instance.getStringSync('user_profile_name');
     if (widget.story != null) {
+      final cleanMembers = Story.deduplicateMembers(widget.story!.members,
+          currentUserName: currentUserName);
+      final cleanBalances = Story.deduplicateBalances(
+          widget.story!.memberBalances,
+          currentUserName: currentUserName);
       _story = widget.story!.copyWith(
-        members: Story.deduplicateMembers(widget.story!.members),
-        memberBalances: Story.deduplicateBalances(widget.story!.memberBalances),
+        members: cleanMembers,
+        memberBalances: cleanBalances,
+        summary:
+            widget.story!.summary.copyWith(memberCount: cleanMembers.length),
       );
       _splitMethod = _story.splitMethod;
       for (final exp in _story.expenses) {
-        final payerMember = _story.members.firstWhere(
-          (m) => m.userId == exp.paidBy,
-          orElse: () =>
-              StoryMember(userId: exp.paidBy, name: exp.paidBy, joinedAt: ''),
-        );
+        final payerMember = _resolvePayerMember(exp.paidBy);
         _memberExpenses[payerMember.name] =
             (_memberExpenses[payerMember.name] ?? 0.0) + exp.amount;
       }
@@ -205,11 +209,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
       );
       _splitMethod = _story.splitMethod;
       for (final exp in _story.expenses) {
-        final payerMember = _story.members.firstWhere(
-          (m) => m.userId == exp.paidBy,
-          orElse: () =>
-              StoryMember(userId: exp.paidBy, name: exp.paidBy, joinedAt: ''),
-        );
+        final payerMember = _resolvePayerMember(exp.paidBy);
         _memberExpenses[payerMember.name] =
             (_memberExpenses[payerMember.name] ?? 0.0) + exp.amount;
       }
@@ -315,168 +315,6 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
       _story = recalculated;
     });
     await StoryRepository.instance.updateStory(recalculated);
-  }
-
-  void _showAddExpenseDialog(Friend friend) {
-    final currentAmount = _memberExpenses[friend.name];
-    final controller = TextEditingController(
-      text: currentAmount != null && currentAmount > 0
-          ? currentAmount.toStringAsFixed(
-              currentAmount.truncateToDouble() == currentAmount ? 0 : 2)
-          : '',
-    );
-    final formKey = GlobalKey<FormState>();
-
-    AppTransitions.showFadeScaleDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.cardLarge),
-          side: const BorderSide(color: AppColors.border, width: 1.0),
-        ),
-        title: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.surfaceSubtle,
-              ),
-              child: Center(
-                child: Text(
-                  StringUtils.getSingleInitial(friend.name),
-                  style: GoogleFonts.manrope(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Expense for ${friend.name}',
-                style: GoogleFonts.manrope(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: controller,
-                autofocus: true,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                style: GoogleFonts.manrope(
-                    fontSize: 15, color: AppColors.textPrimary),
-                decoration: InputDecoration(
-                  labelText: 'Amount (₹)',
-                  hintText: 'Enter amount e.g. 250',
-                  hintStyle: GoogleFonts.manrope(color: AppColors.textTertiary),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.input),
-                  ),
-                ),
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Please enter an amount';
-                  }
-                  final parsed = double.tryParse(val.trim());
-                  if (parsed == null || parsed <= 0) {
-                    return 'Enter a valid amount > 0';
-                  }
-                  return null;
-                },
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel',
-                style: GoogleFonts.manrope(color: AppColors.textSecondary)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.buttonSecondary),
-              ),
-            ),
-            onPressed: () async {
-              if (formKey.currentState?.validate() ?? false) {
-                final amount = double.parse(controller.text.trim());
-                final matchingMember = _story.members.firstWhere(
-                  (m) => m.name.toLowerCase() == friend.name.toLowerCase(),
-                  orElse: () => StoryMember(
-                      userId: friend.name, name: friend.name, joinedAt: ''),
-                );
-
-                final newExpense = StoryExpense(
-                  expenseId: 'exp_${DateTime.now().millisecondsSinceEpoch}',
-                  title: 'Expense by ${friend.name}',
-                  category: 'general',
-                  amount: amount,
-                  paidBy: matchingMember.userId,
-                  splitType: 'equal',
-                  participants: _story.members.map((m) => m.userId).toList(),
-                  shares: _story.members
-                      .map((m) => ExpenseShare(
-                            userId: m.userId,
-                            amount: amount /
-                                (_story.members.isNotEmpty
-                                    ? _story.members.length
-                                    : 1),
-                          ))
-                      .toList(),
-                  date: DateTime.now().toIso8601String(),
-                );
-
-                setState(() {
-                  _memberExpenses[friend.name] = amount;
-
-                  // Add or update matching StoryExpense
-                  final existingIdx = _story.expenses.indexWhere(
-                    (e) => e.title == 'Expense by ${friend.name}',
-                  );
-
-                  if (existingIdx != -1) {
-                    final updated = List<StoryExpense>.from(_story.expenses);
-                    updated[existingIdx] = newExpense;
-                    _story = _story.copyWith(expenses: updated);
-                  } else {
-                    _story = _story
-                        .copyWith(expenses: [..._story.expenses, newExpense]);
-                  }
-                });
-
-                await _persistExpense(newExpense, matchingMember.name);
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
-              }
-            },
-            child: Text('Save Expense',
-                style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
-    );
   }
 
   String _inferCategoryFromTitle(String title) {
@@ -832,25 +670,66 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                     ),
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: titleController,
-                    decoration: InputDecoration(
-                      labelText: isAdvanceMode
-                          ? 'Note / Purpose (Optional)'
-                          : 'Expense Title',
-                      hintText: isAdvanceMode
-                          ? 'e.g. Hotel advance, Flight booking'
-                          : 'e.g. Dinner, Boat Ride',
-                      hintStyle:
-                          GoogleFonts.manrope(color: AppColors.textTertiary),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.input)),
+                  Text(
+                    isAdvanceMode
+                        ? 'Note / Purpose (Optional)'
+                        : 'Expense Title',
+                    style: GoogleFonts.manrope(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF111111),
                     ),
-                    validator: isAdvanceMode
-                        ? null
-                        : (v) => (v == null || v.trim().isEmpty)
-                            ? 'Enter a title'
-                            : null,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 56,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                          color: const Color(0xFFEAEAEF), width: 1.2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.025),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: TextFormField(
+                        controller: titleController,
+                        style: GoogleFonts.manrope(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF111111),
+                        ),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          filled: false,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                          hintText: isAdvanceMode
+                              ? 'Note / Purpose (Optional)'
+                              : 'Expense Title',
+                          hintStyle: GoogleFonts.manrope(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                        validator: isAdvanceMode
+                            ? null
+                            : (v) => (v == null || v.trim().isEmpty)
+                                ? 'Enter a title'
+                                : null,
+                      ),
+                    ),
                   ),
                   if (!isAdvanceMode) ...[
                     const SizedBox(height: 10),
@@ -953,29 +832,70 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                       ),
                     ),
                   ],
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: amountController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      labelText: 'Amount (₹)',
-                      hintText: 'e.g. 2000',
-                      hintStyle:
-                          GoogleFonts.manrope(color: AppColors.textTertiary),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.input)),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Amount (₹)',
+                    style: GoogleFonts.manrope(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF111111),
                     ),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) {
-                        return 'Enter amount';
-                      }
-                      final val = double.tryParse(v.trim());
-                      if (val == null || val <= 0) {
-                        return 'Enter valid amount > 0';
-                      }
-                      return null;
-                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 56,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                          color: const Color(0xFFEAEAEF), width: 1.2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.025),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: TextFormField(
+                        controller: amountController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        style: GoogleFonts.manrope(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF111111),
+                        ),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          filled: false,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                          hintText: 'Amount (₹)',
+                          hintStyle: GoogleFonts.manrope(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Enter amount';
+                          }
+                          final val = double.tryParse(v.trim());
+                          if (val == null || val <= 0) {
+                            return 'Enter valid amount > 0';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   if (!isAdvanceMode) ...[
@@ -1013,7 +933,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                                 ),
                               ),
                               child: Text(
-                                m.name,
+                                _formatMemberDisplayName(m.name, _isCurrentUser(m.name, m.userId)),
                                 style: GoogleFonts.manrope(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -1069,7 +989,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                                 ),
                               ),
                               child: Text(
-                                m.name,
+                                _formatMemberDisplayName(m.name, _isCurrentUser(m.name, m.userId)),
                                 style: GoogleFonts.manrope(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -1125,7 +1045,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                                 ),
                               ),
                               child: Text(
-                                m.name,
+                                _formatMemberDisplayName(m.name, _isCurrentUser(m.name, m.userId)),
                                 style: GoogleFonts.manrope(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -1282,9 +1202,27 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                             date: DateTime.now().toIso8601String(),
                           );
 
+                          final recalculatedStory = Story.create(
+                            storyId: _story.storyId,
+                            title: _story.title,
+                            description: _story.description,
+                            coverEmoji: _story.coverEmoji,
+                            currency: _story.currency,
+                            status: _story.status,
+                            splitMethod: _splitMethod,
+                            createdBy: _story.createdBy,
+                            createdAt: _story.createdAt,
+                            startDate: _story.startDate,
+                            endDate: _story.endDate,
+                            members: _story.members,
+                            expenses: [..._story.expenses, newExpense],
+                            existingSettlements: _story.settlements
+                                .where((s) => s.status == 'completed')
+                                .toList(),
+                          );
+
                           setState(() {
-                            _story = _story.copyWith(
-                                expenses: [..._story.expenses, newExpense]);
+                            _story = recalculatedStory;
                             _memberExpenses[payer.name] =
                                 (_memberExpenses[payer.name] ?? 0.0) + amt;
                           });
@@ -1322,13 +1260,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
           exp.category == 'advance') {
         continue;
       }
-      final payerMember = _story.members.firstWhere(
-        (m) =>
-            m.userId == exp.paidBy ||
-            m.name.toLowerCase() == exp.paidBy.toLowerCase(),
-        orElse: () =>
-            StoryMember(userId: exp.paidBy, name: exp.paidBy, joinedAt: ''),
-      );
+      final payerMember = _resolvePayerMember(exp.paidBy);
       _memberExpenses[payerMember.name] =
           (_memberExpenses[payerMember.name] ?? 0.0) + exp.amount;
     }
@@ -1337,11 +1269,9 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
   /// Shows the expense details bottom sheet with Edit and Delete options
   void _showExpenseDetailSheet(StoryExpense expense) {
     HapticFeedback.lightImpact();
-    final payer = _story.members.firstWhere(
-      (m) => m.userId == expense.paidBy,
-      orElse: () => StoryMember(
-          userId: expense.paidBy, name: expense.paidBy, joinedAt: ''),
-    );
+    final payer = _resolvePayerMember(expense.paidBy);
+    final isMe = _isCurrentUser(payer.name, payer.userId);
+    final displayName = _formatMemberDisplayName(payer.name, isMe);
 
     showModalBottomSheet(
       context: context,
@@ -1452,13 +1382,14 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                 const Spacer(),
                 AppAvatar(
                   size: 24,
-                  name: payer.name,
+                  name: displayName,
                   avatarUrl: payer.avatar,
+                  isCurrentUser: isMe,
                   fontSize: 11,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  payer.name,
+                  displayName,
                   style: GoogleFonts.manrope(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -2197,29 +2128,6 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
   IconData _getCategoryIcon(String category) =>
       ExpenseCategories.getCategoryIcon(category);
 
-  String _formatExpenseDate(String dateStr) {
-    try {
-      final dt = DateTime.parse(dateStr);
-      final months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec'
-      ];
-      return '${months[dt.month - 1]} ${dt.day}';
-    } catch (_) {
-      return 'Nov 12';
-    }
-  }
-
   String _formatExpenseDateTime(String dateStr) {
     try {
       final dt = DateTime.parse(dateStr).toLocal();
@@ -2671,35 +2579,40 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                     ),
                   ),
 
-                  // Full-width Add Expense + button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF111111),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28),
-                        ),
-                      ),
-                      onPressed: () => _openAddExpenseSheet(context),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Add Expense',
-                            style: GoogleFonts.manrope(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
+                  // Content-sized Add Expense button (as required for expense text)
+                  Align(
+                    alignment: Alignment.center,
+                    child: SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF111111),
+                          foregroundColor: Colors.white,
+                          elevation: 3,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
                           ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.add_rounded,
-                              color: Colors.white, size: 20),
-                        ],
+                          shadowColor: Colors.black.withOpacity(0.25),
+                        ),
+                        onPressed: () => _openAddExpenseSheet(context),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Add Expense',
+                              style: GoogleFonts.manrope(
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(Icons.add_rounded,
+                                color: Colors.white, size: 20),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -3187,10 +3100,16 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
   }
 
   String _formatMemberDisplayName(String name, bool isMe) {
+    if (isMe) {
+      return 'You';
+    }
     final clean = name
         .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
         .trim();
-    return isMe ? '$clean (You)' : clean;
+    if (clean.toLowerCase() == 'you') {
+      return 'You';
+    }
+    return clean;
   }
 
   String? get _resolvedCurrentMemberId {
@@ -3255,6 +3174,64 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     return null;
   }
 
+  StoryMember _resolvePayerMember(String paidByIdentifier) {
+    final idLower = paidByIdentifier.toLowerCase().trim();
+
+    // 1. Exact userId match
+    for (final m in _story.members) {
+      if (m.userId == paidByIdentifier || m.userId.toLowerCase().trim() == idLower) {
+        return m;
+      }
+    }
+
+    // 2. Exact or clean name match
+    for (final m in _story.members) {
+      final cleanM = m.name
+          .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+          .toLowerCase()
+          .trim();
+      if (cleanM == idLower) return m;
+      if (idLower == 'user_${cleanM.replaceAll(' ', '_')}') return m;
+    }
+
+    // 3. Creator / Admin match (e.g. user_creator_... or creator or you)
+    if (idLower.startsWith('user_creator') ||
+        idLower == 'creator' ||
+        idLower == 'you' ||
+        idLower.startsWith('user_you')) {
+      final adminMember = _story.members.firstWhere(
+        (m) => m.role == 'admin' || m.role == 'creator',
+        orElse: () => _story.members.firstWhere(
+          (m) => _isCurrentUser(m.name, m.userId),
+          orElse: () => _story.members.first,
+        ),
+      );
+      return adminMember;
+    }
+
+    // 4. Current user match
+    if (_isCurrentUser(paidByIdentifier, paidByIdentifier)) {
+      final myMember = _story.members.firstWhere(
+        (m) => _isCurrentUser(m.name, m.userId),
+        orElse: () => _story.members.first,
+      );
+      return myMember;
+    }
+
+    // 5. First-name partial match (e.g. user_kumar_123 contains kumar)
+    for (final m in _story.members) {
+      final mFirst = m.name.toLowerCase().trim().split(' ').first;
+      if (mFirst.length > 2 && idLower.contains(mFirst)) {
+        return m;
+      }
+    }
+
+    // Fallback: If not found, check if it's the current user or first member
+    return _story.members.isNotEmpty
+        ? _story.members.first
+        : StoryMember(userId: paidByIdentifier, name: paidByIdentifier, joinedAt: '');
+  }
+
   bool _isCurrentUser(String name, [String? userId]) {
     final cleanName = name
         .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
@@ -3315,10 +3292,6 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
   ) {
     final isMe = _isCurrentUser(balance.name, balance.userId);
     final displayName = _formatMemberDisplayName(balance.name, isMe);
-    final cleanFriendName = _formatMemberDisplayName(balance.name, false);
-    final friend = Friend(name: cleanFriendName, phone: '+91 98765 00000');
-    final hasExpense = _memberExpenses[cleanFriendName] != null &&
-        _memberExpenses[cleanFriendName]! > 0;
     final paid = balance.totalPaid;
     final share = balance.totalShare > 0
         ? balance.totalShare
@@ -3329,97 +3302,73 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
         ? balance.netBalance
         : (paid - share);
 
-    Widget statusWidget;
+    Color pillBg;
+    Color pillTextColor;
+    String pillTitle;
+    String pillAmount;
 
-    if (!isSampleGoaTrip && !hasExpense && balance.totalPaid == 0) {
-      statusWidget = GestureDetector(
-        onTap: () => _showAddExpenseDialog(friend),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceSubtle,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border, width: 1.0),
-          ),
-          child: Text(
-            'Add expense',
-            style: GoogleFonts.manrope(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ),
-      );
+    final isSettled = net.abs() <= 0.001;
+
+    if (net > 0.001) {
+      pillBg = const Color(0xFFE8F8EE);
+      pillTextColor = const Color(0xFF16A34A);
+      pillTitle = 'Gets';
+      pillAmount = '₹${_formatAmount(net)}';
+    } else if (net < -0.001) {
+      pillBg = const Color(0xFFFEECEB);
+      pillTextColor = const Color(0xFFE53935);
+      pillTitle = 'Owes';
+      pillAmount = '₹${_formatAmount(-net)}';
     } else {
-      Color pillBg;
-      Color pillTextColor;
-      String pillTitle;
-      String pillAmount;
-
-      final isSettled = net.abs() <= 0.001;
-
-      if (net > 0.001) {
-        pillBg = const Color(0xFFE8F8EE);
-        pillTextColor = const Color(0xFF16A34A);
-        pillTitle = 'Gets';
-        pillAmount = '₹${_formatAmount(net)}';
-      } else if (net < -0.001) {
-        pillBg = const Color(0xFFFEECEB);
-        pillTextColor = const Color(0xFFE53935);
-        pillTitle = 'Owes';
-        pillAmount = '₹${_formatAmount(-net)}';
-      } else {
-        pillBg = const Color(0xFFF4F4F5);
-        pillTextColor = AppColors.textSecondary;
-        pillTitle = 'Settled';
-        pillAmount = '';
-      }
-
-      statusWidget = Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: 10,
-          vertical: isSettled ? 6 : 4,
-        ),
-        decoration: BoxDecoration(
-          color: pillBg,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: isSettled
-            ? Text(
-                'Settled',
-                style: GoogleFonts.manrope(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: pillTextColor,
-                ),
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    pillTitle,
-                    style: GoogleFonts.manrope(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: pillTextColor,
-                    ),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    pillAmount,
-                    style: GoogleFonts.manrope(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: pillTextColor,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                ],
-              ),
-      );
+      pillBg = const Color(0xFFF4F4F5);
+      pillTextColor = AppColors.textSecondary;
+      pillTitle = 'Settled';
+      pillAmount = '';
     }
+
+    final statusWidget = Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: isSettled ? 6 : 4,
+      ),
+      decoration: BoxDecoration(
+        color: pillBg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: isSettled
+          ? Text(
+              'Settled',
+              style: GoogleFonts.manrope(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: pillTextColor,
+              ),
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  pillTitle,
+                  style: GoogleFonts.manrope(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: pillTextColor,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  pillAmount,
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: pillTextColor,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ],
+            ),
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -3470,17 +3419,100 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
             ),
           ),
 
-          // Balance status pill / action
+          // Balance status pill (no redundant chevron arrow)
           statusWidget,
-          const SizedBox(width: 8),
-
-          // Chevron Arrow
-          const Icon(
-            Icons.chevron_right_rounded,
-            size: 20,
-            color: AppColors.textTertiary,
-          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildExpenseItemRow(StoryExpense expense) {
+    final payer = _resolvePayerMember(expense.paidBy);
+    final isMe = _isCurrentUser(payer.name, payer.userId);
+    final displayName = _formatMemberDisplayName(payer.name, isMe);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showExpenseDetailSheet(expense),
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              // Category Icon Squircle
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Center(
+                  child: Icon(
+                    _getCategoryIcon(expense.category),
+                    size: 22,
+                    color: const Color(0xFF1F2937),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+
+              // Title, Payer, and Timestamp
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      expense.title,
+                      style: GoogleFonts.manrope(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Paid by $displayName',
+                      style: GoogleFonts.manrope(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatExpenseDateTime(expense.date),
+                      style: GoogleFonts.manrope(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Trailing Amount
+              Text(
+                '₹${_formatAmount(expense.amount)}',
+                style: GoogleFonts.manrope(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.3,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -3492,7 +3524,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.border, width: 1.0),
         ),
         child: Center(
@@ -3508,93 +3540,41 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
       );
     }
 
-    final latestExp = _story.expenses.lastWhere(
-      (e) =>
-          e.category != 'reimbursement' &&
-          e.category != 'settlement' &&
-          e.category != 'advance',
-      orElse: () => _story.expenses.last,
-    );
-    final payer = _story.members.firstWhere(
-      (m) => m.userId == latestExp.paidBy,
-      orElse: () => StoryMember(
-          userId: latestExp.paidBy, name: latestExp.paidBy, joinedAt: ''),
-    );
+    final sortedExpenses = List<StoryExpense>.from(_story.expenses);
+    sortedExpenses.sort((a, b) {
+      final dateA = DateTime.tryParse(a.date);
+      final dateB = DateTime.tryParse(b.date);
+      if (dateA != null && dateB != null) {
+        final cmp = dateB.compareTo(dateA); // Latest at top
+        if (cmp != 0) return cmp;
+      }
+      return b.expenseId.compareTo(a.expenseId);
+    });
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _showExpenseDetailSheet(latestExp),
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.border, width: 1.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+    final recentList = sortedExpenses.take(6).toList();
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border, width: 1.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF4E6),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Center(
-                  child: Icon(
-                    _getCategoryIcon(latestExp.category),
-                    color: const Color(0xFF1E1E1E),
-                    size: 22,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      latestExp.title,
-                      style: GoogleFonts.manrope(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Paid by ${payer.name} · ${_formatExpenseDate(latestExp.date)}',
-                      style: GoogleFonts.manrope(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                '₹${_formatAmount(latestExp.amount)}',
-                style: GoogleFonts.manrope(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                  letterSpacing: -0.3,
-                ),
-              ),
-            ],
-          ),
-        ),
+        ],
+      ),
+      child: Column(
+        children: [
+          for (int i = 0; i < recentList.length; i++) ...[
+            _buildExpenseItemRow(recentList[i]),
+            if (i < recentList.length - 1)
+              const Divider(color: AppColors.border, height: 1, thickness: 1),
+          ],
+        ],
       ),
     );
   }
@@ -3613,183 +3593,120 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
           width: double.infinity,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Sub-header: "₹1,000 total · 1 expense"
-          Builder(
-            builder: (context) {
-              final actualCount = _story.expenses
-                  .where((e) =>
-                      e.category != 'reimbursement' &&
-                      e.category != 'settlement' &&
-                      e.category != 'advance')
-                  .length;
-              final transferCount = _story.expenses.length - actualCount;
-              final countText = transferCount > 0
-                  ? '$actualCount expense${actualCount == 1 ? '' : 's'} · $transferCount transfer${transferCount == 1 ? '' : 's'}'
-                  : '$actualCount expense${actualCount == 1 ? '' : 's'}';
-              return Text(
-                '₹${_formatAmount(totalExpenses)} total · $countText',
-                style: GoogleFonts.manrope(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 14),
-
-          if (_story.expenses.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 40),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceSubtle,
-                        borderRadius: BorderRadius.circular(AppRadius.card),
-                      ),
-                      child: const Icon(
-                        Icons.receipt_long_outlined,
-                        size: 28,
-                        color: AppColors.textPrimary,
-                      ),
+            children: [
+              // Sub-header: "₹1,000 total · 1 expense"
+              Builder(
+                builder: (context) {
+                  final actualCount = _story.expenses
+                      .where((e) =>
+                          e.category != 'reimbursement' &&
+                          e.category != 'settlement' &&
+                          e.category != 'advance')
+                      .length;
+                  final transferCount = _story.expenses.length - actualCount;
+                  final countText = transferCount > 0
+                      ? '$actualCount expense${actualCount == 1 ? '' : 's'} · $transferCount transfer${transferCount == 1 ? '' : 's'}'
+                      : '$actualCount expense${actualCount == 1 ? '' : 's'}';
+                  return Text(
+                    '₹${_formatAmount(totalExpenses)} total · $countText',
+                    style: GoogleFonts.manrope(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
                     ),
-                    const SizedBox(height: 14),
-                    Text(
-                      'No expenses added yet',
-                      style: GoogleFonts.manrope(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Tap "+ Add expense" below to record who paid.',
-                      style: GoogleFonts.manrope(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
-            )
-          else
-            // Expense Cards matching Screen 3
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _story.expenses.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final expense = _story.expenses[index];
-                final payer = _story.members.firstWhere(
-                  (m) => m.userId == expense.paidBy,
-                  orElse: () => StoryMember(
-                      userId: expense.paidBy,
-                      name: expense.paidBy,
-                      joinedAt: ''),
-                );
+              const SizedBox(height: 14),
 
-                return Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () => _showExpenseDetailSheet(expense),
-                    borderRadius: BorderRadius.circular(18),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+              if (_story.expenses.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceSubtle,
+                            borderRadius: BorderRadius.circular(AppRadius.card),
+                          ),
+                          child: const Icon(
+                            Icons.receipt_long_outlined,
+                            size: 28,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          'No expenses added yet',
+                          style: GoogleFonts.manrope(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Tap "+ Add expense" below to record who paid.',
+                          style: GoogleFonts.manrope(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Builder(
+                  builder: (context) {
+                    final sortedExpenses =
+                        List<StoryExpense>.from(_story.expenses);
+                    sortedExpenses.sort((a, b) {
+                      final dateA = DateTime.tryParse(a.date);
+                      final dateB = DateTime.tryParse(b.date);
+                      if (dateA != null && dateB != null) {
+                        final cmp = dateB.compareTo(dateA); // Latest first
+                        if (cmp != 0) return cmp;
+                      }
+                      return b.expenseId.compareTo(a.expenseId);
+                    });
+
+                    // Expenses in single card with dividers like members list
+                    return Container(
+                      width: double.infinity,
                       decoration: BoxDecoration(
                         color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: AppColors.border, width: 1.0),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.02),
+                            color: Colors.black.withOpacity(0.03),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
                         ],
                       ),
-                      child: Row(
+                      child: Column(
                         children: [
-                          // Category Icon Squircle
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF3F4F6),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                _getCategoryIcon(expense.category),
-                                size: 22,
-                                color: const Color(0xFF1F2937),
+                          for (int i = 0; i < sortedExpenses.length; i++) ...[
+                            _buildExpenseItemRow(sortedExpenses[i]),
+                            if (i < sortedExpenses.length - 1)
+                              const Divider(
+                                color: AppColors.border,
+                                height: 1,
+                                thickness: 1,
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-
-                          // Title, Payer, and Timestamp
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  expense.title,
-                                  style: GoogleFonts.manrope(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  'Paid by ${payer.name}',
-                                  style: GoogleFonts.manrope(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  _formatExpenseDateTime(expense.date),
-                                  style: GoogleFonts.manrope(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Trailing Amount
-                          Text(
-                            '₹${_formatAmount(expense.amount)}',
-                            style: GoogleFonts.manrope(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
+                          ],
                         ],
                       ),
-                    ),
-                  ),
-                );
-              },
-            ),
-        ],
+                    );
+                  },
+                ),
+            ],
           ),
         ),
       ),
@@ -3881,6 +3798,102 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
             ),
             child: Column(
               children: [
+                // 1st default item: Add member
+                InkWell(
+                  key: const ValueKey('members_tab_add_member_tile'),
+                  onTap: () => _openAddMemberSheet(context),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(20)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color(0xFFF3F0FF),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.person_add_rounded,
+                              color: Color(0xFF5B4DFF),
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            'Add member',
+                            style: GoogleFonts.manrope(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          size: 20,
+                          color: Color(0xFF9CA3AF),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const Divider(color: AppColors.border, height: 1, thickness: 1),
+
+                // 2nd default item: Invite via link or QR
+                InkWell(
+                  key: const ValueKey('members_tab_invite_qr_tile'),
+                  onTap: () => _showShareInviteSheet(context),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color(0xFFF0FDF4),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.qr_code_rounded,
+                              color: Color(0xFF16A34A),
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            'Invite via link or QR',
+                            style: GoogleFonts.manrope(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          size: 20,
+                          color: Color(0xFF9CA3AF),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_story.memberBalances.isNotEmpty)
+                  const Divider(
+                      color: AppColors.border, height: 1, thickness: 1),
+
                 for (int i = 0; i < _story.memberBalances.length; i++) ...[
                   _buildMembersTabMemberRow(
                     _story.memberBalances[i],

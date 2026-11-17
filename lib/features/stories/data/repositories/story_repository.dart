@@ -185,10 +185,8 @@ class StoryRepository extends ChangeNotifier {
         // 2. Exact normalized name matches
         if (cleanUser.isNotEmpty && cleanM == cleanUser) return true;
 
-        // 3. 'You' matches ONLY if current user is the story creator
-        if (cleanM == 'you' &&
-            (story!.createdBy == currentDeviceUserId ||
-                (authUserId != null && story.createdBy == authUserId))) {
+        // 3. 'You' matches current user (claims existing 'You' slot instead of creating duplicate)
+        if (cleanM == 'you') {
           return true;
         }
 

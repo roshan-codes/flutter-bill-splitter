@@ -8,6 +8,7 @@ import 'package:flutter_bill_splitter/shared/widgets/platform_adaptive.dart';
 /// Platform-adaptive Card container grouping profile navigation menu items into
 /// distinct sections (SOCIAL, ACCOUNT, APP) matching the design screenshot.
 class ProfileMenuCard extends StatelessWidget {
+  final VoidCallback? onCommunitiesTap;
   final VoidCallback? onFriendsTap;
   final VoidCallback? onGroupsTap;
   final VoidCallback? onEditProfileTap;
@@ -18,6 +19,7 @@ class ProfileMenuCard extends StatelessWidget {
 
   const ProfileMenuCard({
     super.key,
+    this.onCommunitiesTap,
     this.onFriendsTap,
     this.onGroupsTap,
     this.onEditProfileTap,
@@ -73,15 +75,9 @@ class ProfileMenuCard extends StatelessWidget {
         _buildSectionLabel('SOCIAL'),
         _buildGroupCard([
           ProfileMenuItem(
-            icon: Icons.people_outline_rounded,
-            title: 'Friends',
-            onTap: onFriendsTap,
-          ),
-          divider,
-          ProfileMenuItem(
             icon: Icons.groups_outlined,
-            title: 'Groups',
-            onTap: onGroupsTap,
+            title: 'Communities',
+            onTap: onCommunitiesTap ?? onGroupsTap ?? onFriendsTap,
           ),
         ]),
         const SizedBox(height: 20),
@@ -93,12 +89,6 @@ class ProfileMenuCard extends StatelessWidget {
             icon: Icons.person_outline_rounded,
             title: 'Edit Profile',
             onTap: onEditProfileTap,
-          ),
-          divider,
-          ProfileMenuItem(
-            icon: Icons.account_balance_wallet_outlined,
-            title: 'Payment & Settlement',
-            onTap: onPaymentSettlementTap,
           ),
         ]),
         const SizedBox(height: 20),
