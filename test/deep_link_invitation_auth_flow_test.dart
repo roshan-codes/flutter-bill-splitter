@@ -379,10 +379,18 @@ void main() {
 
       expect(find.byType(OnboardingScreen), findsOneWidget);
 
-      // Tap Skip Login (Testing) to simulate successful auth
-      final skipBtn = find.text('Skip Login (Testing)');
-      expect(skipBtn, findsOneWidget);
-      await tester.tap(skipBtn);
+      // Simulate successful auth completion and resume pending invite
+      await StorageService.instance
+          .setBool(AppConstants.keyHasCompletedOnboarding, true);
+      await StorageService.instance
+          .setBool(AppConstants.keyIsLoggedInWithGoogle, true);
+      await StorageService.instance
+          .setString(AppConstants.keyUserProfileName, 'Test User');
+      await StorageService.instance
+          .setString(AppConstants.keyUserProfileEmail, 'test.user@ttmm.club');
+      final uri = Uri.parse(
+          'https://flutter-bill-splitter.onrender.com/?story_id=${sampleStory.storyId}');
+      await InviteService.handleIncomingUri(uri);
       await tester.pumpAndSettle();
 
       // Automatically resumes pending invitation into JoinStoryScreen!

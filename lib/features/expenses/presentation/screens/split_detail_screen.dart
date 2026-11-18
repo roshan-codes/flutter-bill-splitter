@@ -119,8 +119,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
 
   Future<void> _fetchLatestStoryFromCloud() async {
     try {
-      final fresh =
-          await StoryRepository.instance.refreshStory(_story.storyId);
+      final fresh = await StoryRepository.instance.refreshStory(_story.storyId);
       if (fresh != null && mounted) {
         setState(() {
           _story = fresh;
@@ -199,10 +198,9 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
 
     if (widget.members.isEmpty) {
       // Fallback for tests or direct previews: prefer Delhi mockup story, then Goa trip
-      final sample =
-          StoryRepository.instance.getStoryById('story_delhi_001') ??
-              StoryRepository.instance.getStoryById('story_001') ??
-              Story.sampleDelhiTrip();
+      final sample = StoryRepository.instance.getStoryById('story_delhi_001') ??
+          StoryRepository.instance.getStoryById('story_001') ??
+          Story.sampleDelhiTrip();
       _story = sample.copyWith(
         members: Story.deduplicateMembers(sample.members),
         memberBalances: Story.deduplicateBalances(sample.memberBalances),
@@ -271,7 +269,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
   String _formatAmount(num value) => CurrencyFormatter.format(value);
 
   String _getDateSubtitle(int memberCount) =>
-      DateFormatter.formatStoryDateSubtitle(memberCount, _story.startDate, _story.endDate);
+      DateFormatter.formatStoryDateSubtitle(
+          memberCount, _story.startDate, _story.endDate);
 
   Future<void> _persistExpense(StoryExpense expense, String payerName) async {
     final count = _story.members.isNotEmpty ? _story.members.length : 1;
@@ -308,7 +307,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
       endDate: _story.endDate,
       members: _story.members,
       expenses: _story.expenses,
-      existingSettlements: _story.settlements.where((s) => s.status == 'completed').toList(),
+      existingSettlements:
+          _story.settlements.where((s) => s.status == 'completed').toList(),
     );
 
     setState(() {
@@ -376,22 +376,45 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
 
   List<_ExpenseQuickTag> _getFrequentAndQuickTags() {
     final baseTags = <_ExpenseQuickTag>[
-      const _ExpenseQuickTag(label: 'Food', icon: Icons.restaurant_rounded, category: 'food'),
-      const _ExpenseQuickTag(label: 'Travel', icon: Icons.directions_car_rounded, category: 'transport'),
-      const _ExpenseQuickTag(label: 'Stay', icon: Icons.hotel_rounded, category: 'stay'),
-      const _ExpenseQuickTag(label: 'Fuel', icon: Icons.local_gas_station_rounded, category: 'transport'),
-      const _ExpenseQuickTag(label: 'Drinks', icon: Icons.local_bar_rounded, category: 'food'),
-      const _ExpenseQuickTag(label: 'Activities', icon: Icons.confirmation_number_rounded, category: 'activities'),
-      const _ExpenseQuickTag(label: 'Groceries', icon: Icons.shopping_cart_rounded, category: 'food'),
-      const _ExpenseQuickTag(label: 'Shopping', icon: Icons.shopping_bag_rounded, category: 'shopping'),
-      const _ExpenseQuickTag(label: 'Flight', icon: Icons.flight_takeoff_rounded, category: 'transport'),
-      const _ExpenseQuickTag(label: 'Cafe', icon: Icons.local_cafe_rounded, category: 'food'),
+      const _ExpenseQuickTag(
+          label: 'Food', icon: Icons.restaurant_rounded, category: 'food'),
+      const _ExpenseQuickTag(
+          label: 'Travel',
+          icon: Icons.directions_car_rounded,
+          category: 'transport'),
+      const _ExpenseQuickTag(
+          label: 'Stay', icon: Icons.hotel_rounded, category: 'stay'),
+      const _ExpenseQuickTag(
+          label: 'Fuel',
+          icon: Icons.local_gas_station_rounded,
+          category: 'transport'),
+      const _ExpenseQuickTag(
+          label: 'Drinks', icon: Icons.local_bar_rounded, category: 'food'),
+      const _ExpenseQuickTag(
+          label: 'Activities',
+          icon: Icons.confirmation_number_rounded,
+          category: 'activities'),
+      const _ExpenseQuickTag(
+          label: 'Groceries',
+          icon: Icons.shopping_cart_rounded,
+          category: 'food'),
+      const _ExpenseQuickTag(
+          label: 'Shopping',
+          icon: Icons.shopping_bag_rounded,
+          category: 'shopping'),
+      const _ExpenseQuickTag(
+          label: 'Flight',
+          icon: Icons.flight_takeoff_rounded,
+          category: 'transport'),
+      const _ExpenseQuickTag(
+          label: 'Cafe', icon: Icons.local_cafe_rounded, category: 'food'),
     ];
 
     final frequencyMap = <String, int>{};
 
     try {
-      final raw = StorageService.instance.getStringSync('frequent_expense_tags');
+      final raw =
+          StorageService.instance.getStringSync('frequent_expense_tags');
       if (raw != null && raw.isNotEmpty) {
         final decoded = jsonDecode(raw) as Map<String, dynamic>;
         decoded.forEach((k, v) {
@@ -463,7 +486,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     try {
       final key = title.trim().toLowerCase();
       if (key.isEmpty) return;
-      final raw = StorageService.instance.getStringSync('frequent_expense_tags');
+      final raw =
+          StorageService.instance.getStringSync('frequent_expense_tags');
       final map = <String, int>{};
       if (raw != null && raw.isNotEmpty) {
         final decoded = jsonDecode(raw) as Map<String, dynamic>;
@@ -472,7 +496,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
         });
       }
       map[key] = (map[key] ?? 0) + 1;
-      await StorageService.instance.setString('frequent_expense_tags', jsonEncode(map));
+      await StorageService.instance
+          .setString('frequent_expense_tags', jsonEncode(map));
     } catch (_) {}
   }
 
@@ -530,7 +555,9 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    isAdvanceMode ? 'Record Advance Payment' : 'Add New Expense',
+                    isAdvanceMode
+                        ? 'Record Advance Payment'
+                        : 'Add New Expense',
                     style: GoogleFonts.manrope(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
@@ -713,7 +740,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                           errorBorder: InputBorder.none,
                           disabledBorder: InputBorder.none,
                           filled: false,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 16),
                           hintText: isAdvanceMode
                               ? 'Note / Purpose (Optional)'
                               : 'Expense Title',
@@ -876,7 +904,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                           errorBorder: InputBorder.none,
                           disabledBorder: InputBorder.none,
                           filled: false,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 16),
                           hintText: 'Amount (₹)',
                           hintStyle: GoogleFonts.manrope(
                             fontSize: 15,
@@ -933,7 +962,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                                 ),
                               ),
                               child: Text(
-                                _formatMemberDisplayName(m.name, _isCurrentUser(m.name, m.userId)),
+                                _formatMemberDisplayName(
+                                    m.name, _isCurrentUser(m.name, m.userId)),
                                 style: GoogleFonts.manrope(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -989,7 +1019,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                                 ),
                               ),
                               child: Text(
-                                _formatMemberDisplayName(m.name, _isCurrentUser(m.name, m.userId)),
+                                _formatMemberDisplayName(
+                                    m.name, _isCurrentUser(m.name, m.userId)),
                                 style: GoogleFonts.manrope(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -1045,7 +1076,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                                 ),
                               ),
                               child: Text(
-                                _formatMemberDisplayName(m.name, _isCurrentUser(m.name, m.userId)),
+                                _formatMemberDisplayName(
+                                    m.name, _isCurrentUser(m.name, m.userId)),
                                 style: GoogleFonts.manrope(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -1076,7 +1108,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                       ),
                       onPressed: () async {
                         if (sheetFormKey.currentState?.validate() ?? false) {
-                          final amt = double.parse(amountController.text.trim());
+                          final amt =
+                              double.parse(amountController.text.trim());
 
                           if (isAdvanceMode) {
                             final sender = _story.members.firstWhere(
@@ -1155,7 +1188,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                               memberExpenses: {sender.name: amt},
                               settlements: const [],
                             );
-                            ActivityRepository.instance.recordActivity(activity);
+                            ActivityRepository.instance
+                                .recordActivity(activity);
 
                             if (ctx.mounted) {
                               Navigator.of(ctx).pop();
@@ -1530,8 +1564,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
         ),
         content: Text(
           'Are you sure you want to delete "${expense.title}" (₹${_formatAmount(expense.amount)})? This will recalculate member balances.',
-          style: GoogleFonts.manrope(
-              fontSize: 14, color: AppColors.textSecondary),
+          style:
+              GoogleFonts.manrope(fontSize: 14, color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -1659,7 +1693,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                               } else {
                                 selectedTagLabel = tag.label;
                                 selectedCategory = tag.category;
-                                final currentTitle = titleController.text.trim();
+                                final currentTitle =
+                                    titleController.text.trim();
                                 if (currentTitle.isEmpty ||
                                     quickTags.any((t) =>
                                         t.label.toLowerCase() ==
@@ -1996,15 +2031,17 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
             .map((m) => Friend(name: m.name, phone: '+91 98765 00000'))
             .toList();
 
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => SplitSummaryScreen(
-          groupName: _story.title,
-          members: effectiveFriends,
-          memberExpenses: _memberExpenses,
-          storyId: _story.storyId,
-          existingStory: _story,
-        ),
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => SplitSummaryScreen(
+        groupName: _story.title,
+        members: effectiveFriends,
+        memberExpenses: _memberExpenses,
+        storyId: _story.storyId,
+        existingStory: _story,
+        isBottomSheet: true,
       ),
     );
 
@@ -2166,7 +2203,9 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                 e.category != 'settlement' &&
                 e.category != 'advance')
             .fold<double>(0.0, (s, e) => s + e.amount)
-        : (_story.summary.totalExpenses > 0 ? _story.summary.totalExpenses : 0.0);
+        : (_story.summary.totalExpenses > 0
+            ? _story.summary.totalExpenses
+            : 0.0);
     final memberCount = _story.members.isNotEmpty ? _story.members.length : 1;
     final perPersonAmount = totalExpenses / memberCount;
 
@@ -2225,8 +2264,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                       height: 1,
                       child: Text(
                         'Split with Members',
-                        style: TextStyle(
-                            fontSize: 0.1, color: Colors.transparent),
+                        style:
+                            TextStyle(fontSize: 0.1, color: Colors.transparent),
                       ),
                     ),
                   ),
@@ -2263,8 +2302,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                                     Container(
                                       width: 36,
                                       height: 4,
-                                      margin:
-                                          const EdgeInsets.only(bottom: 12),
+                                      margin: const EdgeInsets.only(bottom: 12),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFE5E7EB),
                                         borderRadius: BorderRadius.circular(2),
@@ -2273,13 +2311,15 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                                     ListTile(
                                       key: const ValueKey('close_story_tile'),
                                       leading: Icon(
-                                        _story.status.toLowerCase() == 'inactive'
+                                        _story.status.toLowerCase() ==
+                                                'inactive'
                                             ? Icons.lock_open_rounded
                                             : Icons.lock_outline_rounded,
                                         color: AppColors.textPrimary,
                                       ),
                                       title: Text(
-                                        _story.status.toLowerCase() == 'inactive'
+                                        _story.status.toLowerCase() ==
+                                                'inactive'
                                             ? 'Reopen Story'
                                             : 'Close Story',
                                         style: GoogleFonts.manrope(
@@ -2292,9 +2332,11 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                                             ScaffoldMessenger.of(context);
                                         Navigator.of(ctx).pop();
                                         final isCurrentlyInactive =
-                                            _story.status.toLowerCase() == 'inactive';
-                                        final newStatus =
-                                            isCurrentlyInactive ? 'active' : 'inactive';
+                                            _story.status.toLowerCase() ==
+                                                'inactive';
+                                        final newStatus = isCurrentlyInactive
+                                            ? 'active'
+                                            : 'inactive';
                                         final updatedStory =
                                             _story.copyWith(status: newStatus);
                                         setState(() => _story = updatedStory);
@@ -2306,7 +2348,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                                               content: Text(isCurrentlyInactive
                                                   ? 'Story reopened'
                                                   : 'Story closed and marked inactive'),
-                                              behavior: SnackBarBehavior.floating,
+                                              behavior:
+                                                  SnackBarBehavior.floating,
                                             ),
                                           );
                                         }
@@ -2330,7 +2373,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                                       },
                                     ),
                                     ListTile(
-                                      key: const ValueKey('invite_friends_tile'),
+                                      key:
+                                          const ValueKey('invite_friends_tile'),
                                       leading: const Icon(
                                         Icons.share_outlined,
                                         color: Color(0xFF5B4DFF),
@@ -2460,8 +2504,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: _story.status.toLowerCase() == 'inactive'
                           ? const Color(0xFFF3F4F6)
@@ -2471,7 +2515,10 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                     child: Text(
                       _story.status.toLowerCase() == 'inactive'
                           ? 'Inactive'
-                          : (_story.status.toLowerCase() == 'settled'
+                          : ((_story.status.toLowerCase() == 'settled' &&
+                                  _story.summary.pendingAmount <= 0.01 &&
+                                  _story.memberBalances
+                                      .every((b) => b.netBalance.abs() <= 0.01))
                               ? 'Settled'
                               : 'Active'),
                       style: GoogleFonts.manrope(
@@ -2500,7 +2547,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                     if (_isBottomBarVisible) {
                       setState(() => _isBottomBarVisible = false);
                     }
-                  } else if (notification.direction == ScrollDirection.forward) {
+                  } else if (notification.direction ==
+                      ScrollDirection.forward) {
                     // Scrolling up towards top of page -> show Settle & Expense buttons
                     if (!_isBottomBarVisible) {
                       setState(() => _isBottomBarVisible = true);
@@ -2708,8 +2756,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     );
   }
 
-  Widget _buildCurrentTabContent(
-      double totalExpenses, double perPersonAmount) {
+  Widget _buildCurrentTabContent(double totalExpenses, double perPersonAmount) {
     switch (_currentTab) {
       case 0:
         return _buildOverviewTab(totalExpenses, perPersonAmount);
@@ -2735,185 +2782,185 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
             parent: BouncingScrollPhysics()),
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1. Clean White Hero Summary Card (Total expenses & Per person)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: AppColors.border, width: 1.0),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // Total expenses
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Total expenses',
-                        style: GoogleFonts.manrope(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '₹${_formatAmount(totalExpenses)}',
-                        style: GoogleFonts.manrope(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ],
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Clean White Hero Summary Card (Total expenses & Per person)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: AppColors.border, width: 1.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-
-                // Vertical Divider
-                Container(
-                  width: 1,
-                  height: 42,
-                  color: AppColors.border,
-                ),
-                const SizedBox(width: 20),
-
-                // Per person
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Per person',
-                        style: GoogleFonts.manrope(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '₹${_formatAmount(perPersonAmount)}',
-                        style: GoogleFonts.manrope(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // 2. Net Balance Banner Card ("You get back ₹3,500" with ↑ and >)
-          _buildNetBalanceBanner(totalExpenses, perPersonAmount),
-          const SizedBox(height: 22),
-
-          // 3. Section Header: Member balances (with test-compatible Group summary)
-          Stack(
-            children: [
-              Text(
-                'Member balances',
-                style: GoogleFonts.manrope(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const Opacity(
-                opacity: 0.0,
-                child: Text('Group summary', style: TextStyle(fontSize: 1)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Group summary Card with Member Balances List
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border, width: 1.0),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                for (int i = 0; i < _story.memberBalances.length; i++) ...[
-                  _buildGroupSummaryMemberRow(
-                    _story.memberBalances[i],
-                    totalExpenses,
-                    perPersonAmount,
-                    isSampleGoaTrip,
-                  ),
-                  if (i < _story.memberBalances.length - 1)
-                    const Divider(
-                        color: AppColors.border, height: 1, thickness: 1),
                 ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // 3. Section: Recent expenses
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Recent expenses',
-                style: GoogleFonts.manrope(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                  letterSpacing: -0.3,
-                ),
               ),
-              GestureDetector(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  setState(() => _currentTab = 1);
-                },
-                child: Text(
-                  'View all →',
+              child: Row(
+                children: [
+                  // Total expenses
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Total expenses',
+                          style: GoogleFonts.manrope(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '₹${_formatAmount(totalExpenses)}',
+                          style: GoogleFonts.manrope(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Vertical Divider
+                  Container(
+                    width: 1,
+                    height: 42,
+                    color: AppColors.border,
+                  ),
+                  const SizedBox(width: 20),
+
+                  // Per person
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Per person',
+                          style: GoogleFonts.manrope(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '₹${_formatAmount(perPersonAmount)}',
+                          style: GoogleFonts.manrope(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 2. Net Balance Banner Card ("You get back ₹3,500" with ↑ and >)
+            _buildNetBalanceBanner(totalExpenses, perPersonAmount),
+            const SizedBox(height: 22),
+
+            // 3. Section Header: Member balances (with test-compatible Group summary)
+            Stack(
+              children: [
+                Text(
+                  'Member balances',
                   style: GoogleFonts.manrope(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
+                    letterSpacing: -0.3,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+                const Opacity(
+                  opacity: 0.0,
+                  child: Text('Group summary', style: TextStyle(fontSize: 1)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
 
-          // Recent expenses Card
-          _buildRecentExpenseCard(),
-        ],
+            // Group summary Card with Member Balances List
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.border, width: 1.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  for (int i = 0; i < _story.memberBalances.length; i++) ...[
+                    _buildGroupSummaryMemberRow(
+                      _story.memberBalances[i],
+                      totalExpenses,
+                      perPersonAmount,
+                      isSampleGoaTrip,
+                    ),
+                    if (i < _story.memberBalances.length - 1)
+                      const Divider(
+                          color: AppColors.border, height: 1, thickness: 1),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // 3. Section: Recent expenses
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Recent expenses',
+                  style: GoogleFonts.manrope(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _currentTab = 1);
+                  },
+                  child: Text(
+                    'View all →',
+                    style: GoogleFonts.manrope(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Recent expenses Card
+            _buildRecentExpenseCard(),
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -3012,8 +3059,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     final isOwed = net < -0.01;
     final isGetsBack = net > 0.01;
 
-    final bgColor =
-        isOwed ? const Color(0xFFFDE8E8) : const Color(0xFFEAF8ED);
+    final bgColor = isOwed ? const Color(0xFFFDE8E8) : const Color(0xFFEAF8ED);
     final iconBgColor =
         isOwed ? const Color(0xFFFEE2E2) : const Color(0xFFDCFCE7);
     final iconColor =
@@ -3117,9 +3163,9 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     final currentName = SupabaseService.userDisplayName ??
         StorageService.instance.getStringSync('user_profile_name');
     final myClean = currentName
-        ?.replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
-        .toLowerCase()
-        .trim() ??
+            ?.replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+            .toLowerCase()
+            .trim() ??
         '';
 
     // 1. Authenticated user ID matches a member's userId
@@ -3156,7 +3202,9 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     // 5. Default user name "Roshan" (app owner/primary user profile)
     for (final m in _story.members) {
       final cleanM = m.name.toLowerCase().trim();
-      if (cleanM == 'roshan' || cleanM.startsWith('roshan ') || cleanM.contains('roshan')) {
+      if (cleanM == 'roshan' ||
+          cleanM.startsWith('roshan ') ||
+          cleanM.contains('roshan')) {
         return m.userId;
       }
     }
@@ -3179,7 +3227,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
 
     // 1. Exact userId match
     for (final m in _story.members) {
-      if (m.userId == paidByIdentifier || m.userId.toLowerCase().trim() == idLower) {
+      if (m.userId == paidByIdentifier ||
+          m.userId.toLowerCase().trim() == idLower) {
         return m;
       }
     }
@@ -3229,7 +3278,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     // Fallback: If not found, check if it's the current user or first member
     return _story.members.isNotEmpty
         ? _story.members.first
-        : StoryMember(userId: paidByIdentifier, name: paidByIdentifier, joinedAt: '');
+        : StoryMember(
+            userId: paidByIdentifier, name: paidByIdentifier, joinedAt: '');
   }
 
   bool _isCurrentUser(String name, [String? userId]) {
@@ -3379,12 +3429,12 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
             size: 42,
             name: balance.name,
             avatarUrl: _story.members
-                .where((m) =>
-                    m.userId == balance.userId ||
-                    m.name.toLowerCase().trim() ==
-                        balance.name.toLowerCase().trim())
-                .firstOrNull
-                ?.avatar ??
+                    .where((m) =>
+                        m.userId == balance.userId ||
+                        m.name.toLowerCase().trim() ==
+                            balance.name.toLowerCase().trim())
+                    .firstOrNull
+                    ?.avatar ??
                 AvatarResolver.getDefaultAvatarForName(balance.name),
             isCurrentUser: isMe,
             backgroundColor: const Color(0xFF1E1E1E),
@@ -3727,209 +3777,173 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
           width: double.infinity,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header: Members (3) on left, + Add on right
-          Row(
             children: [
-              Text(
-                'Members (${_story.members.length})',
-                style: GoogleFonts.manrope(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                  letterSpacing: -0.3,
-                ),
+              // Header: Members (3)
+              Row(
+                children: [
+                  Text(
+                    'Members (${_story.members.length})',
+                    style: GoogleFonts.manrope(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ],
               ),
-              const Spacer(),
-              InkWell(
-                key: const ValueKey('members_tab_invite_btn'),
-                onTap: () => _showShareInviteSheet(context),
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.share_outlined,
-                          size: 15, color: Color(0xFF5B4DFF)),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Invite',
-                        style: GoogleFonts.manrope(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF5B4DFF),
+              const SizedBox(height: 14),
+
+              // Members list card matching Screen 4
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.border, width: 1.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // 1st default item: Add member
+                    InkWell(
+                      key: const ValueKey('members_tab_add_member_tile'),
+                      onTap: () => _openAddMemberSheet(context),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(20)),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFFF3F0FF),
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.person_add_rounded,
+                                  color: Color(0xFF5B4DFF),
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                'Add member',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              size: 20,
+                              color: Color(0xFF9CA3AF),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () => _openAddMemberSheet(context),
-                child: Text(
-                  '+ Add',
-                  style: GoogleFonts.manrope(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // Members list card matching Screen 4
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border, width: 1.0),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                // 1st default item: Add member
-                InkWell(
-                  key: const ValueKey('members_tab_add_member_tile'),
-                  onTap: () => _openAddMemberSheet(context),
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(20)),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 42,
-                          height: 42,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Color(0xFFF3F0FF),
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.person_add_rounded,
-                              color: Color(0xFF5B4DFF),
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Text(
-                            'Add member',
-                            style: GoogleFonts.manrope(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          size: 20,
-                          color: Color(0xFF9CA3AF),
-                        ),
-                      ],
                     ),
-                  ),
-                ),
-                const Divider(color: AppColors.border, height: 1, thickness: 1),
-
-                // 2nd default item: Invite via link or QR
-                InkWell(
-                  key: const ValueKey('members_tab_invite_qr_tile'),
-                  onTap: () => _showShareInviteSheet(context),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 42,
-                          height: 42,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Color(0xFFF0FDF4),
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.qr_code_rounded,
-                              color: Color(0xFF16A34A),
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Text(
-                            'Invite via link or QR',
-                            style: GoogleFonts.manrope(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          size: 20,
-                          color: Color(0xFF9CA3AF),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (_story.memberBalances.isNotEmpty)
-                  const Divider(
-                      color: AppColors.border, height: 1, thickness: 1),
-
-                for (int i = 0; i < _story.memberBalances.length; i++) ...[
-                  _buildMembersTabMemberRow(
-                    _story.memberBalances[i],
-                    totalExpenses,
-                    perPersonAmount,
-                  ),
-                  if (i < _story.memberBalances.length - 1)
                     const Divider(
                         color: AppColors.border, height: 1, thickness: 1),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
 
-          // 3 Action Option Cards below Members list
-          _buildOptionTile(
-            key: const ValueKey('split_method_tile'),
-            icon: Icons.alt_route_rounded,
-            title: 'Split method',
-            subtitle: _getSplitMethodDisplayName(),
-            onTap: () => _showSplitMethodSheet(context),
-          ),
-          _buildOptionTile(
-            key: const ValueKey('edit_story_tile'),
-            icon: Icons.edit_outlined,
-            title: 'Edit story',
-            onTap: () => _showEditStorySheet(context),
-          ),
-          _buildOptionTile(
-            key: const ValueKey('story_settings_tile'),
-            icon: Icons.settings_outlined,
-            title: 'Story settings',
-            onTap: () => _confirmDeleteStory(context),
-          ),
-        ],
+                    // 2nd default item: Invite via link or QR
+                    InkWell(
+                      key: const ValueKey('members_tab_invite_btn'),
+                      onTap: () => _showShareInviteSheet(context),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFFF0FDF4),
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.qr_code_rounded,
+                                  color: Color(0xFF16A34A),
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                'Invite via link or QR',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              size: 20,
+                              color: Color(0xFF9CA3AF),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (_story.memberBalances.isNotEmpty)
+                      const Divider(
+                          color: AppColors.border, height: 1, thickness: 1),
+
+                    for (int i = 0; i < _story.memberBalances.length; i++) ...[
+                      _buildMembersTabMemberRow(
+                        _story.memberBalances[i],
+                        totalExpenses,
+                        perPersonAmount,
+                      ),
+                      if (i < _story.memberBalances.length - 1)
+                        const Divider(
+                            color: AppColors.border, height: 1, thickness: 1),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 3 Action Option Cards below Members list
+              _buildOptionTile(
+                key: const ValueKey('split_method_tile'),
+                icon: Icons.alt_route_rounded,
+                title: 'Split method',
+                subtitle: _getSplitMethodDisplayName(),
+                onTap: () => _showSplitMethodSheet(context),
+              ),
+              _buildOptionTile(
+                key: const ValueKey('edit_story_tile'),
+                icon: Icons.edit_outlined,
+                title: 'Edit story',
+                onTap: () => _showEditStorySheet(context),
+              ),
+              _buildOptionTile(
+                key: const ValueKey('story_settings_tile'),
+                icon: Icons.settings_outlined,
+                title: 'Story settings',
+                onTap: () => _confirmDeleteStory(context),
+              ),
+            ],
           ),
         ),
       ),
@@ -3955,12 +3969,12 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
               size: 42,
               name: balance.name,
               avatarUrl: _story.members
-                  .where((m) =>
-                      m.userId == balance.userId ||
-                      m.name.toLowerCase().trim() ==
-                          balance.name.toLowerCase().trim())
-                  .firstOrNull
-                  ?.avatar ??
+                      .where((m) =>
+                          m.userId == balance.userId ||
+                          m.name.toLowerCase().trim() ==
+                              balance.name.toLowerCase().trim())
+                      .firstOrNull
+                      ?.avatar ??
                   AvatarResolver.getDefaultAvatarForName(balance.name),
               isCurrentUser: isMe,
               backgroundColor: const Color(0xFF1E1E1E),
@@ -4560,8 +4574,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
-                    child:
-                        Icon(icon, size: 20, color: const Color(0xFF1F2937)),
+                    child: Icon(icon, size: 20, color: const Color(0xFF1F2937)),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -4675,7 +4688,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                     final alreadyExists = _story.members.any((m) {
                       final cleanM = m.name.toLowerCase().trim();
                       if (cleanM == cleanNew) return true;
-                      if (cleanM == 'you' && _isCurrentUser(newName)) return true;
+                      if (cleanM == 'you' && _isCurrentUser(newName))
+                        return true;
                       if (cleanNew == 'you' && _isCurrentUser(m.name)) {
                         return true;
                       }
@@ -4749,7 +4763,10 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
   ) {
     if (_splitMethod == 'percentage' && _memberPercentages.isNotEmpty) {
       final pct = _memberPercentages[balance.name] ??
-          (100.0 / (_story.memberBalances.isEmpty ? 1 : _story.memberBalances.length));
+          (100.0 /
+              (_story.memberBalances.isEmpty
+                  ? 1
+                  : _story.memberBalances.length));
       return totalExpenses * (pct / 100.0);
     } else if (_splitMethod == 'shares' && _memberSharesRatio.isNotEmpty) {
       final totalShares =
@@ -4839,7 +4856,6 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                       ),
                     ),
                     const SizedBox(height: 18),
-
                     _buildSplitMethodChoiceTile(
                       methodKey: 'equal',
                       icon: Icons.balance,
@@ -5131,12 +5147,12 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                               name: member.name,
                               size: 34,
                               avatarUrl: _story.members
-                                  .where((m) =>
-                                      m.userId == member.userId ||
-                                      m.name.toLowerCase().trim() ==
-                                          member.name.toLowerCase().trim())
-                                  .firstOrNull
-                                  ?.avatar ??
+                                      .where((m) =>
+                                          m.userId == member.userId ||
+                                          m.name.toLowerCase().trim() ==
+                                              member.name.toLowerCase().trim())
+                                      .firstOrNull
+                                      ?.avatar ??
                                   AvatarResolver.getDefaultAvatarForName(
                                       member.name),
                               isCurrentUser:
@@ -5183,13 +5199,13 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                                   fillColor: const Color(0xFFF9FAFB),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
-                                    borderSide:
-                                        const BorderSide(color: AppColors.border),
+                                    borderSide: const BorderSide(
+                                        color: AppColors.border),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
-                                    borderSide:
-                                        const BorderSide(color: AppColors.border),
+                                    borderSide: const BorderSide(
+                                        color: AppColors.border),
                                   ),
                                 ),
                               ),
@@ -5270,7 +5286,9 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                 e.category != 'settlement' &&
                 e.category != 'advance')
             .fold<double>(0.0, (s, e) => s + e.amount)
-        : (_story.summary.totalExpenses > 0 ? _story.summary.totalExpenses : 0.0);
+        : (_story.summary.totalExpenses > 0
+            ? _story.summary.totalExpenses
+            : 0.0);
     final memberCount =
         _story.memberBalances.isNotEmpty ? _story.memberBalances.length : 1;
     final defaultPerPerson = totalExpenses / memberCount;
@@ -5279,8 +5297,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     for (final member in _story.memberBalances) {
       final current = _memberExactShares[member.name] ?? defaultPerPerson;
       controllers[member.name] = TextEditingController(
-        text: current.toStringAsFixed(
-            current.truncateToDouble() == current ? 0 : 2),
+        text: current
+            .toStringAsFixed(current.truncateToDouble() == current ? 0 : 2),
       );
     }
 
@@ -5386,12 +5404,12 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                               name: member.name,
                               size: 34,
                               avatarUrl: _story.members
-                                  .where((m) =>
-                                      m.userId == member.userId ||
-                                      m.name.toLowerCase().trim() ==
-                                          member.name.toLowerCase().trim())
-                                  .firstOrNull
-                                  ?.avatar ??
+                                      .where((m) =>
+                                          m.userId == member.userId ||
+                                          m.name.toLowerCase().trim() ==
+                                              member.name.toLowerCase().trim())
+                                      .firstOrNull
+                                      ?.avatar ??
                                   AvatarResolver.getDefaultAvatarForName(
                                       member.name),
                               isCurrentUser:
@@ -5438,13 +5456,13 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                                   fillColor: const Color(0xFFF9FAFB),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
-                                    borderSide:
-                                        const BorderSide(color: AppColors.border),
+                                    borderSide: const BorderSide(
+                                        color: AppColors.border),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
-                                    borderSide:
-                                        const BorderSide(color: AppColors.border),
+                                    borderSide: const BorderSide(
+                                        color: AppColors.border),
                                   ),
                                 ),
                               ),
@@ -5588,12 +5606,12 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                               name: member.name,
                               size: 34,
                               avatarUrl: _story.members
-                                  .where((m) =>
-                                      m.userId == member.userId ||
-                                      m.name.toLowerCase().trim() ==
-                                          member.name.toLowerCase().trim())
-                                  .firstOrNull
-                                  ?.avatar ??
+                                      .where((m) =>
+                                          m.userId == member.userId ||
+                                          m.name.toLowerCase().trim() ==
+                                              member.name.toLowerCase().trim())
+                                      .firstOrNull
+                                      ?.avatar ??
                                   AvatarResolver.getDefaultAvatarForName(
                                       member.name),
                               isCurrentUser:
@@ -5623,8 +5641,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                                       ? AppColors.textPrimary
                                       : Colors.grey,
                                   onPressed: () {
-                                    final cur =
-                                        localShares[member.name] ?? 1.0;
+                                    final cur = localShares[member.name] ?? 1.0;
                                     if (cur > 0) {
                                       setSheetState(() {
                                         localShares[member.name] = cur - 1;
@@ -5645,8 +5662,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                                       size: 22),
                                   color: const Color(0xFF5B4DFF),
                                   onPressed: () {
-                                    final cur =
-                                        localShares[member.name] ?? 1.0;
+                                    final cur = localShares[member.name] ?? 1.0;
                                     setSheetState(() {
                                       localShares[member.name] = cur + 1;
                                     });

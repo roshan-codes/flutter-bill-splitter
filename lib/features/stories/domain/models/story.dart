@@ -349,29 +349,40 @@ class Story {
           .toList(),
     );
 
+    final summaryObj = json['summary'] != null
+        ? StorySummary.fromJson(json['summary'] as Map<String, dynamic>)
+            .copyWith(memberCount: parsedMembers.length)
+        : StorySummary(
+            totalExpenses: 0,
+            totalSettled: 0,
+            pendingAmount: 0,
+            memberCount: parsedMembers.length,
+            expenseCount: 0,
+          );
+
+    final rawStatus = (json['status'] as String? ?? 'active').toLowerCase();
+    final hasPendingBalances =
+        parsedBalances.any((b) => b.netBalance.abs() > 0.01);
+    final hasPendingDebt =
+        summaryObj.pendingAmount > 0.01 || hasPendingBalances;
+    final effectiveStatus = rawStatus == 'inactive'
+        ? 'inactive'
+        : (hasPendingDebt ? 'active' : rawStatus);
+
     return Story(
       storyId: json['story_id'] as String? ?? '',
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       coverEmoji: json['cover_emoji'] as String? ?? '🌴',
       currency: json['currency'] as String? ?? 'INR',
-      status: json['status'] as String? ?? 'active',
+      status: effectiveStatus,
       splitMethod: json['split_method'] as String? ?? 'equal',
       createdBy: json['created_by'] as String? ?? '',
       createdAt: json['created_at'] as String? ?? '',
       startDate: json['start_date'] as String?,
       endDate: json['end_date'] as String?,
       members: parsedMembers,
-      summary: json['summary'] != null
-          ? StorySummary.fromJson(json['summary'] as Map<String, dynamic>)
-              .copyWith(memberCount: parsedMembers.length)
-          : StorySummary(
-              totalExpenses: 0,
-              totalSettled: 0,
-              pendingAmount: 0,
-              memberCount: parsedMembers.length,
-              expenseCount: 0,
-            ),
+      summary: summaryObj,
       expenses: rawExpenses
           .map((e) => StoryExpense.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -853,37 +864,43 @@ class Story {
     }
 
     for (final reimb in reimbursementExpenses) {
-      String senderId = reimb.paidBy;
-      final senderMatch = members
-          .where((m) =>
-              m.userId == senderId ||
-              m.name.toLowerCase().trim() == senderId.toLowerCase().trim())
-          .firstOrNull;
-      if (senderMatch != null) senderId = senderMatch.userId;
+      String senderId = resolveMember(reimb.paidBy).userId;
 
-      String? recipientId = reimb.participants.isNotEmpty
-          ? reimb.participants.first
-          : (reimb.shares.isNotEmpty ? reimb.shares.first.userId : null);
-
-      if (recipientId != null) {
-        final recMatch = members
-            .where((m) =>
-                m.userId == recipientId ||
-                m.name.toLowerCase().trim() == recipientId!.toLowerCase().trim())
-            .firstOrNull;
-        if (recMatch != null) recipientId = recMatch.userId;
+      String? recipientId;
+      if (reimb.participants.isNotEmpty) {
+        recipientId = resolveMember(reimb.participants.first).userId;
+      } else if (reimb.shares.isNotEmpty) {
+        recipientId = resolveMember(reimb.shares.first.userId).userId;
       }
 
-      // If still unresolved, look for "to <Name>" in the reimbursement title
+      final titleLower = reimb.title.toLowerCase();
+
+      // If still unresolved or identical, extract recipient and sender from title
       if (recipientId == null || recipientId == senderId) {
-        for (final m in members) {
-          if (m.userId == senderId) continue;
-          final titleLower = reimb.title.toLowerCase();
-          final nameLower = m.name.toLowerCase().trim();
-          if (titleLower.contains('to $nameLower') ||
-              titleLower.contains(nameLower)) {
-            recipientId = m.userId;
-            break;
+        if (titleLower.contains('to you')) {
+          recipientId = resolveMember('you').userId;
+        } else {
+          for (final m in members) {
+            final nameLower = m.name.toLowerCase().trim();
+            if (nameLower.isNotEmpty && titleLower.contains('to $nameLower')) {
+              recipientId = m.userId;
+              break;
+            }
+          }
+        }
+      }
+
+      // If sender was unresolved or equals recipient, check "by <Name>" in title
+      if (senderId == recipientId) {
+        if (titleLower.contains('by you')) {
+          senderId = resolveMember('you').userId;
+        } else {
+          for (final m in members) {
+            final nameLower = m.name.toLowerCase().trim();
+            if (nameLower.isNotEmpty && titleLower.contains('by $nameLower')) {
+              senderId = m.userId;
+              break;
+            }
           }
         }
       }
@@ -892,7 +909,7 @@ class Story {
         reimbSentByUser[senderId] =
             (reimbSentByUser[senderId] ?? 0.0) + reimb.amount;
       }
-      if (recipientId != null && recipientId.isNotEmpty) {
+      if (recipientId != null && recipientId.isNotEmpty && recipientId != senderId) {
         reimbReceivedByUser[recipientId] =
             (reimbReceivedByUser[recipientId] ?? 0.0) + reimb.amount;
       }
@@ -998,13 +1015,23 @@ class Story {
       expenseCount: actualExpenses.length,
     );
 
+    final String effectiveStatus;
+    if (status.toLowerCase() == 'inactive') {
+      effectiveStatus = 'inactive';
+    } else if (pendingAmount <= 0.01 &&
+        balances.every((b) => b.netBalance.abs() <= 0.01)) {
+      effectiveStatus = 'settled';
+    } else {
+      effectiveStatus = 'active';
+    }
+
     return Story(
       storyId: storyId,
       title: title,
       description: description,
       coverEmoji: coverEmoji,
       currency: currency,
-      status: status,
+      status: effectiveStatus,
       splitMethod: splitMethod,
       createdBy: createdBy,
       createdAt: createdAt,

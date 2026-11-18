@@ -35,12 +35,37 @@ class ExpenseCalculator {
 
     final sharePerPerson = calculateSharePerPerson(total, members.length);
 
+    final Map<String, double> netBalances = {};
+    for (final member in members) {
+      final paid = paidAmounts[member.name] ?? 0.0;
+      netBalances[member.name] = paid - sharePerPerson;
+    }
+
+    return calculateSettlementsFromNetBalances(
+      members: members,
+      netBalances: netBalances,
+    );
+  }
+
+  /// Computes the minimal list of settlement transactions directly from net balances.
+  static List<SettlementTransaction> calculateSettlementsFromNetBalances({
+    required List<Friend> members,
+    required Map<String, double> netBalances,
+  }) {
+    if (members.isEmpty) return [];
+
     final List<_BalanceEntry> debtors = [];
     final List<_BalanceEntry> creditors = [];
 
     for (final member in members) {
-      final paid = paidAmounts[member.name] ?? 0.0;
-      final net = paid - sharePerPerson;
+      double net = 0.0;
+      for (final entry in netBalances.entries) {
+        if (_isNameMatch(entry.key, member.name)) {
+          net = entry.value;
+          break;
+        }
+      }
+
       if (net < -0.01) {
         debtors.add(_BalanceEntry(member, -net)); // owes money
       } else if (net > 0.01) {
@@ -80,5 +105,18 @@ class ExpenseCalculator {
     }
 
     return transactions;
+  }
+
+  static bool _isNameMatch(String a, String b) {
+    final cleanA = a
+        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .toLowerCase()
+        .trim();
+    final cleanB = b
+        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .toLowerCase()
+        .trim();
+    if (cleanA.isEmpty || cleanB.isEmpty) return false;
+    return cleanA == cleanB;
   }
 }

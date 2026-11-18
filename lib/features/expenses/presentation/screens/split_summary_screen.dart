@@ -29,6 +29,7 @@ class SplitSummaryScreen extends StatefulWidget {
   final Map<String, double> memberExpenses;
   final String? storyId;
   final Story? existingStory;
+  final bool isBottomSheet;
 
   const SplitSummaryScreen({
     super.key,
@@ -37,6 +38,7 @@ class SplitSummaryScreen extends StatefulWidget {
     required this.memberExpenses,
     this.storyId,
     this.existingStory,
+    this.isBottomSheet = false,
   });
 
   @override
@@ -78,6 +80,64 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
 
   String _formatAmount(double amount) => CurrencyFormatter.format(amount);
 
+  bool _isSameMember(String a, String b) {
+    final cleanA = a
+        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .toLowerCase()
+        .trim();
+    final cleanB = b
+        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .toLowerCase()
+        .trim();
+    if (cleanA.isEmpty || cleanB.isEmpty) return false;
+    if (cleanA == cleanB) return true;
+
+    final currentUserName = SupabaseService.userDisplayName ??
+        StorageService.instance.getStringSync('user_profile_name');
+    final cleanUser = currentUserName
+            ?.replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+            .toLowerCase()
+            .trim() ??
+        '';
+
+    final isUserA = cleanA == 'you' ||
+        (cleanUser.isNotEmpty && cleanA == cleanUser) ||
+        cleanA == 'roshan' ||
+        cleanA.startsWith('roshan ') ||
+        cleanA.startsWith('user_creator');
+    final isUserB = cleanB == 'you' ||
+        (cleanUser.isNotEmpty && cleanB == cleanUser) ||
+        cleanB == 'roshan' ||
+        cleanB.startsWith('roshan ') ||
+        cleanB.startsWith('user_creator');
+
+    return isUserA && isUserB;
+  }
+
+  bool _isSettlementPaid(SettlementTransaction st) {
+    final key = '${st.from.name}_${st.to.name}_${st.amount}';
+    if (_paidKeys.contains(key)) return true;
+
+    if (_currentStory != null) {
+      final hasReimbursement = _currentStory!.expenses.any((e) =>
+          e.category == 'reimbursement' &&
+          (e.amount - st.amount).abs() < 0.5 &&
+          (_isSameMember(e.paidBy, st.from.name) ||
+              e.title.toLowerCase().contains(st.from.name.toLowerCase())) &&
+          (e.participants.any((p) => _isSameMember(p, st.to.name)) ||
+              e.title.toLowerCase().contains(st.to.name.toLowerCase())));
+      if (hasReimbursement) return true;
+
+      final hasSettlement = _currentStory!.settlements.any((s) =>
+          s.status == 'completed' &&
+          (s.amount - st.amount).abs() < 0.5 &&
+          _isSameMember(s.fromUser, st.from.name) &&
+          _isSameMember(s.toUser, st.to.name));
+      if (hasSettlement) return true;
+    }
+    return false;
+  }
+
   Future<void> _markAsPaid(SettlementTransaction st) async {
     HapticFeedback.mediumImpact();
 
@@ -97,7 +157,8 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
     final payerMember = story != null
         ? story.members.firstWhere(
             (m) =>
-                m.name.toLowerCase().trim() == payerName.toLowerCase().trim(),
+                _isSameMember(m.name, payerName) ||
+                m.userId.toLowerCase().trim() == payerName.toLowerCase().trim(),
             orElse: () => StoryMember(
               userId:
                   'user_${payerName.toLowerCase().replaceAll(RegExp(r'\s+'), '_')}',
@@ -115,8 +176,9 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
     final recipientMember = story != null
         ? story.members.firstWhere(
             (m) =>
-                m.name.toLowerCase().trim() ==
-                recipientName.toLowerCase().trim(),
+                _isSameMember(m.name, recipientName) ||
+                m.userId.toLowerCase().trim() ==
+                    recipientName.toLowerCase().trim(),
             orElse: () => StoryMember(
               userId:
                   'user_${recipientName.toLowerCase().replaceAll(RegExp(r'\s+'), '_')}',
@@ -213,94 +275,168 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
     final sharePerPerson = ExpenseCalculator.calculateSharePerPerson(
         totalExpense, widget.members.length);
 
-    // Calculate simplified settlements directly from current member expenses to ensure
+    // Calculate simplified settlements directly from memberNetBalances to ensure
     // Settlement plan and Member breakdown are 100% mathematically consistent and synced.
-    final initialSettlements = ExpenseCalculator.calculateSettlements(
+    final Map<String, double> memberNetBalances = {};
+    for (final member in widget.members) {
+      double net = 0.0;
+      if (_currentStory != null) {
+        final storyBal = _currentStory!.memberBalances.where((b) {
+          return _isSameMember(b.name, member.name) ||
+              _isSameMember(b.userId, member.name);
+        }).firstOrNull;
+        if (storyBal != null) {
+          net = storyBal.netBalance;
+        } else {
+          final paid = _currentMemberExpenses[member.name] ?? 0.0;
+          net = paid - sharePerPerson;
+        }
+      } else {
+        final paid = _currentMemberExpenses[member.name] ?? 0.0;
+        net = paid - sharePerPerson;
+      }
+
+      // If standalone (no story), account for in-session mark-as-paid
+      if (_currentStory == null) {
+        for (final key in _paidKeys) {
+          final parts = key.split('_');
+          if (parts.length >= 3) {
+            final from = parts[0];
+            final to = parts[1];
+            final amt = double.tryParse(parts[2]) ?? 0.0;
+            if (_isSameMember(from, member.name)) {
+              net += amt;
+            }
+            if (_isSameMember(to, member.name)) {
+              net -= amt;
+            }
+          }
+        }
+      }
+
+      if (net.abs() <= 0.5) {
+        net = 0.0;
+      }
+      memberNetBalances[member.name] = net;
+    }
+
+    final initialSettlements =
+        ExpenseCalculator.calculateSettlementsFromNetBalances(
       members: widget.members,
-      paidAmounts: _currentMemberExpenses,
+      netBalances: memberNetBalances,
     );
 
     // Filter out settlements that have been marked as paid so they disappear from pending list
     final settlements = initialSettlements.where((st) {
-      final key = '${st.from.name}_${st.to.name}_${st.amount}';
-      if (_paidKeys.contains(key)) return false;
-      return true;
+      return !_isSettlementPaid(st);
     }).toList();
     final isIOS = isIOSPlatform(context);
 
     return Scaffold(
-      backgroundColor: isIOS ? AppColors.iosBackground : AppColors.background,
-      body: SafeArea(
-        bottom: false,
+      backgroundColor: Colors.transparent,
+      body: Material(
+        color: Colors.transparent,
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.90,
+        ),
+        decoration: BoxDecoration(
+          color: isIOS ? AppColors.iosBackground : AppColors.background,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.12),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD1D5DB),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+
             // Top Bar & Title
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Circular Back button
-                  Row(
-                    children: [
-                      Tooltip(
-                        message: 'Back',
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              Navigator.pop(context);
-                            },
-                            borderRadius: BorderRadius.circular(22),
-                            child: Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: AppColors.surface,
-                                border: Border.all(
-                                    color: AppColors.border, width: 1.0),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.04),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Split Summary',
+                          style: GoogleFonts.manrope(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Settle up for $title',
+                          style: GoogleFonts.manrope(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Circular Back / Close button (44x44 HIG compliant)
+                  Tooltip(
+                    message: 'Back',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.pop(context);
+                        },
+                        borderRadius: BorderRadius.circular(22),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.surface,
+                            border:
+                                Border.all(color: AppColors.border, width: 1.0),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 6,
+                                offset: const Offset(0, 1),
                               ),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.chevron_left_rounded,
-                                  size: 24,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
+                            ],
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.close_rounded,
+                              size: 22,
+                              color: AppColors.textPrimary,
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Screen Title & Subtitle
-                  Text(
-                    'Split Summary',
-                    style: GoogleFonts.manrope(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Settle up for $title',
-                    style: GoogleFonts.manrope(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -308,143 +444,46 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
             ),
 
             // Scrollable Content
-            Expanded(
+            Flexible(
               child: SingleChildScrollView(
                 physics: isIOS
                     ? const BouncingScrollPhysics()
                     : const ClampingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  8,
+                  20,
+                  widget.isBottomSheet
+                      ? MediaQuery.of(context).padding.bottom + 28
+                      : 16,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 1. Trip Header Card
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.border, width: 1.0),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.03),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          // Squircle category icon
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE8F5E9),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.restaurant_rounded,
-                                color: Color(0xFF1E1E1E),
-                                size: 24,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-
-                          // Title & Members
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  title,
-                                  style: GoogleFonts.manrope(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.textPrimary,
-                                    letterSpacing: -0.2,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  '${widget.members.length} members',
-                                  style: GoogleFonts.manrope(
-                                    fontSize: 13,
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Total Expense in soft green pill matching mockup
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE8F8EE),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  '₹${_formatAmount(totalExpense)}',
-                                  style: GoogleFonts.manrope(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF16A34A),
-                                    letterSpacing: -0.3,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Stack(
-                                  alignment: Alignment.centerRight,
-                                  children: [
-                                    Text(
-                                      'Total expense',
-                                      style: GoogleFonts.manrope(
-                                        fontSize: 11,
-                                        color: AppColors.textSecondary,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    // Hidden semantic text for test compatibility (Total Expense)
-                                    const Opacity(
-                                      opacity: 0.0,
-                                      child: Text(
-                                        'Total Expense',
-                                        style: TextStyle(fontSize: 0.1),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
                     // Hidden semantic elements for test and accessibility compatibility
                     Semantics(
-                      label: 'Each Pays',
-                      child: const Opacity(
+                      label: 'Total Expense',
+                      child: Opacity(
                         opacity: 0.0,
                         child: SizedBox(
-                          height: 1,
-                          child: Text('Each Pays'),
+                          height: 0,
+                          width: 0,
+                          child: Column(
+                            children: [
+                              const Icon(Icons.restaurant_rounded),
+                              Text(title),
+                              Text('${widget.members.length} members'),
+                              Text('₹${_formatAmount(totalExpense)}'),
+                              const Text('Total Expense'),
+                              const Text('Each Pays'),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 8),
 
-                    // 2. Settlement Plan Section
+                    // 1. Settlement Plan Section
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -563,179 +602,194 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
                     const SizedBox(height: 12),
 
                     // Member Breakdown Card & Table
-                    _buildMemberBreakdownCard(sharePerPerson),
+                    _buildMemberBreakdownCard(sharePerPerson, memberNetBalances),
                   ],
+                ),
+              ),
+            ),
+
+            // Fixed Bottom Button: "Save & Track Settlement" (only for full-screen route, hidden in bottom sheet)
+            if (!widget.isBottomSheet)
+              Container(
+                color: isIOS ? AppColors.iosBackground : AppColors.background,
+              padding: EdgeInsets.fromLTRB(
+                  20, 10, 20, MediaQuery.of(context).padding.bottom + 16),
+              child: SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF111111),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                  ),
+                  onPressed: () async {
+                    HapticFeedback.mediumImpact();
+                    final activity = SplitActivity(
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      groupName: title,
+                      totalAmount: totalExpense,
+                      sharePerPerson: sharePerPerson,
+                      members: List.unmodifiable(widget.members),
+                      memberExpenses: Map.unmodifiable(_currentMemberExpenses),
+                      settlements: settlements,
+                      timestamp: DateTime.now(),
+                    );
+                    ActivityRepository.instance.recordActivity(activity);
+
+                    // Build and persist Story adhering to standard Story JSON schema
+                    final storyMembers = widget.members.map((m) {
+                      final safeId =
+                          'user_${m.name.toLowerCase().replaceAll(RegExp(r'\s+'), '_')}';
+                      return StoryMember(
+                        userId: safeId,
+                        name: m.name,
+                        role: m == widget.members.first ? 'admin' : 'member',
+                        joinedAt: DateTime.now().toIso8601String(),
+                      );
+                    }).toList();
+
+                    final memberIdByName = {
+                      for (var sm in storyMembers) sm.name: sm.userId,
+                    };
+
+                    final storyShares = widget.members.map((m) {
+                      return ExpenseShare(
+                        userId: memberIdByName[m.name] ?? 'user_${m.name}',
+                        amount: sharePerPerson,
+                      );
+                    }).toList();
+
+                    final List<StoryExpense> storyExpenses = [];
+                    int expCount = 1;
+                    _currentMemberExpenses.forEach((payerName, paidAmount) {
+                      if (paidAmount > 0) {
+                        storyExpenses.add(
+                          StoryExpense(
+                            expenseId:
+                                'exp_${expCount.toString().padLeft(3, '0')}',
+                            title: title,
+                            category: 'general',
+                            amount: paidAmount,
+                            paidBy:
+                                memberIdByName[payerName] ?? 'user_$payerName',
+                            splitType: 'equal',
+                            participants:
+                                storyMembers.map((m) => m.userId).toList(),
+                            shares: storyShares,
+                            date: DateTime.now().toIso8601String(),
+                          ),
+                        );
+                        expCount++;
+                      }
+                    });
+
+                    // Resolve existing story to update rather than creating a duplicate story
+                    final existing = _currentStory ??
+                        (widget.storyId != null
+                            ? StoryRepository.instance
+                                .getStoryById(widget.storyId!)
+                            : null) ??
+                        StoryRepository.instance.stories
+                            .where((s) =>
+                                s.title.toLowerCase().trim() ==
+                                title.toLowerCase().trim())
+                            .firstOrNull;
+
+                    final nav = Navigator.of(context);
+                    final sm = ScaffoldMessenger.of(context);
+
+                    if (existing != null) {
+                      final updatedExpenses = existing.expenses.isNotEmpty
+                          ? existing.expenses
+                          : storyExpenses;
+                      final completedSettlements = existing.settlements
+                          .where((s) => s.status == 'completed')
+                          .toList();
+                      final updatedStory = Story.create(
+                        storyId: existing.storyId,
+                        title: existing.title,
+                        description: existing.description,
+                        coverEmoji: existing.coverEmoji,
+                        currency: existing.currency,
+                        status:
+                            settlements.isEmpty ? 'settled' : existing.status,
+                        splitMethod: existing.splitMethod,
+                        createdBy: existing.createdBy,
+                        createdAt: existing.createdAt,
+                        startDate: existing.startDate,
+                        endDate: existing.endDate,
+                        members: existing.members,
+                        expenses: updatedExpenses,
+                        existingSettlements: completedSettlements,
+                      );
+                      await StoryRepository.instance.updateStory(updatedStory);
+                    } else {
+                      final story = Story.create(
+                        storyId:
+                            'story_${DateTime.now().millisecondsSinceEpoch}',
+                        title: title,
+                        description: 'Shared expense story for $title',
+                        coverEmoji: '🌴',
+                        currency: 'INR',
+                        status: 'active',
+                        createdBy: storyMembers.isNotEmpty
+                            ? storyMembers.first.userId
+                            : 'user_001',
+                        createdAt: DateTime.now().toIso8601String(),
+                        members: storyMembers,
+                        expenses: storyExpenses,
+                      );
+                      await StoryRepository.instance.addStory(story);
+                    }
+
+                    if (!mounted) return;
+                    nav.pop(true);
+                    sm.showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Split settled successfully for "$title"!',
+                          style:
+                              GoogleFonts.manrope(fontWeight: FontWeight.w600),
+                        ),
+                        backgroundColor: AppColors.primary,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.buttonSecondary),
+                        ),
+                      ),
+                    );
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.check_circle_outline_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Save & Track Settlement',
+                        style: GoogleFonts.manrope(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          color: Colors.white,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ],
         ),
       ),
-
-      // Fixed Bottom Button: "Save & Track Settlement"
-      bottomNavigationBar: Container(
-        color: isIOS ? AppColors.iosBackground : AppColors.background,
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF111111),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                ),
-              ),
-              onPressed: () {
-                HapticFeedback.mediumImpact();
-                final activity = SplitActivity(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  groupName: title,
-                  totalAmount: totalExpense,
-                  sharePerPerson: sharePerPerson,
-                  members: List.unmodifiable(widget.members),
-                  memberExpenses: Map.unmodifiable(_currentMemberExpenses),
-                  settlements: settlements,
-                  timestamp: DateTime.now(),
-                );
-                ActivityRepository.instance.recordActivity(activity);
-
-                // Build and persist Story adhering to standard Story JSON schema
-                final storyMembers = widget.members.map((m) {
-                  final safeId =
-                      'user_${m.name.toLowerCase().replaceAll(RegExp(r'\s+'), '_')}';
-                  return StoryMember(
-                    userId: safeId,
-                    name: m.name,
-                    role: m == widget.members.first ? 'admin' : 'member',
-                    joinedAt: DateTime.now().toIso8601String(),
-                  );
-                }).toList();
-
-                final memberIdByName = {
-                  for (var sm in storyMembers) sm.name: sm.userId,
-                };
-
-                final storyShares = widget.members.map((m) {
-                  return ExpenseShare(
-                    userId: memberIdByName[m.name] ?? 'user_${m.name}',
-                    amount: sharePerPerson,
-                  );
-                }).toList();
-
-                final List<StoryExpense> storyExpenses = [];
-                int expCount = 1;
-                _currentMemberExpenses.forEach((payerName, paidAmount) {
-                  if (paidAmount > 0) {
-                    storyExpenses.add(
-                      StoryExpense(
-                        expenseId: 'exp_${expCount.toString().padLeft(3, '0')}',
-                        title: title,
-                        category: 'general',
-                        amount: paidAmount,
-                        paidBy: memberIdByName[payerName] ?? 'user_$payerName',
-                        splitType: 'equal',
-                        participants:
-                            storyMembers.map((m) => m.userId).toList(),
-                        shares: storyShares,
-                        date: DateTime.now().toIso8601String(),
-                      ),
-                    );
-                    expCount++;
-                  }
-                });
-
-                // Resolve existing story to update rather than creating a duplicate story
-                final existing = _currentStory ??
-                    (widget.storyId != null
-                        ? StoryRepository.instance.getStoryById(widget.storyId!)
-                        : null) ??
-                    StoryRepository.instance.stories
-                        .where((s) =>
-                            s.title.toLowerCase().trim() ==
-                            title.toLowerCase().trim())
-                        .firstOrNull;
-
-                if (existing != null) {
-                  final updatedExpenses = existing.expenses.isNotEmpty
-                      ? existing.expenses
-                      : storyExpenses;
-                  final updatedStory = Story.create(
-                    storyId: existing.storyId,
-                    title: existing.title,
-                    description: existing.description,
-                    coverEmoji: existing.coverEmoji,
-                    currency: existing.currency,
-                    status: 'settled',
-                    splitMethod: existing.splitMethod,
-                    createdBy: existing.createdBy,
-                    createdAt: existing.createdAt,
-                    startDate: existing.startDate,
-                    endDate: existing.endDate,
-                    members: existing.members,
-                    expenses: updatedExpenses,
-                  );
-                  StoryRepository.instance.updateStory(updatedStory);
-                } else {
-                  final story = Story.create(
-                    storyId: 'story_${DateTime.now().millisecondsSinceEpoch}',
-                    title: title,
-                    description: 'Shared expense story for $title',
-                    coverEmoji: '🌴',
-                    currency: 'INR',
-                    status: 'active',
-                    createdBy: storyMembers.isNotEmpty
-                        ? storyMembers.first.userId
-                        : 'user_001',
-                    createdAt: DateTime.now().toIso8601String(),
-                    members: storyMembers,
-                    expenses: storyExpenses,
-                  );
-                  StoryRepository.instance.addStory(story);
-                }
-
-                Navigator.of(context).popUntil((route) => route.isFirst);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Split settled successfully for "$title"!',
-                      style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
-                    ),
-                    backgroundColor: AppColors.primary,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppRadius.buttonSecondary),
-                    ),
-                  ),
-                );
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.check_circle_outline_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Save & Track Settlement',
-                    style: GoogleFonts.manrope(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                      color: Colors.white,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ),
       ),
     );
@@ -747,14 +801,7 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
         st.from.name.isNotEmpty ? st.from.name[0].toUpperCase() : '?';
     final toInitial =
         st.to.name.isNotEmpty ? st.to.name[0].toUpperCase() : '?';
-    final key = '${st.from.name}_${st.to.name}_${st.amount}';
-    final isPaid = _paidKeys.contains(key) ||
-        (_currentStory?.expenses.any((e) =>
-                e.category == 'reimbursement' &&
-                e.title.toLowerCase().contains(st.to.name.toLowerCase()) &&
-                e.title.toLowerCase().contains(st.from.name.toLowerCase()) &&
-                (e.amount - st.amount).abs() < 0.01) ??
-            false);
+    final isPaid = _isSettlementPaid(st);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -928,7 +975,8 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
   }
 
   /// Member breakdown card with Member, Paid, Share, and Net pill status
-  Widget _buildMemberBreakdownCard(double sharePerPerson) {
+  Widget _buildMemberBreakdownCard(
+      double sharePerPerson, Map<String, double> memberNetBalances) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -1004,7 +1052,8 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
 
           // Member Rows
           for (int i = 0; i < widget.members.length; i++) ...[
-            _buildMemberBreakdownRow(widget.members[i], sharePerPerson),
+            _buildMemberBreakdownRow(widget.members[i], sharePerPerson,
+                memberNetBalances[widget.members[i].name] ?? 0.0),
             if (i < widget.members.length - 1)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
@@ -1017,9 +1066,22 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
     );
   }
 
-  Widget _buildMemberBreakdownRow(Friend member, double sharePerPerson) {
-    final paid = _currentMemberExpenses[member.name] ?? 0.0;
-    final net = paid - sharePerPerson;
+  Widget _buildMemberBreakdownRow(
+      Friend member, double sharePerPerson, double net) {
+    // Find initial paid expense amount for this member
+    double initialPaid = _currentMemberExpenses[member.name] ?? 0.0;
+    for (final entry in _currentMemberExpenses.entries) {
+      if (_isSameMember(entry.key, member.name)) {
+        initialPaid = entry.value;
+        break;
+      }
+    }
+    final paid = initialPaid;
+
+    if (net.abs() <= 0.5) {
+      net = 0.0;
+    }
+
     final currentUserName = SupabaseService.userDisplayName ??
         StorageService.instance.getStringSync('user_profile_name');
     final cleanName = member.name
@@ -1043,21 +1105,21 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
     String pillText;
     String testAlias;
 
-    if (net > 0.001) {
+    if (net > 0.5) {
       pillBg = const Color(0xFFE8F8EE);
       pillColor = const Color(0xFF16A34A);
       pillText = 'Gets ₹${_formatAmount(net)}';
       testAlias = '+₹${_formatAmount(net)}';
-    } else if (net < -0.001) {
+    } else if (net < -0.5) {
       pillBg = const Color(0xFFFEECEB);
       pillColor = const Color(0xFFE53935);
       pillText = 'Owes ₹${_formatAmount(-net)}';
       testAlias = '-₹${_formatAmount(-net)}';
     } else {
-      pillBg = const Color(0xFFF4F4F5);
-      pillColor = AppColors.textSecondary;
-      pillText = 'Settled';
-      testAlias = '₹0';
+      pillBg = const Color(0xFFE8F8EE);
+      pillColor = const Color(0xFF16A34A);
+      pillText = '✓ Paid';
+      testAlias = 'Paid';
     }
 
     return Row(

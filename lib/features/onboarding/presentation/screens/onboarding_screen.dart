@@ -15,7 +15,7 @@ import 'package:flutter_bill_splitter/features/onboarding/presentation/widgets/s
 /// - Screen 1: "Split expenses with friends" (Floating receipt with ₹2,400, ₹6,000, ₹2,100, purple group badge)
 /// - Screen 2: "Keep everyone in sync" (3 friend avatars with dashed ring, purple checkmark badge)
 /// - Screen 3: "Settle up easily" ("Settlement Complete!" card with green checkmark, S -> R pill)
-/// - Screen 4: Welcome & Auth ("Continue with Google", "Skip Login (Testing)", terms disclaimer)
+/// - Screen 4: Welcome & Auth ("Continue with Google", terms disclaimer)
 /// - Saves 'has_completed_onboarding' = true so it only appears for first-time users.
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback? onGetStarted;
@@ -161,45 +161,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     } finally {
       if (mounted) setState(() => _isSigningIn = false);
     }
-  }
-
-  Future<void> _skipLoginForTesting(BuildContext context) async {
-    HapticFeedback.lightImpact();
-    await StorageService.instance.setBool(AppConstants.keyHasCompletedOnboarding, true);
-    await StorageService.instance.setBool(AppConstants.keyIsLoggedInWithGoogle, true);
-    await StorageService.instance.setString(AppConstants.keyUserProfileName, 'Test User');
-    await StorageService.instance.setString(AppConstants.keyUserProfileEmail, 'test.user@ttmm.club');
-
-    final pendingInvite =
-        widget.inviteStoryId ?? await InviteService.getPendingInvite();
-
-    if (widget.onGetStarted != null) {
-      widget.onGetStarted!();
-      return;
-    }
-
-    if (!context.mounted) return;
-    if (pendingInvite != null && pendingInvite.isNotEmpty) {
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) =>
-              JoinStoryScreen(storyId: pendingInvite),
-          transitionsBuilder: (_, animation, __, child) =>
-              FadeTransition(opacity: animation, child: child),
-          transitionDuration: const Duration(milliseconds: 500),
-        ),
-      );
-      return;
-    }
-
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const MainScreen(),
-        transitionsBuilder: (_, animation, __, child) =>
-            FadeTransition(opacity: animation, child: child),
-        transitionDuration: const Duration(milliseconds: 500),
-      ),
-    );
   }
 
   @override
@@ -557,44 +518,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                           ],
                         ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Button 2: Skip Login (Testing)
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.9),
-                    foregroundColor: const Color(0xFF4B5563),
-                    side: const BorderSide(
-                        color: Color(0xFFE5E7EB), width: 1.2),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
-                  onPressed: () => _skipLoginForTesting(context),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.fast_forward_rounded,
-                        color: Color(0xFF4B5563),
-                        size: 18,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Skip Login (Testing)',
-                        style: GoogleFonts.manrope(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF4B5563),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
               const SizedBox(height: 24),
