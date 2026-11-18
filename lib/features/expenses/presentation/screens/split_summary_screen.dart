@@ -1095,8 +1095,7 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
         '';
     final isCurrentUser = cleanM == 'you' ||
         (cleanUser.isNotEmpty && cleanM == cleanUser) ||
-        cleanM == 'roshan' ||
-        cleanM.startsWith('roshan ');
+        (cleanUser.isEmpty && (cleanM == 'roshan' || cleanM.startsWith('roshan ')));
     final displayName = isCurrentUser ? 'You' : cleanName;
 
     // Status pill

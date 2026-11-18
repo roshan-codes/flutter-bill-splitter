@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:animations/animations.dart';
 import 'package:flutter/cupertino.dart';
@@ -515,6 +516,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
         .map((m) => m.userId)
         .firstOrNull;
     bool isAdvanceMode = false;
+    bool isSubmitting = false;
     final sheetFormKey = GlobalKey<FormState>();
     final quickTags = _getFrequentAndQuickTags();
     String? selectedTagLabel;
@@ -1100,181 +1102,213 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                     height: 52,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: isSubmitting
+                            ? const Color(0xFF666666)
+                            : AppColors.primary,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppRadius.button),
                         ),
                       ),
-                      onPressed: () async {
-                        if (sheetFormKey.currentState?.validate() ?? false) {
-                          final amt =
-                              double.parse(amountController.text.trim());
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              if (isSubmitting) return;
+                              setSheetState(() => isSubmitting = true);
 
-                          if (isAdvanceMode) {
-                            final sender = _story.members.firstWhere(
-                              (m) => m.userId == selectedPayerId,
-                              orElse: () => _story.members.first,
-                            );
-                            final recipient = _story.members.firstWhere(
-                              (m) =>
-                                  m.userId ==
-                                  (selectedRecipientId ??
-                                      _story.members
-                                          .where((m) =>
-                                              m.userId != selectedPayerId)
-                                          .map((m) => m.userId)
-                                          .firstOrNull ??
-                                      ''),
-                              orElse: () => _story.members.last,
-                            );
+                              if (!(sheetFormKey.currentState?.validate() ??
+                                  false)) {
+                                setSheetState(() => isSubmitting = false);
+                                return;
+                              }
 
-                            if (sender.userId == recipient.userId) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'Sender and recipient cannot be the same member'),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                              return;
-                            }
+                              final amt =
+                                  double.parse(amountController.text.trim());
 
-                            final rawTitle = titleController.text.trim();
-                            final note =
-                                rawTitle.isNotEmpty ? ' ($rawTitle)' : '';
-                            final advanceTitle =
-                                'Advance to ${recipient.name} by ${sender.name}$note';
+                              if (isAdvanceMode) {
+                                final sender = _story.members.firstWhere(
+                                  (m) => m.userId == selectedPayerId,
+                                  orElse: () => _story.members.first,
+                                );
+                                final recipient = _story.members.firstWhere(
+                                  (m) =>
+                                      m.userId ==
+                                      (selectedRecipientId ??
+                                          _story.members
+                                              .where((m) =>
+                                                  m.userId != selectedPayerId)
+                                              .map((m) => m.userId)
+                                              .firstOrNull ??
+                                          ''),
+                                  orElse: () => _story.members.last,
+                                );
 
-                            final newExpense = StoryExpense(
-                              expenseId:
-                                  'exp_adv_${DateTime.now().millisecondsSinceEpoch}',
-                              title: advanceTitle,
-                              category: 'advance',
-                              amount: amt,
-                              paidBy: sender.userId,
-                              splitType: 'exact',
-                              participants: [recipient.userId],
-                              shares: [
-                                ExpenseShare(
-                                  userId: recipient.userId,
+                                if (sender.userId == recipient.userId) {
+                                  setSheetState(() => isSubmitting = false);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          'Sender and recipient cannot be the same member'),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                final rawTitle = titleController.text.trim();
+                                final note =
+                                    rawTitle.isNotEmpty ? ' ($rawTitle)' : '';
+                                final advanceTitle =
+                                    'Advance to ${recipient.name} by ${sender.name}$note';
+
+                                final newExpense = StoryExpense(
+                                  expenseId:
+                                      'exp_adv_${DateTime.now().millisecondsSinceEpoch}',
+                                  title: advanceTitle,
+                                  category: 'advance',
                                   amount: amt,
-                                ),
-                              ],
-                              date: DateTime.now().toIso8601String(),
-                              note: rawTitle.isNotEmpty ? rawTitle : null,
-                            );
+                                  paidBy: sender.userId,
+                                  splitType: 'exact',
+                                  participants: [recipient.userId],
+                                  shares: [
+                                    ExpenseShare(
+                                      userId: recipient.userId,
+                                      amount: amt,
+                                    ),
+                                  ],
+                                  date: DateTime.now().toIso8601String(),
+                                  note: rawTitle.isNotEmpty ? rawTitle : null,
+                                );
 
-                            final updatedStory = _story.addExpense(newExpense);
-                            setState(() {
-                              _story = updatedStory;
-                            });
+                                final updatedStory =
+                                    _story.addExpense(newExpense);
+                                setState(() {
+                                  _story = updatedStory;
+                                });
 
-                            await StoryRepository.instance
-                                .updateStory(updatedStory);
+                                if (ctx.mounted) {
+                                  Navigator.of(ctx).pop();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          'Advance payment of ₹${_formatAmount(amt)} recorded'),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
 
-                            final activity = SplitActivity(
-                              id: newExpense.expenseId,
-                              groupName: _story.title,
-                              expenseTitle: advanceTitle,
-                              type: 'reimbursement',
-                              totalAmount: amt,
-                              sharePerPerson: amt,
-                              timestamp: DateTime.now(),
-                              members: _story.members
-                                  .map((m) => Friend(
-                                      name: m.name, phone: '+91 98765 00000'))
-                                  .toList(),
-                              memberExpenses: {sender.name: amt},
-                              settlements: const [],
-                            );
-                            ActivityRepository.instance
-                                .recordActivity(activity);
+                                unawaited(StoryRepository.instance
+                                    .updateStory(updatedStory));
 
-                            if (ctx.mounted) {
-                              Navigator.of(ctx).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                      'Advance payment of ₹${_formatAmount(amt)} recorded'),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
+                                final activity = SplitActivity(
+                                  id: newExpense.expenseId,
+                                  groupName: _story.title,
+                                  expenseTitle: advanceTitle,
+                                  type: 'reimbursement',
+                                  totalAmount: amt,
+                                  sharePerPerson: amt,
+                                  timestamp: DateTime.now(),
+                                  members: _story.members
+                                      .map((m) => Friend(
+                                          name: m.name,
+                                          phone: '+91 98765 00000'))
+                                      .toList(),
+                                  memberExpenses: {sender.name: amt},
+                                  settlements: const [],
+                                );
+                                ActivityRepository.instance
+                                    .recordActivity(activity);
+                                return;
+                              }
+
+                              // Normal Expense mode
+                              final payer = _story.members.firstWhere(
+                                (m) => m.userId == selectedPayerId,
+                                orElse: () => _story.members.first,
                               );
-                            }
-                            return;
-                          }
 
-                          // Normal Expense mode
-                          final payer = _story.members.firstWhere(
-                            (m) => m.userId == selectedPayerId,
-                            orElse: () => _story.members.first,
-                          );
+                              final expenseTitle = titleController.text.trim();
+                              final finalCategory = selectedCategory ??
+                                  _inferCategoryFromTitle(expenseTitle);
 
-                          final expenseTitle = titleController.text.trim();
-                          final finalCategory = selectedCategory ??
-                              _inferCategoryFromTitle(expenseTitle);
+                              final newExpense = StoryExpense(
+                                expenseId:
+                                    'exp_${DateTime.now().millisecondsSinceEpoch}',
+                                title: expenseTitle,
+                                category: finalCategory,
+                                amount: amt,
+                                paidBy: payer.userId,
+                                splitType: 'equal',
+                                participants: _story.members
+                                    .map((m) => m.userId)
+                                    .toList(),
+                                shares: _story.members
+                                    .map((m) => ExpenseShare(
+                                          userId: m.userId,
+                                          amount: amt /
+                                              (_story.members.isNotEmpty
+                                                  ? _story.members.length
+                                                  : 1),
+                                        ))
+                                    .toList(),
+                                date: DateTime.now().toIso8601String(),
+                              );
 
-                          final newExpense = StoryExpense(
-                            expenseId:
-                                'exp_${DateTime.now().millisecondsSinceEpoch}',
-                            title: expenseTitle,
-                            category: finalCategory,
-                            amount: amt,
-                            paidBy: payer.userId,
-                            splitType: 'equal',
-                            participants:
-                                _story.members.map((m) => m.userId).toList(),
-                            shares: _story.members
-                                .map((m) => ExpenseShare(
-                                      userId: m.userId,
-                                      amount: amt /
-                                          (_story.members.isNotEmpty
-                                              ? _story.members.length
-                                              : 1),
-                                    ))
-                                .toList(),
-                            date: DateTime.now().toIso8601String(),
-                          );
+                              final recalculatedStory = Story.create(
+                                storyId: _story.storyId,
+                                title: _story.title,
+                                description: _story.description,
+                                coverEmoji: _story.coverEmoji,
+                                currency: _story.currency,
+                                status: _story.status,
+                                splitMethod: _splitMethod,
+                                createdBy: _story.createdBy,
+                                createdAt: _story.createdAt,
+                                startDate: _story.startDate,
+                                endDate: _story.endDate,
+                                members: _story.members,
+                                expenses: [..._story.expenses, newExpense],
+                                existingSettlements: _story.settlements
+                                    .where((s) => s.status == 'completed')
+                                    .toList(),
+                              );
 
-                          final recalculatedStory = Story.create(
-                            storyId: _story.storyId,
-                            title: _story.title,
-                            description: _story.description,
-                            coverEmoji: _story.coverEmoji,
-                            currency: _story.currency,
-                            status: _story.status,
-                            splitMethod: _splitMethod,
-                            createdBy: _story.createdBy,
-                            createdAt: _story.createdAt,
-                            startDate: _story.startDate,
-                            endDate: _story.endDate,
-                            members: _story.members,
-                            expenses: [..._story.expenses, newExpense],
-                            existingSettlements: _story.settlements
-                                .where((s) => s.status == 'completed')
-                                .toList(),
-                          );
+                              setState(() {
+                                _story = recalculatedStory;
+                                _memberExpenses[payer.name] =
+                                    (_memberExpenses[payer.name] ?? 0.0) + amt;
+                              });
 
-                          setState(() {
-                            _story = recalculatedStory;
-                            _memberExpenses[payer.name] =
-                                (_memberExpenses[payer.name] ?? 0.0) + amt;
-                          });
+                              if (ctx.mounted) {
+                                Navigator.of(ctx).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content:
+                                        Text('Expense "$expenseTitle" added'),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
 
-                          await _recordTagUsage(expenseTitle);
-                          await _persistExpense(newExpense, payer.name);
-                          if (ctx.mounted) {
-                            Navigator.of(ctx).pop();
-                          }
-                        }
-                      },
-                      child: Text(
-                        isAdvanceMode
-                            ? 'Record Advance Payment'
-                            : 'Save Expense',
-                        style: GoogleFonts.manrope(
-                            fontWeight: FontWeight.w700, fontSize: 16),
-                      ),
+                              unawaited(_recordTagUsage(expenseTitle));
+                              unawaited(_persistExpense(newExpense, payer.name));
+                            },
+                      child: isSubmitting
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              isAdvanceMode
+                                  ? 'Record Advance Payment'
+                                  : 'Save Expense',
+                              style: GoogleFonts.manrope(
+                                  fontWeight: FontWeight.w700, fontSize: 16),
+                            ),
                     ),
                   ),
                 ],
@@ -3287,12 +3321,11 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
         .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
         .trim();
     final clean = cleanName.toLowerCase();
-    if (clean == 'you') return true;
 
     final myId = _resolvedCurrentMemberId;
     if (myId != null) {
-      if (userId != null && userId.isNotEmpty && userId == myId) {
-        return true;
+      if (userId != null && userId.isNotEmpty) {
+        return userId == myId;
       }
       final myMember =
           _story.members.where((m) => m.userId == myId).firstOrNull;
@@ -3301,17 +3334,18 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
             .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
             .toLowerCase()
             .trim();
-        if (clean == myClean) return true;
+        return clean == myClean || clean == 'you';
       }
     }
+
+    if (clean == 'you') return true;
 
     final currentId = SupabaseService.currentUser?.id;
     if (userId != null &&
         userId.isNotEmpty &&
         currentId != null &&
-        currentId.isNotEmpty &&
-        userId == currentId) {
-      return true;
+        currentId.isNotEmpty) {
+      return userId == currentId;
     }
 
     final currentName = SupabaseService.userDisplayName ??
@@ -3321,14 +3355,12 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
           .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
           .toLowerCase()
           .trim();
-      if (clean == myClean ||
+      return clean == myClean ||
           clean.startsWith('$myClean ') ||
-          myClean.startsWith('$clean ')) {
-        return true;
-      }
+          myClean.startsWith('$clean ');
     }
 
-    // Default primary user name match
+    // Default primary user name match only when no authenticated user is present
     if (clean == 'roshan' || clean.startsWith('roshan ')) return true;
 
     return false;

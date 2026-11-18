@@ -105,4 +105,67 @@ void main() {
     final amountField = find.widgetWithText(TextFormField, 'Amount (₹)');
     expect(amountField, findsOneWidget);
   });
+
+  testWidgets(
+      'Rapid multiple taps on Save Expense do not create duplicate expenses',
+      (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final story = Story.create(
+      storyId: 'story_duplicate_expense_test',
+      title: 'Road Trip',
+      description: 'Trip test',
+      createdBy: 'user_roshan',
+      members: const [
+        StoryMember(userId: 'user_roshan', name: 'Roshan', joinedAt: ''),
+        StoryMember(userId: 'user_kumar', name: 'Kumar', joinedAt: ''),
+      ],
+      expenses: const [],
+    );
+
+    await StoryRepository.instance.addStory(story);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SplitDetailScreen(
+          groupName: story.title,
+          members: story.members.map((m) => Friend(name: m.name, phone: '')).toList(),
+          story: story,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 1. Open Expenses tab and tap Add Expense
+    await tester.tap(find.text('Expenses'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add Expense'));
+    await tester.pumpAndSettle();
+
+    // 2. Fill in Title and Amount
+    final titleField = find.widgetWithText(TextFormField, 'Expense Title');
+    await tester.enterText(titleField, 'Fuel Refill');
+    final amountField = find.widgetWithText(TextFormField, 'Amount (₹)');
+    await tester.enterText(amountField, '2000');
+    await tester.pump();
+
+    // 3. Tap Save Expense button multiple times rapidly without letting pumpAndSettle finish
+    final saveBtn = find.text('Save Expense');
+    expect(saveBtn, findsOneWidget);
+
+    await tester.tap(saveBtn);
+    await tester.tap(saveBtn, warnIfMissed: false);
+    await tester.tap(saveBtn, warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    // 4. Verify only ONE expense was created with title 'Fuel Refill'
+    final currentStory = StoryRepository.instance.getStoryById('story_duplicate_expense_test');
+    expect(currentStory, isNotNull);
+    final fuelExpenses = currentStory!.expenses.where((e) => e.title == 'Fuel Refill').toList();
+    expect(fuelExpenses.length, equals(1));
+    expect(find.text('Fuel Refill'), findsOneWidget);
+  });
 }

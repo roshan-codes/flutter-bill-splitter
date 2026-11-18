@@ -81,43 +81,6 @@ class AppAvatar extends StatelessWidget {
     }
 
     final letter = _getInitial();
-    Widget imageContent;
-
-    if (effectiveIndex != null) {
-      final assetPath = 'assets/avatars/memo_${(effectiveIndex % 35) + 1}.png';
-      imageContent = Image.asset(
-        assetPath,
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildFallbackInitial(letter),
-      );
-    } else if (effectiveAvatar != null && effectiveAvatar.trim().isNotEmpty) {
-      final trimmed = effectiveAvatar.trim();
-      if (trimmed.startsWith('assets/')) {
-        imageContent = Image.asset(
-          trimmed,
-          width: size,
-          height: size,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _buildFallbackInitial(letter),
-        );
-      } else if (trimmed.startsWith('http://') ||
-          trimmed.startsWith('https://')) {
-        imageContent = Image.network(
-          trimmed,
-          width: size,
-          height: size,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _buildFallbackInitial(letter),
-        );
-      } else {
-        imageContent = _buildFallbackInitial(letter);
-      }
-    } else {
-      imageContent = _buildFallbackInitial(letter);
-    }
-
     final bool hasImage = effectiveIndex != null ||
         (effectiveAvatar != null && effectiveAvatar.trim().isNotEmpty);
     // Memo avatars and profile images render on clean white backgrounds instead of dark/black
@@ -132,6 +95,45 @@ class AppAvatar extends StatelessWidget {
             : backgroundColor!)
         : (backgroundColor ?? const Color(0xFF111111));
 
+    Widget imageContent;
+
+    if (effectiveIndex != null) {
+      final assetPath = 'assets/avatars/memo_${(effectiveIndex % 35) + 1}.png';
+      imageContent = Image.asset(
+        assetPath,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildFallbackInitial(letter, effectiveBg),
+      );
+    } else if (effectiveAvatar != null && effectiveAvatar.trim().isNotEmpty) {
+      final trimmed = effectiveAvatar.trim();
+      if (trimmed.startsWith('assets/')) {
+        imageContent = Image.asset(
+          trimmed,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) =>
+              _buildFallbackInitial(letter, effectiveBg),
+        );
+      } else if (trimmed.startsWith('http://') ||
+          trimmed.startsWith('https://')) {
+        imageContent = Image.network(
+          trimmed,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) =>
+              _buildFallbackInitial(letter, effectiveBg),
+        );
+      } else {
+        imageContent = _buildFallbackInitial(letter, effectiveBg);
+      }
+    } else {
+      imageContent = _buildFallbackInitial(letter, effectiveBg);
+    }
+
     return Container(
       width: size,
       height: size,
@@ -144,12 +146,23 @@ class AppAvatar extends StatelessWidget {
     );
   }
 
-  Widget _buildFallbackInitial(String letter) {
-    return Center(
+  Widget _buildFallbackInitial(String letter, [Color? effectiveBg]) {
+    final isWhiteBg = effectiveBg == Colors.white ||
+        effectiveBg == const Color(0xFFFAFAFC) ||
+        effectiveBg == const Color(0xFFF3F4F6);
+    final isWhiteText = textColor == null || textColor == Colors.white;
+    final color = (isWhiteBg && isWhiteText)
+        ? const Color(0xFF1E1E1E)
+        : (textColor ?? Colors.white);
+    final bg = (isWhiteBg && isWhiteText) ? const Color(0xFFE5E7EB) : null;
+
+    return Container(
+      color: bg,
+      alignment: Alignment.center,
       child: Text(
         letter,
         style: GoogleFonts.manrope(
-          color: textColor ?? Colors.white,
+          color: color,
           fontWeight: FontWeight.w800,
           fontSize: fontSize,
         ),
