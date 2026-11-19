@@ -235,9 +235,8 @@ void main() {
       expect(find.text('Edit Profile'), findsOneWidget);
       expect(find.byIcon(Icons.person_outline_rounded), findsOneWidget);
 
-      expect(find.text('Payment & Settlement'), findsOneWidget);
-      expect(
-          find.byIcon(Icons.account_balance_wallet_outlined), findsOneWidget);
+      expect(find.text('Communities'), findsOneWidget);
+      expect(find.byIcon(Icons.groups_outlined), findsOneWidget);
 
       expect(find.text('App Settings'), findsOneWidget);
       expect(find.byIcon(Icons.settings_outlined), findsOneWidget);

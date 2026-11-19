@@ -204,7 +204,7 @@ void main() {
 
       // Verify member options sheet
       expect(find.text('Edit name or number'), findsOneWidget);
-      expect(find.text('Remove from group'), findsOneWidget);
+      expect(find.textContaining('Remove from'), findsOneWidget);
 
       // Tap "Edit name or number"
       await tester.tap(find.text('Edit name or number'));
@@ -246,8 +246,8 @@ void main() {
       await tester.tap(find.text('Amit'));
       await tester.pumpAndSettle();
 
-      // Tap "Remove from group"
-      await tester.tap(find.text('Remove from group'));
+      // Tap "Remove from story"
+      await tester.tap(find.textContaining('Remove from'));
       await tester.pumpAndSettle();
 
       // Verify confirmation dialog

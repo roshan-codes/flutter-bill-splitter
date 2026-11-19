@@ -1640,7 +1640,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                   ),
                 ),
                 title: Text(
-                  'Remove from group',
+                  'Remove from story',
                   style: GoogleFonts.manrope(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -1790,7 +1790,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${member.name} removed from group'),
+          content: Text('${member.name} removed from story'),
           behavior: SnackBarBehavior.floating,
         ),
       );

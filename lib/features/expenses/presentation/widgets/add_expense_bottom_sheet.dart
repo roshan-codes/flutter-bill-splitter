@@ -628,8 +628,8 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
                       contentPadding:
                           const EdgeInsets.symmetric(vertical: 16),
                       hintText: _isAdvanceMode
-                          ? 'Note / Purpose (Optional)'
-                          : 'Expense Title',
+                          ? 'e.g. Deposit or fuel advance'
+                          : 'e.g. Dinner, Taxi, Groceries',
                       hintStyle: GoogleFonts.manrope(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
@@ -746,15 +746,6 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
                 ),
               ],
               const SizedBox(height: 16),
-              Text(
-                'Amount (₹)',
-                style: GoogleFonts.manrope(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF111111),
-                ),
-              ),
-              const SizedBox(height: 8),
               Container(
                 height: 56,
                 padding: const EdgeInsets.symmetric(horizontal: 16),

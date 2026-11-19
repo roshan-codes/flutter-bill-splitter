@@ -259,7 +259,66 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
           ),
           backgroundColor: const Color(0xFF1E1E1E),
           behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'UNDO',
+            textColor: const Color(0xFF22C55E),
+            onPressed: () async {
+              if (story != null) {
+                final current =
+                    StoryRepository.instance.getStoryById(story.storyId) ??
+                        story;
+                final restoredExpenses = current.expenses
+                    .where((e) => e.expenseId != reimbursementExpense.expenseId)
+                    .toList();
+                final restored = Story.create(
+                  storyId: current.storyId,
+                  title: current.title,
+                  description: current.description,
+                  coverEmoji: current.coverEmoji,
+                  currency: current.currency,
+                  status: current.status,
+                  splitMethod: current.splitMethod,
+                  createdBy: current.createdBy,
+                  createdAt: current.createdAt,
+                  startDate: current.startDate,
+                  endDate: current.endDate,
+                  members: current.members,
+                  expenses: restoredExpenses,
+                  existingSettlements: current.settlements
+                      .where((s) => s.status == 'completed')
+                      .toList(),
+                  version: current.version,
+                );
+                await StoryRepository.instance.updateStory(restored);
+                if (mounted) {
+                  setState(() {
+                    _currentStory = restored;
+                    _paidKeys.remove(key);
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Settlement payment undone',
+                        style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
+                      ),
+                      backgroundColor: const Color(0xFF1E1E1E),
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 2),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  );
+                }
+              } else {
+                if (mounted) {
+                  setState(() {
+                    _paidKeys.remove(key);
+                  });
+                }
+              }
+            },
+          ),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
