@@ -36,41 +36,15 @@ class UserIdentityResolver {
       }
     }
 
-    // 3. Member named 'you' literally
+    // 3. Member named 'you' literally (e.g. offline-created starter story where user is literally 'You')
     for (final m in story.members) {
       final cleanM = m.name.toLowerCase().trim();
-      if (cleanM == 'you' || cleanM.contains('(you)')) return m.userId;
+      if (cleanM == 'you' || cleanM == '(you)') return m.userId;
     }
 
-    // 4. Fallback to story creator if present in members
-    if (story.createdBy.isNotEmpty) {
-      for (final m in story.members) {
-        if (m.userId == story.createdBy) return m.userId;
-      }
-    }
-
-    // 5. Default user name "Roshan" (app owner profile in offline/unauthenticated mode)
-    if (currentId == null && myClean.isEmpty) {
-      for (final m in story.members) {
-        final cleanM = m.name.toLowerCase().trim();
-        if (cleanM == 'roshan' ||
-            cleanM.startsWith('roshan ') ||
-            cleanM.contains('roshan')) {
-          return m.userId;
-        }
-      }
-    }
-
-    // 6. First admin member
-    for (final m in story.members) {
-      if (m.role == 'admin') return m.userId;
-    }
-
-    // 7. Fallback to first member
-    if (story.members.isNotEmpty) {
-      return story.members.first.userId;
-    }
-
+    // Strict Access Control: If neither authenticated UID, saved profile name,
+    // nor literal 'You' matches, this active session is a non-member/guest/viewer.
+    // NEVER fall back to claiming story.createdBy, admin, or first member!
     return null;
   }
 
@@ -123,14 +97,11 @@ class UserIdentityResolver {
           myClean.startsWith('$clean ');
     }
 
-    if (currentId == null) {
-      if (clean == 'roshan' || clean.startsWith('roshan ')) return true;
-    }
-
     return clean == 'you';
   }
 
-  /// Formats member name: returns 'You' if isMe is true, else clean member name.
+  /// Formats member name: returns 'Name (You)' if isMe is true (or 'You' if name is literally 'You'),
+  /// preserving the exact name from the database while identifying the active user.
   /// If isMe is false, NEVER return 'You'. If stored name was literally 'You',
   /// resolve a clean fallback name from story/member role, or 'Host'.
   static String formatMemberDisplayName(
@@ -139,13 +110,19 @@ class UserIdentityResolver {
     String? memberUserId,
     Story? story,
     String? fallbackOtherName,
+    bool includeYouSuffix = true,
   }) {
-    if (isMe) {
-      return 'You';
-    }
     final clean = name
         .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
         .trim();
+
+    if (isMe) {
+      if (clean.isEmpty || clean.toLowerCase() == 'you') {
+        return 'You';
+      }
+      return includeYouSuffix ? '$clean (You)' : clean;
+    }
+
     if (clean.toLowerCase() == 'you' || clean.isEmpty) {
       // NEVER show 'You' when isMe is false!
       if (fallbackOtherName != null &&

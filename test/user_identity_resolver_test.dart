@@ -27,7 +27,7 @@ void main() {
       createdBy: 'creator_1',
     );
 
-    test('Current user (Gunjan) sees herself as "You"', () {
+    test('Current user (Gunjan) sees herself as "Gunjan (You)"', () {
       final isMe = UserIdentityResolver.isCurrentUser(
         name: 'Gunjan',
         userId: 'gunjan_1',
@@ -42,7 +42,7 @@ void main() {
         memberUserId: 'gunjan_1',
         story: story,
       );
-      expect(displayName, equals('You'));
+      expect(displayName, equals('Gunjan (You)'));
     });
 
     test('Current user (Gunjan) NEVER sees creator with name "You" as "You"', () {
@@ -62,6 +62,64 @@ void main() {
       );
       expect(displayName, isNot(equals('You')));
       expect(displayName, equals('Host'));
+    });
+
+    test('Anonymous guest user is NEVER resolved as story creator or member', () {
+      const guestStory = Story(
+        storyId: 'story_party',
+        title: 'Party',
+        description: 'Party trip',
+        coverEmoji: '🌴',
+        members: [
+          StoryMember(userId: 'gunjan_id', name: 'Gunjan Barai', role: 'creator', joinedAt: ''),
+          StoryMember(userId: 'roshan_id', name: 'Roshan', role: 'member', joinedAt: ''),
+        ],
+        expenses: [],
+        settlements: [],
+        memberBalances: [],
+        summary: StorySummary(
+          totalExpenses: 0,
+          totalSettled: 0,
+          pendingAmount: 0,
+          memberCount: 2,
+          expenseCount: 0,
+        ),
+        createdAt: '',
+        createdBy: 'gunjan_id',
+      );
+
+      final resolvedId = UserIdentityResolver.resolveCurrentMemberId(guestStory);
+      expect(resolvedId, isNull);
+
+      final isGunjanMe = UserIdentityResolver.isCurrentUser(
+        name: 'Gunjan Barai',
+        userId: 'gunjan_id',
+        story: guestStory,
+      );
+      expect(isGunjanMe, isFalse);
+
+      final isRoshanMe = UserIdentityResolver.isCurrentUser(
+        name: 'Roshan',
+        userId: 'roshan_id',
+        story: guestStory,
+      );
+      expect(isRoshanMe, isFalse);
+
+      final gunjanDisplay = UserIdentityResolver.formatMemberDisplayName(
+        'Gunjan Barai',
+        isGunjanMe,
+        memberUserId: 'gunjan_id',
+        story: guestStory,
+      );
+      expect(gunjanDisplay, equals('Gunjan Barai'));
+
+      final roshanDisplay = UserIdentityResolver.formatMemberDisplayName(
+        'Roshan',
+        isRoshanMe,
+        memberUserId: 'roshan_id',
+        story: guestStory,
+      );
+      expect(roshanDisplay, equals('Roshan'));
     });
   });
 }

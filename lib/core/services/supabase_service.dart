@@ -520,11 +520,20 @@ class SupabaseService {
               .or('created_by.eq.$userId,user_id.eq.$userId')
               .order('created_at', ascending: false);
         }
+      } else if (cleanUser.isNotEmpty) {
+        // Unauthenticated guest with a saved local name: only fetch stories mentioning this name
+        try {
+          response = await cli
+              .from('stories')
+              .select()
+              .order('created_at', ascending: false);
+        } catch (_) {
+          response = [];
+        }
       } else {
-        response = await cli
-            .from('stories')
-            .select()
-            .order('created_at', ascending: false);
+        // Unauthenticated guest with no identity: STRICT ISOLATION
+        // Cannot access private cloud stories belonging to other users.
+        return [];
       }
 
       final List<Story> results = [];
@@ -542,7 +551,9 @@ class SupabaseService {
           }
           if (parsed != null) {
             final isCreator = (userId != null &&
-                (parsed.createdBy == userId || item['user_id'] == userId));
+                    (parsed.createdBy == userId || item['user_id'] == userId)) ||
+                (cleanUser.isNotEmpty &&
+                    parsed.createdBy.toLowerCase() == cleanUser);
             final isMember = parsed.members.any((m) {
               final cleanM = m.name
                   .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
@@ -552,9 +563,8 @@ class SupabaseService {
                   (cleanUser.isNotEmpty && cleanM == cleanUser);
             });
 
-            final isAllowed = (userId == null && cleanUser.isEmpty) ||
-                isCreator ||
-                isMember;
+            // STRICT ACCESS CONTROL: Only creators and members may access a story!
+            final isAllowed = isCreator || isMember;
 
             if (isAllowed) {
               // 1. Deduplicate by exact storyId
@@ -693,7 +703,7 @@ class SupabaseService {
             date: e['date'] as String? ?? '',
             participants: participants,
             shares: shares,
-            receipt: e['receipt_url'] as String?,
+            note: e['notes'] as String?,
           ));
         }
 

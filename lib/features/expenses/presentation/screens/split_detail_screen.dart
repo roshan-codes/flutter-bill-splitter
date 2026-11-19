@@ -1298,69 +1298,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
     );
   }
 
-  String? get _resolvedCurrentMemberId {
-    final currentId = SupabaseService.currentUser?.id;
-    final currentName = SupabaseService.userDisplayName ??
-        StorageService.instance.getStringSync('user_profile_name');
-    final myClean = currentName
-            ?.replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
-            .toLowerCase()
-            .trim() ??
-        '';
-
-    // 1. Authenticated user ID matches a member's userId
-    if (currentId != null && currentId.isNotEmpty) {
-      for (final m in _story.members) {
-        if (m.userId == currentId) return m.userId;
-      }
-    }
-
-    // 2. Profile display name matches member name
-    if (myClean.isNotEmpty) {
-      for (final m in _story.members) {
-        final cleanM = m.name
-            .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
-            .toLowerCase()
-            .trim();
-        if (cleanM == myClean) return m.userId;
-      }
-    }
-
-    // 3. Member named 'you' literally
-    for (final m in _story.members) {
-      final cleanM = m.name.toLowerCase().trim();
-      if (cleanM == 'you' || cleanM.contains('(you)')) return m.userId;
-    }
-
-    // 4. Fallback to story creator if present in members
-    if (_story.createdBy.isNotEmpty) {
-      for (final m in _story.members) {
-        if (m.userId == _story.createdBy) return m.userId;
-      }
-    }
-
-    // 5. Default user name "Roshan" (app owner/primary user profile)
-    for (final m in _story.members) {
-      final cleanM = m.name.toLowerCase().trim();
-      if (cleanM == 'roshan' ||
-          cleanM.startsWith('roshan ') ||
-          cleanM.contains('roshan')) {
-        return m.userId;
-      }
-    }
-
-    // 6. First admin member
-    for (final m in _story.members) {
-      if (m.role == 'admin') return m.userId;
-    }
-
-    // 7. Fallback to first member
-    if (_story.members.isNotEmpty) {
-      return _story.members.first.userId;
-    }
-
-    return null;
-  }
+  String? get _resolvedCurrentMemberId =>
+      UserIdentityResolver.resolveCurrentMemberId(_story);
 
   StoryMember _resolvePayerMember(String paidByIdentifier) {
     final idLower = paidByIdentifier.toLowerCase().trim();

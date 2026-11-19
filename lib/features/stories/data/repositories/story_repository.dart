@@ -46,7 +46,9 @@ class StoryRepository extends ChangeNotifier {
         _stories.add(sampleStory);
         await StorageService.instance
             .setBool(AppConstants.keyHasSeededSampleStory, true);
-        await SupabaseService.saveStory(sampleStory);
+        if (SupabaseService.currentUser != null) {
+          await SupabaseService.saveStory(sampleStory);
+        }
 
         // Seed corresponding sample activities so Activity & Recent Expenses show realistic data
         for (final exp in sampleStory.expenses) {
@@ -75,10 +77,8 @@ class StoryRepository extends ChangeNotifier {
   Future<void> _syncFromSupabase() async {
     try {
       final remote = await SupabaseService.fetchStories();
-      if (remote.isNotEmpty) {
-        _stories.clear();
-        _stories.addAll(remote);
-      }
+      _stories.clear();
+      _stories.addAll(remote);
       final currentAvatar = SupabaseService.resolvedUserAvatar;
       if (currentAvatar != null) {
         _applyAvatarToUserMembers(currentAvatar);
