@@ -595,11 +595,15 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
     }
     final currentUserId = (authUserId != null && authUserId.isNotEmpty) ? authUserId : localGuestId;
 
-    final rawCreator = _creatorName.trim().isNotEmpty ? _creatorName.trim() : 'You';
+    final profileName = SupabaseService.userDisplayName ??
+        StorageService.instance.getStringSync('user_profile_name');
+    final rawCreator = _creatorName.trim().isNotEmpty && _creatorName.trim().toLowerCase() != 'you'
+        ? _creatorName.trim()
+        : (profileName?.trim().isNotEmpty == true ? profileName!.trim() : 'Roshan');
     final cleanCurrentName = rawCreator
         .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
         .trim();
-    final currentUserName = cleanCurrentName.isNotEmpty ? cleanCurrentName : 'You';
+    final currentUserName = cleanCurrentName.isNotEmpty ? cleanCurrentName : 'Roshan';
 
     // Build member list: creator is guaranteed to be Member #1 with role 'creator'
     final List<StoryMember> rawMembers = [];

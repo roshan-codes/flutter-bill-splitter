@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_bill_splitter/core/utils/split_calculator.dart';
 
 /// Domain model representing a Story Member.
 class StoryMember {
@@ -311,6 +312,7 @@ class Story {
   final List<StoryExpense> expenses;
   final List<StoryMemberBalance> memberBalances;
   final List<StorySettlement> settlements;
+  final int version;
 
   const Story({
     required this.storyId,
@@ -329,6 +331,7 @@ class Story {
     required this.expenses,
     required this.memberBalances,
     required this.settlements,
+    this.version = 1,
   });
 
   factory Story.fromJson(Map<String, dynamic> json) {
@@ -390,6 +393,7 @@ class Story {
       settlements: rawSettlements
           .map((s) => StorySettlement.fromJson(s as Map<String, dynamic>))
           .toList(),
+      version: (json['version'] as num?)?.toInt() ?? 1,
     );
   }
 
@@ -660,6 +664,7 @@ class Story {
         'expenses': expenses.map((e) => e.toJson()).toList(),
         'member_balances': memberBalances.map((b) => b.toJson()).toList(),
         'settlements': settlements.map((s) => s.toJson()).toList(),
+        'version': version,
       };
 
   String toJsonString() => jsonEncode(toJson());
@@ -680,6 +685,7 @@ class Story {
     required List<StoryMember> members,
     required List<StoryExpense> expenses,
     List<StorySettlement>? existingSettlements,
+    int version = 1,
   }) {
     final nowIso = createdAt ?? DateTime.now().toIso8601String();
     return _buildCalculatedStory(
@@ -697,6 +703,7 @@ class Story {
       members: members,
       expenses: expenses,
       existingSettlements: existingSettlements,
+      version: version,
     );
   }
 
@@ -719,6 +726,7 @@ class Story {
       expenses: updatedExpenses,
       existingSettlements:
           settlements.where((s) => s.status == 'completed').toList(),
+      version: version + 1,
     );
   }
 
@@ -739,6 +747,7 @@ class Story {
     List<StoryExpense>? expenses,
     List<StoryMemberBalance>? memberBalances,
     List<StorySettlement>? settlements,
+    int? version,
   }) {
     final creator = createdBy ?? this.createdBy;
     final resolvedMembers = members != null
@@ -768,6 +777,7 @@ class Story {
       expenses: expenses ?? this.expenses,
       memberBalances: resolvedBalances,
       settlements: settlements ?? this.settlements,
+      version: version ?? this.version,
     );
   }
 
@@ -787,6 +797,7 @@ class Story {
     required List<StoryMember> members,
     required List<StoryExpense> expenses,
     List<StorySettlement>? existingSettlements,
+    int version = 1,
   }) {
     final actualExpenses = expenses
         .where((e) =>
@@ -795,18 +806,19 @@ class Story {
             e.category != 'advance')
         .toList();
 
-    final totalExpenses = actualExpenses.fold<double>(
-      0.0,
-      (sum, e) => sum + e.amount,
+    final totalExpensesPaise = actualExpenses.fold<int>(
+      0,
+      (sum, e) => sum + SplitCalculator.toPaise(e.amount),
     );
+    final totalExpenses = SplitCalculator.fromPaise(totalExpensesPaise);
 
-    // Compute paid and share per user strictly from actual expenses
-    final Map<String, double> totalPaidByUser = {};
-    final Map<String, double> totalShareByUser = {};
+    // Compute paid and share per user strictly in integer minor units (paise)
+    final Map<String, int> totalPaidPaiseByUser = {};
+    final Map<String, int> totalSharePaiseByUser = {};
 
     for (final member in members) {
-      totalPaidByUser[member.userId] = 0.0;
-      totalShareByUser[member.userId] = 0.0;
+      totalPaidPaiseByUser[member.userId] = 0;
+      totalSharePaiseByUser[member.userId] = 0;
     }
 
     StoryMember resolveMember(String identifier) {
@@ -827,27 +839,46 @@ class Story {
       );
     }
 
-    for (final expense in actualExpenses) {
+    for (int expenseIdx = 0; expenseIdx < actualExpenses.length; expenseIdx++) {
+      final expense = actualExpenses[expenseIdx];
       final payer = resolveMember(expense.paidBy);
-      totalPaidByUser[payer.userId] =
-          (totalPaidByUser[payer.userId] ?? 0.0) + expense.amount;
+      final expensePaise = SplitCalculator.toPaise(expense.amount);
+      totalPaidPaiseByUser[payer.userId] =
+          (totalPaidPaiseByUser[payer.userId] ?? 0) + expensePaise;
       if (expense.shares.isNotEmpty) {
+        int allocatedSharesPaise = 0;
+        final rawShares = <MapEntry<StoryMember, int>>[];
         for (final share in expense.shares) {
           final shareMember = resolveMember(share.userId);
-          totalShareByUser[shareMember.userId] =
-              (totalShareByUser[shareMember.userId] ?? 0.0) + share.amount;
+          final p = SplitCalculator.toPaise(share.amount);
+          allocatedSharesPaise += p;
+          rawShares.add(MapEntry(shareMember, p));
+        }
+        final shareDiff = expensePaise - allocatedSharesPaise;
+        if (shareDiff != 0 && rawShares.isNotEmpty) {
+          rawShares[0] =
+              MapEntry(rawShares[0].key, rawShares[0].value + shareDiff);
+        }
+        for (final entry in rawShares) {
+          totalSharePaiseByUser[entry.key.userId] =
+              (totalSharePaiseByUser[entry.key.userId] ?? 0) + entry.value;
         }
       } else {
-        final equalShare =
-            expense.amount / (members.isNotEmpty ? members.length : 1);
-        for (final member in members) {
-          totalShareByUser[member.userId] =
-              (totalShareByUser[member.userId] ?? 0.0) + equalShare;
+        final sharesPaise = SplitCalculator.splitEqualInPaise(
+          expensePaise,
+          members.isNotEmpty ? members.length : 1,
+          remainderStartIndex: expenseIdx,
+        );
+        for (int i = 0; i < members.length; i++) {
+          final member = members[i];
+          final shareP = i < sharesPaise.length ? sharesPaise[i] : 0;
+          totalSharePaiseByUser[member.userId] =
+              (totalSharePaiseByUser[member.userId] ?? 0) + shareP;
         }
       }
     }
 
-    // Process reimbursement / settlement transfers between members
+    // Process reimbursement / settlement transfers between members in paise
     final reimbursementExpenses = expenses
         .where((e) =>
             e.category == 'reimbursement' ||
@@ -855,12 +886,12 @@ class Story {
             e.category == 'advance')
         .toList();
 
-    final Map<String, double> reimbSentByUser = {};
-    final Map<String, double> reimbReceivedByUser = {};
+    final Map<String, int> reimbSentPaiseByUser = {};
+    final Map<String, int> reimbReceivedPaiseByUser = {};
 
     for (final member in members) {
-      reimbSentByUser[member.userId] = 0.0;
-      reimbReceivedByUser[member.userId] = 0.0;
+      reimbSentPaiseByUser[member.userId] = 0;
+      reimbReceivedPaiseByUser[member.userId] = 0;
     }
 
     for (final reimb in reimbursementExpenses) {
@@ -905,36 +936,41 @@ class Story {
         }
       }
 
+      final reimbPaise = SplitCalculator.toPaise(reimb.amount);
       if (senderId.isNotEmpty) {
-        reimbSentByUser[senderId] =
-            (reimbSentByUser[senderId] ?? 0.0) + reimb.amount;
+        reimbSentPaiseByUser[senderId] =
+            (reimbSentPaiseByUser[senderId] ?? 0) + reimbPaise;
       }
-      if (recipientId != null && recipientId.isNotEmpty && recipientId != senderId) {
-        reimbReceivedByUser[recipientId] =
-            (reimbReceivedByUser[recipientId] ?? 0.0) + reimb.amount;
+      if (recipientId != null &&
+          recipientId.isNotEmpty &&
+          recipientId != senderId) {
+        reimbReceivedPaiseByUser[recipientId] =
+            (reimbReceivedPaiseByUser[recipientId] ?? 0) + reimbPaise;
       }
     }
 
-    // Build member balances
+    // Build member balances with exact integer paise precision
     final List<StoryMemberBalance> balances = [];
-    final List<MapEntry<String, double>> debtors = [];
-    final List<MapEntry<String, double>> creditors = [];
+    final Map<String, int> netPaiseMap = {};
 
     for (final member in members) {
-      final paid = totalPaidByUser[member.userId] ?? 0.0;
-      final share = totalShareByUser[member.userId] ?? 0.0;
+      final paidPaise = totalPaidPaiseByUser[member.userId] ?? 0;
+      final sharePaise = totalSharePaiseByUser[member.userId] ?? 0;
       // Net balance: (paid - share) + reimbSent - reimbReceived
-      final net = (paid - share) +
-          (reimbSentByUser[member.userId] ?? 0.0) -
-          (reimbReceivedByUser[member.userId] ?? 0.0);
+      final netPaise = (paidPaise - sharePaise) +
+          (reimbSentPaiseByUser[member.userId] ?? 0) -
+          (reimbReceivedPaiseByUser[member.userId] ?? 0);
+      netPaiseMap[member.userId] = netPaise;
+
+      final paid = SplitCalculator.fromPaise(paidPaise);
+      final share = SplitCalculator.fromPaise(sharePaise);
+      final net = SplitCalculator.fromPaise(netPaise);
 
       String balStatus;
-      if (net > 0.001) {
+      if (netPaise > 0) {
         balStatus = 'gets_back';
-        creditors.add(MapEntry(member.userId, net));
-      } else if (net < -0.001) {
+      } else if (netPaise < 0) {
         balStatus = 'owes';
-        debtors.add(MapEntry(member.userId, -net)); // positive debt
       } else {
         balStatus = 'settled';
       }
@@ -951,37 +987,22 @@ class Story {
       );
     }
 
-    // Calculate simplified settlements if not explicitly provided or if recalculated
+    // Calculate simplified settlements using integer paise debt solver
+    final debtTransactions = SplitCalculator.simplifyDebts<String>(
+      netBalancesInPaise: netPaiseMap,
+    );
     final List<StorySettlement> computedSettlements = [];
-    int settlementCounter = 1;
-
-    int dIdx = 0;
-    int cIdx = 0;
-
-    while (dIdx < debtors.length && cIdx < creditors.length) {
-      final debtor = debtors[dIdx];
-      final creditor = creditors[cIdx];
-
-      final minAmount =
-          debtor.value < creditor.value ? debtor.value : creditor.value;
-      if (minAmount > 0.01) {
-        computedSettlements.add(
-          StorySettlement(
-            settlementId: 'set_${settlementCounter.toString().padLeft(3, '0')}',
-            fromUser: debtor.key,
-            toUser: creditor.key,
-            amount: minAmount,
-            status: 'pending',
-          ),
-        );
-        settlementCounter++;
-      }
-
-      debtors[dIdx] = MapEntry(debtor.key, debtor.value - minAmount);
-      creditors[cIdx] = MapEntry(creditor.key, creditor.value - minAmount);
-
-      if (debtors[dIdx].value <= 0.01) dIdx++;
-      if (creditors[cIdx].value <= 0.01) cIdx++;
+    for (int i = 0; i < debtTransactions.length; i++) {
+      final dt = debtTransactions[i];
+      computedSettlements.add(
+        StorySettlement(
+          settlementId: 'set_${(i + 1).toString().padLeft(3, '0')}',
+          fromUser: dt.from,
+          toUser: dt.to,
+          amount: SplitCalculator.fromPaise(dt.amountInPaise),
+          status: 'pending',
+        ),
+      );
     }
 
     final List<StorySettlement> finalSettlements;
@@ -1042,6 +1063,7 @@ class Story {
       expenses: expenses,
       memberBalances: balances,
       settlements: finalSettlements,
+      version: version,
     );
   }
 

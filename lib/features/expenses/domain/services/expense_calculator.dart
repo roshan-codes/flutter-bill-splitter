@@ -1,20 +1,19 @@
+import 'package:flutter_bill_splitter/core/utils/split_calculator.dart';
 import 'package:flutter_bill_splitter/features/expenses/domain/models/settlement_transaction.dart';
 import 'package:flutter_bill_splitter/features/friends/domain/models/friend.dart';
 
-class _BalanceEntry {
-  final Friend friend;
-  double amount;
-
-  _BalanceEntry(this.friend, this.amount);
-}
-
-/// Service that computes equal split shares and simplified debt settlements.
+/// Service that computes equal split shares and simplified debt settlements
+/// using integer paise precision.
 class ExpenseCalculator {
   ExpenseCalculator._();
 
   /// Calculates total expense across all members.
   static double calculateTotal(Map<String, double> paidAmounts) {
-    return paidAmounts.values.fold(0.0, (sum, val) => sum + val);
+    int totalPaise = 0;
+    for (final val in paidAmounts.values) {
+      totalPaise += SplitCalculator.toPaise(val);
+    }
+    return SplitCalculator.fromPaise(totalPaise);
   }
 
   /// Calculates equal share per person.
@@ -28,17 +27,19 @@ class ExpenseCalculator {
     required List<Friend> members,
     required Map<String, double> paidAmounts,
   }) {
-    if (members.isEmpty) return [];
+    if (members.isEmpty) return const [];
 
     final total = calculateTotal(paidAmounts);
-    if (total <= 0) return [];
+    if (total <= 0) return const [];
 
-    final sharePerPerson = calculateSharePerPerson(total, members.length);
+    final equalShares = SplitCalculator.splitEqual(total, members.length);
 
     final Map<String, double> netBalances = {};
-    for (final member in members) {
+    for (int i = 0; i < members.length; i++) {
+      final member = members[i];
       final paid = paidAmounts[member.name] ?? 0.0;
-      netBalances[member.name] = paid - sharePerPerson;
+      final share = equalShares[i];
+      netBalances[member.name] = paid - share;
     }
 
     return calculateSettlementsFromNetBalances(
@@ -52,11 +53,10 @@ class ExpenseCalculator {
     required List<Friend> members,
     required Map<String, double> netBalances,
   }) {
-    if (members.isEmpty) return [];
+    if (members.isEmpty) return const [];
 
-    final List<_BalanceEntry> debtors = [];
-    final List<_BalanceEntry> creditors = [];
-
+    // Map netBalances to Friend keys using integer paise
+    final Map<Friend, int> paiseMap = {};
     for (final member in members) {
       double net = 0.0;
       for (final entry in netBalances.entries) {
@@ -65,46 +65,22 @@ class ExpenseCalculator {
           break;
         }
       }
-
-      if (net < -0.01) {
-        debtors.add(_BalanceEntry(member, -net)); // owes money
-      } else if (net > 0.01) {
-        creditors.add(_BalanceEntry(member, net)); // is owed money
+      final paise = SplitCalculator.toPaise(net);
+      if (paise != 0) {
+        paiseMap[member] = paise;
       }
     }
 
-    // Sort descending by magnitude to minimize transactions
-    debtors.sort((a, b) => b.amount.compareTo(a.amount));
-    creditors.sort((a, b) => b.amount.compareTo(a.amount));
-
-    final List<SettlementTransaction> transactions = [];
-    int d = 0;
-    int c = 0;
-
-    while (d < debtors.length && c < creditors.length) {
-      final debtor = debtors[d];
-      final creditor = creditors[c];
-      final settleAmount =
-          debtor.amount < creditor.amount ? debtor.amount : creditor.amount;
-
-      if (settleAmount > 0.01) {
-        transactions.add(
-          SettlementTransaction(
-            from: debtor.friend,
-            to: creditor.friend,
-            amount: settleAmount,
+    final debts = SplitCalculator.simplifyDebts<Friend>(netBalancesInPaise: paiseMap);
+    return debts
+        .map(
+          (d) => SettlementTransaction(
+            from: d.from,
+            to: d.to,
+            amount: d.amount,
           ),
-        );
-      }
-
-      debtor.amount -= settleAmount;
-      creditor.amount -= settleAmount;
-
-      if (debtor.amount <= 0.01) d++;
-      if (creditor.amount <= 0.01) c++;
-    }
-
-    return transactions;
+        )
+        .toList();
   }
 
   static bool _isNameMatch(String a, String b) {

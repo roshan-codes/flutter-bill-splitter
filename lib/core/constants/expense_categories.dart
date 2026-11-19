@@ -42,4 +42,62 @@ class ExpenseCategories {
         return Icons.receipt_long_rounded;
     }
   }
+
+  /// Automatically infers the category keyword based on words in the title.
+  static String inferCategoryFromTitle(String title) {
+    final lowerTitle = title.toLowerCase();
+    if (lowerTitle.contains('food') ||
+        lowerTitle.contains('dinner') ||
+        lowerTitle.contains('lunch') ||
+        lowerTitle.contains('breakfast') ||
+        lowerTitle.contains('drink') ||
+        lowerTitle.contains('coffee') ||
+        lowerTitle.contains('tea') ||
+        lowerTitle.contains('cafe') ||
+        lowerTitle.contains('snack') ||
+        lowerTitle.contains('pizza') ||
+        lowerTitle.contains('burger') ||
+        lowerTitle.contains('grocer') ||
+        lowerTitle.contains('restaurant')) {
+      return 'food';
+    } else if (lowerTitle.contains('hotel') ||
+        lowerTitle.contains('stay') ||
+        lowerTitle.contains('resort') ||
+        lowerTitle.contains('villa') ||
+        lowerTitle.contains('airbnb') ||
+        lowerTitle.contains('room')) {
+      return 'stay';
+    } else if (lowerTitle.contains('cab') ||
+        lowerTitle.contains('uber') ||
+        lowerTitle.contains('ola') ||
+        lowerTitle.contains('flight') ||
+        lowerTitle.contains('petrol') ||
+        lowerTitle.contains('fuel') ||
+        lowerTitle.contains('diesel') ||
+        lowerTitle.contains('train') ||
+        lowerTitle.contains('travel') ||
+        lowerTitle.contains('toll') ||
+        lowerTitle.contains('bus') ||
+        lowerTitle.contains('taxi') ||
+        lowerTitle.contains('auto') ||
+        lowerTitle.contains('metro')) {
+      return 'transport';
+    } else if (lowerTitle.contains('scuba') ||
+        lowerTitle.contains('surf') ||
+        lowerTitle.contains('ticket') ||
+        lowerTitle.contains('movie') ||
+        lowerTitle.contains('entry') ||
+        lowerTitle.contains('museum') ||
+        lowerTitle.contains('park') ||
+        lowerTitle.contains('trek') ||
+        lowerTitle.contains('game')) {
+      return 'activities';
+    } else if (lowerTitle.contains('shop') ||
+        lowerTitle.contains('mall') ||
+        lowerTitle.contains('cloth') ||
+        lowerTitle.contains('souvenir')) {
+      return 'shopping';
+    }
+    return 'general';
+  }
 }

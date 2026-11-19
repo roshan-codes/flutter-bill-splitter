@@ -42,14 +42,7 @@ class AppAvatar extends StatelessWidget {
   }
 
   bool _checkIsCurrentUser() {
-    if (isCurrentUser) return true;
-    final clean = name
-        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
-        .toLowerCase()
-        .trim();
-    if (clean.isEmpty) return false;
-    if (clean == 'you') return true;
-    return false;
+    return isCurrentUser;
   }
 
   @override

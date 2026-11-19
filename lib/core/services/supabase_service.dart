@@ -371,6 +371,7 @@ class SupabaseService {
           'status': story.status,
           'created_by': effectiveUserId,
           'created_at': story.createdAt,
+          'version': story.version,
           'data': story.toJson(),
         },
         onConflict: 'story_id',
@@ -504,10 +505,27 @@ class SupabaseService {
           '';
       final cleanUser = currentUserName.toLowerCase().trim();
 
-      final response = await cli
-          .from('stories')
-          .select()
-          .order('created_at', ascending: false);
+      dynamic response;
+      if (userId != null && userId.isNotEmpty) {
+        try {
+          response = await cli
+              .from('stories')
+              .select()
+              .or('created_by.eq.$userId,user_id.eq.$userId,data->members.cs.[{"user_id":"$userId"}]')
+              .order('created_at', ascending: false);
+        } catch (_) {
+          response = await cli
+              .from('stories')
+              .select()
+              .or('created_by.eq.$userId,user_id.eq.$userId')
+              .order('created_at', ascending: false);
+        }
+      } else {
+        response = await cli
+            .from('stories')
+            .select()
+            .order('created_at', ascending: false);
+      }
 
       final List<Story> results = [];
       final Set<String> seenStoryIds = {};
@@ -596,6 +614,132 @@ class SupabaseService {
     }
 
     return [];
+  }
+
+  /// Fetches a story by ID using the normalized relational schema,
+  /// falling back to JSONB if relational rows are not populated.
+  static Future<Story?> fetchStoryNormalized(String storyId) async {
+    final cli = client;
+    if (cli == null) return null;
+
+    try {
+      final storyRow = await cli
+          .from('stories')
+          .select()
+          .eq('story_id', storyId)
+          .maybeSingle();
+      if (storyRow == null) return null;
+
+      // 1. Fetch normalized members
+      final membersRows = await cli
+          .from('story_members')
+          .select()
+          .eq('story_id', storyId);
+
+      // 2. Fetch normalized expenses
+      final expensesRows = await cli
+          .from('expenses')
+          .select()
+          .eq('story_id', storyId)
+          .order('date', ascending: false);
+
+      // 3. Fetch normalized settlements
+      final settlementsRows = await cli
+          .from('settlements')
+          .select()
+          .eq('story_id', storyId);
+
+      // If normalized members exist, assemble relational model
+      if (membersRows.isNotEmpty) {
+        final List<StoryMember> members = [];
+        for (final m in membersRows) {
+          members.add(StoryMember(
+            userId: m['user_id'] as String? ?? '',
+            name: m['name'] as String? ?? 'Member',
+            role: m['role'] as String? ?? 'member',
+            avatar: m['avatar'] as String?,
+            joinedAt: m['joined_at'] as String? ?? '',
+          ));
+        }
+
+        final List<StoryExpense> expensesList = [];
+        for (final e in (expensesRows as List? ?? [])) {
+          final expId = e['expense_id'] as String;
+          // Fetch shares for this expense
+          final sharesRows = await cli
+              .from('expense_shares')
+              .select()
+              .eq('expense_id', expId);
+
+          final List<ExpenseShare> shares = [];
+          for (final sh in (sharesRows as List? ?? [])) {
+            shares.add(ExpenseShare(
+              userId: sh['user_id'] as String? ?? '',
+              amount: (sh['amount'] as num?)?.toDouble() ?? 0.0,
+            ));
+          }
+
+          final participants = shares.isNotEmpty
+              ? shares.map((s) => s.userId).toList()
+              : members.map((m) => m.userId).toList();
+
+          expensesList.add(StoryExpense(
+            expenseId: expId,
+            title: e['title'] as String? ?? '',
+            category: e['category'] as String? ?? 'general',
+            amount: (e['amount'] as num?)?.toDouble() ?? 0.0,
+            paidBy: e['paid_by'] as String? ?? '',
+            splitType: e['split_type'] as String? ?? 'equal',
+            date: e['date'] as String? ?? '',
+            participants: participants,
+            shares: shares,
+            receipt: e['receipt_url'] as String?,
+          ));
+        }
+
+        final List<StorySettlement> settlementsList = [];
+        for (final s in (settlementsRows as List? ?? [])) {
+          settlementsList.add(StorySettlement(
+            settlementId: s['settlement_id'] as String? ?? '',
+            fromUser: s['from_user'] as String? ?? '',
+            toUser: s['to_user'] as String? ?? '',
+            amount: (s['amount'] as num?)?.toDouble() ?? 0.0,
+            status: s['status'] as String? ?? 'pending',
+          ));
+        }
+
+        return Story.create(
+          storyId: storyRow['story_id'] as String,
+          title: storyRow['title'] as String? ?? '',
+          description: storyRow['description'] as String? ?? '',
+          coverEmoji: storyRow['cover_emoji'] as String? ?? '🌴',
+          currency: storyRow['currency'] as String? ?? 'INR',
+          splitMethod: storyRow['split_method'] as String? ?? 'equal',
+          createdBy: storyRow['created_by'] as String? ?? '',
+          createdAt: storyRow['created_at'] as String? ?? '',
+          startDate: storyRow['start_date'] as String?,
+          endDate: storyRow['end_date'] as String?,
+          members: members,
+          expenses: expensesList,
+          existingSettlements: settlementsList,
+          version: (storyRow['version'] as num?)?.toInt() ?? 1,
+        );
+      }
+
+      // Fallback: unpack JSONB data column
+      if (storyRow['data'] != null) {
+        final data = storyRow['data'];
+        if (data is Map<String, dynamic>) {
+          return Story.fromJson(data);
+        } else if (data is String) {
+          return Story.fromJson(jsonDecode(data));
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching normalized story: $e');
+    }
+
+    return null;
   }
 
   /// Persists a SplitActivity to Supabase.

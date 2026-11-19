@@ -6,6 +6,7 @@ import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/core/utils/currency_formatter.dart';
+import 'package:flutter_bill_splitter/core/utils/user_identity_resolver.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
 import 'package:flutter_bill_splitter/features/activity/domain/models/split_activity.dart';
 import 'package:flutter_bill_splitter/features/expenses/domain/models/settlement_transaction.dart';
@@ -1082,21 +1083,19 @@ class _SplitSummaryScreenState extends State<SplitSummaryScreen> {
       net = 0.0;
     }
 
-    final currentUserName = SupabaseService.userDisplayName ??
-        StorageService.instance.getStringSync('user_profile_name');
-    final cleanName = member.name
-        .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
-        .trim();
-    final cleanM = cleanName.toLowerCase();
-    final cleanUser = currentUserName
-            ?.replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
-            .toLowerCase()
-            .trim() ??
-        '';
-    final isCurrentUser = cleanM == 'you' ||
-        (cleanUser.isNotEmpty && cleanM == cleanUser) ||
-        (cleanUser.isEmpty && (cleanM == 'roshan' || cleanM.startsWith('roshan ')));
-    final displayName = isCurrentUser ? 'You' : cleanName;
+    final isCurrentUser = _currentStory != null
+        ? UserIdentityResolver.isCurrentUser(
+            name: member.name,
+            story: _currentStory!,
+          )
+        : (member.name.toLowerCase().trim() == 'you' ||
+            (SupabaseService.userDisplayName?.toLowerCase().trim() ==
+                member.name.toLowerCase().trim()));
+    final displayName = UserIdentityResolver.formatMemberDisplayName(
+      member.name,
+      isCurrentUser,
+      story: _currentStory,
+    );
 
     // Status pill
     Color pillBg;
