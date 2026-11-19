@@ -839,13 +839,65 @@ class Story {
       );
     }
 
+    final List<StoryExpense> recalculatedExpenses = [];
+    int runningRemainderIndex = 0;
     for (int expenseIdx = 0; expenseIdx < actualExpenses.length; expenseIdx++) {
       final expense = actualExpenses[expenseIdx];
       final payer = resolveMember(expense.paidBy);
       final expensePaise = SplitCalculator.toPaise(expense.amount);
       totalPaidPaiseByUser[payer.userId] =
           (totalPaidPaiseByUser[payer.userId] ?? 0) + expensePaise;
-      if (expense.shares.isNotEmpty) {
+
+      final isEqualSplit = expense.splitType == 'equal' ||
+          (splitMethod == 'equal' &&
+              expense.splitType != 'exact' &&
+              expense.splitType != 'percentage' &&
+              expense.splitType != 'shares');
+
+      if (isEqualSplit) {
+        final List<StoryMember> participantMembers;
+        if (expense.participants.isNotEmpty) {
+          participantMembers = expense.participants
+              .map((p) => resolveMember(p))
+              .toSet()
+              .toList();
+        } else {
+          participantMembers = members;
+        }
+
+        final n = participantMembers.isNotEmpty ? participantMembers.length : 1;
+        final remainder = expensePaise % n;
+        final sharesPaise = SplitCalculator.splitEqualInPaise(
+          expensePaise,
+          n,
+          remainderStartIndex: runningRemainderIndex % n,
+        );
+        runningRemainderIndex = (runningRemainderIndex + remainder) % n;
+
+        final List<ExpenseShare> updatedShares = [];
+        for (int i = 0; i < participantMembers.length; i++) {
+          final member = participantMembers[i];
+          final shareP = i < sharesPaise.length ? sharesPaise[i] : 0;
+          totalSharePaiseByUser[member.userId] =
+              (totalSharePaiseByUser[member.userId] ?? 0) + shareP;
+          updatedShares.add(ExpenseShare(
+            userId: member.userId,
+            amount: SplitCalculator.fromPaise(shareP),
+          ));
+        }
+        recalculatedExpenses.add(StoryExpense(
+          expenseId: expense.expenseId,
+          title: expense.title,
+          category: expense.category,
+          amount: expense.amount,
+          paidBy: expense.paidBy,
+          splitType: 'equal',
+          participants: participantMembers.map((m) => m.userId).toList(),
+          shares: updatedShares,
+          date: expense.date,
+          note: expense.note,
+        ));
+      } else if (expense.shares.isNotEmpty) {
         int allocatedSharesPaise = 0;
         final rawShares = <MapEntry<StoryMember, int>>[];
         for (final share in expense.shares) {
@@ -863,6 +915,7 @@ class Story {
           totalSharePaiseByUser[entry.key.userId] =
               (totalSharePaiseByUser[entry.key.userId] ?? 0) + entry.value;
         }
+        recalculatedExpenses.add(expense);
       } else {
         final sharesPaise = SplitCalculator.splitEqualInPaise(
           expensePaise,
@@ -875,6 +928,7 @@ class Story {
           totalSharePaiseByUser[member.userId] =
               (totalSharePaiseByUser[member.userId] ?? 0) + shareP;
         }
+        recalculatedExpenses.add(expense);
       }
     }
 
@@ -1060,7 +1114,7 @@ class Story {
       endDate: endDate,
       members: members,
       summary: summary,
-      expenses: expenses,
+      expenses: [...recalculatedExpenses, ...reimbursementExpenses],
       memberBalances: balances,
       settlements: finalSettlements,
       version: version,

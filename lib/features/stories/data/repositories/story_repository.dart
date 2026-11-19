@@ -291,42 +291,54 @@ class StoryRepository extends ChangeNotifier {
 
       final updatedMembers =
           Story.deduplicateMembers([...story.members, newMember]);
-      final updatedBalances = Story.deduplicateBalances([
-        ...story.memberBalances,
-        StoryMemberBalance(
-          userId: newMemberId,
-          name: effectiveUserName,
-          totalPaid: 0.0,
-          totalShare: 0.0,
-          netBalance: 0.0,
-          status: 'settled',
-        ),
-      ]);
 
-      final updatedSummary = StorySummary(
-        totalExpenses: story.summary.totalExpenses,
-        totalSettled: story.summary.totalSettled,
-        pendingAmount: story.summary.pendingAmount,
-        memberCount: updatedMembers.length,
-        expenseCount: story.summary.expenseCount,
-      );
+      final currentStory = story;
+      final previousMembers = currentStory.members;
+      final previousMemberCount = previousMembers.length;
+      final updatedExpenses = currentStory.expenses.map((expense) {
+        final isEqual = expense.splitType == 'equal' ||
+            (currentStory.splitMethod == 'equal' &&
+                expense.splitType != 'exact' &&
+                expense.splitType != 'percentage' &&
+                expense.splitType != 'shares');
+        if (!isEqual) return expense;
 
-      final updatedStory = Story(
-        storyId: story.storyId,
-        title: story.title,
-        description: story.description,
-        coverEmoji: story.coverEmoji,
-        currency: story.currency,
-        status: story.status,
-        createdBy: story.createdBy,
-        createdAt: story.createdAt,
-        startDate: story.startDate,
-        endDate: story.endDate,
+        final isGroupWide = expense.participants.isEmpty ||
+            expense.participants.length >= previousMemberCount ||
+            previousMembers.every((pm) => expense.participants.any(
+                (p) =>
+                    p == pm.userId ||
+                    p.toLowerCase().trim() == pm.userId.toLowerCase().trim() ||
+                    p.toLowerCase().trim() == pm.name.toLowerCase().trim()));
+
+        if (isGroupWide) {
+          final newParticipants = {
+            ...expense.participants,
+            newMember.userId,
+          }.toList();
+          return expense.copyWith(participants: newParticipants);
+        }
+        return expense;
+      }).toList();
+
+      final updatedStory = Story.create(
+        storyId: currentStory.storyId,
+        title: currentStory.title,
+        description: currentStory.description,
+        coverEmoji: currentStory.coverEmoji,
+        currency: currentStory.currency,
+        status: currentStory.status,
+        splitMethod: currentStory.splitMethod,
+        createdBy: currentStory.createdBy,
+        createdAt: currentStory.createdAt,
+        startDate: currentStory.startDate,
+        endDate: currentStory.endDate,
         members: updatedMembers,
-        expenses: story.expenses,
-        memberBalances: updatedBalances,
-        settlements: story.settlements,
-        summary: updatedSummary,
+        expenses: updatedExpenses,
+        existingSettlements: currentStory.settlements
+            .where((s) => s.status == 'completed')
+            .toList(),
+        version: currentStory.version,
       );
 
       await updateStory(updatedStory);

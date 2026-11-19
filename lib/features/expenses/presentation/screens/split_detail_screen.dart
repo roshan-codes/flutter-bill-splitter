@@ -180,6 +180,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
             widget.story!.summary.copyWith(memberCount: cleanMembers.length),
       );
       _splitMethod = _story.splitMethod;
+      _calibrateRetroactiveEqualSplits();
       for (final exp in _story.expenses) {
         final payerMember = _resolvePayerMember(exp.paidBy);
         _memberExpenses[payerMember.name] =
@@ -198,6 +199,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
         memberBalances: Story.deduplicateBalances(sample.memberBalances),
       );
       _splitMethod = _story.splitMethod;
+      _calibrateRetroactiveEqualSplits();
       for (final exp in _story.expenses) {
         final payerMember = _resolvePayerMember(exp.paidBy);
         _memberExpenses[payerMember.name] =
@@ -256,6 +258,72 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
       settlements: const [],
     );
     _splitMethod = _story.splitMethod;
+    _calibrateRetroactiveEqualSplits();
+  }
+
+  void _calibrateRetroactiveEqualSplits() {
+    if (_story.splitMethod == 'equal' && _story.members.length > 1) {
+      final List<StoryExpense> calibratedExpenses = [];
+      bool neededCalibration = false;
+      for (final exp in _story.expenses) {
+        if (exp.splitType == 'equal' && exp.category != 'reimbursement') {
+          final missingMembers = _story.members.where((m) =>
+              !exp.participants.any((p) =>
+                  p == m.userId ||
+                  p.toLowerCase().trim() == m.userId.toLowerCase().trim() ||
+                  p.toLowerCase().trim() == m.name.toLowerCase().trim())).toList();
+
+          final missingWereAddedLater = missingMembers.isNotEmpty &&
+              missingMembers.every((m) {
+                final b = _story.memberBalances.firstWhere(
+                  (bal) => bal.userId == m.userId,
+                  orElse: () => const StoryMemberBalance(
+                    userId: '',
+                    name: '',
+                    totalPaid: 0,
+                    totalShare: 0,
+                    netBalance: 0,
+                    status: 'settled',
+                  ),
+                );
+                return b.totalShare == 0.0 && b.totalPaid == 0.0;
+              });
+
+          if (missingWereAddedLater) {
+            neededCalibration = true;
+            final newParticipants = [
+              ...exp.participants,
+              ...missingMembers.map((m) => m.userId),
+            ];
+            calibratedExpenses.add(exp.copyWith(participants: newParticipants));
+            continue;
+          }
+        }
+        calibratedExpenses.add(exp);
+      }
+      if (neededCalibration) {
+        _story = Story.create(
+          storyId: _story.storyId,
+          title: _story.title,
+          description: _story.description,
+          coverEmoji: _story.coverEmoji,
+          currency: _story.currency,
+          status: _story.status,
+          splitMethod: _splitMethod,
+          createdBy: _story.createdBy,
+          createdAt: _story.createdAt,
+          startDate: _story.startDate,
+          endDate: _story.endDate,
+          members: _story.members,
+          expenses: calibratedExpenses,
+          existingSettlements: _story.settlements
+              .where((s) => s.status == 'completed')
+              .toList(),
+          version: _story.version,
+        );
+        StoryRepository.instance.updateStory(_story);
+      }
+    }
   }
 
   String _formatAmount(num value) => CurrencyFormatter.format(value);
@@ -2071,10 +2139,44 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
                       role: 'member',
                       joinedAt: DateTime.now().toIso8601String(),
                     );
+
+                    final previousMembers = _story.members;
+                    final previousMemberCount = previousMembers.length;
+                    final updatedMembers = Story.deduplicateMembers(
+                        [..._story.members, newMember]);
+
+                    final updatedExpenses = _story.expenses.map((expense) {
+                      final isEqual = expense.splitType == 'equal' ||
+                          (_splitMethod == 'equal' &&
+                              expense.splitType != 'exact' &&
+                              expense.splitType != 'percentage' &&
+                              expense.splitType != 'shares');
+                      if (!isEqual) return expense;
+
+                      final isGroupWide = expense.participants.isEmpty ||
+                          expense.participants.length >= previousMemberCount ||
+                          previousMembers.every((pm) => expense.participants.any(
+                              (p) =>
+                                  p == pm.userId ||
+                                  p.toLowerCase().trim() ==
+                                      pm.userId.toLowerCase().trim() ||
+                                  p.toLowerCase().trim() ==
+                                      pm.name.toLowerCase().trim()));
+
+                      if (isGroupWide) {
+                        final newParticipants = {
+                          ...expense.participants,
+                          newMember.userId,
+                        }.toList();
+                        return expense.copyWith(participants: newParticipants);
+                      }
+                      return expense;
+                    }).toList();
+
                     setState(() {
                       _story = _story.copyWith(
-                        members: Story.deduplicateMembers(
-                            [..._story.members, newMember]),
+                        members: updatedMembers,
+                        expenses: updatedExpenses,
                       );
                     });
                     _recalculateBalances();
