@@ -50,18 +50,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
   final List<String> _selectedMembers = [];
 
   static const List<String> _popularEmojis = [
-    '🌴',
-    '✈️',
-    '🏖️',
-    '🏔️',
-    '🎉',
-    '🍕',
-    '🚗',
-    '⛺',
-    '🏠',
-    '🎬',
-    '☕',
-    '🍻'
+    '🌴', '✈️', '🏖️', '🏔️', '🎉', '🍕', '🚗', '⛺', '🏠', '🎬', '☕', '🍻'
   ];
 
   @override
@@ -90,8 +79,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         setState(() {
           final oldName = _creatorName;
           _creatorName = name.trim();
-          final idx =
-              _selectedMembers.indexWhere((m) => m == oldName || m == 'You');
+          final idx = _selectedMembers.indexWhere((m) => m == oldName || m == 'You');
           if (idx != -1) {
             _selectedMembers[idx] = _creatorName;
           } else if (!_selectedMembers.contains(_creatorName)) {
@@ -344,7 +332,8 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                             minimumSize: const Size(76, 36),
                             backgroundColor: const Color(0xFF16A34A),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 10),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -414,8 +403,10 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                               setState(() {
                                 _selectedMembers.add(name);
                               });
-                              if (!FriendsRepository.instance.friends.any((f) =>
-                                  f.name.toLowerCase() == name.toLowerCase())) {
+                              if (!FriendsRepository.instance.friends.any(
+                                  (f) =>
+                                      f.name.toLowerCase() ==
+                                      name.toLowerCase())) {
                                 FriendsRepository.instance
                                     .addFriend(Friend(name: name, phone: ''));
                               }
@@ -477,9 +468,8 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: friends.map((f) {
-                        final isSelected = _selectedMembers.any((m) =>
-                            m.toLowerCase().trim() ==
-                            f.name.toLowerCase().trim());
+                        final isSelected = _selectedMembers.any(
+                            (m) => m.toLowerCase().trim() == f.name.toLowerCase().trim());
                         return FilterChip(
                           label: Text(f.name),
                           selected: isSelected,
@@ -536,30 +526,22 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
     final now = DateTime.now();
 
     final authUserId = SupabaseService.currentUser?.id;
-    String? localGuestId =
-        StorageService.instance.getStringSync('local_unique_device_user_id');
+    String? localGuestId = StorageService.instance.getStringSync('local_unique_device_user_id');
     if (localGuestId == null || localGuestId.isEmpty) {
       localGuestId = 'user_creator_${DateTime.now().millisecondsSinceEpoch}';
-      StorageService.instance
-          .setString('local_unique_device_user_id', localGuestId);
+      StorageService.instance.setString('local_unique_device_user_id', localGuestId);
     }
-    final currentUserId = (authUserId != null && authUserId.isNotEmpty)
-        ? authUserId
-        : localGuestId;
+    final currentUserId = (authUserId != null && authUserId.isNotEmpty) ? authUserId : localGuestId;
 
     final profileName = SupabaseService.userDisplayName ??
         StorageService.instance.getStringSync('user_profile_name');
-    final rawCreator = _creatorName.trim().isNotEmpty &&
-            _creatorName.trim().toLowerCase() != 'you'
+    final rawCreator = _creatorName.trim().isNotEmpty && _creatorName.trim().toLowerCase() != 'you'
         ? _creatorName.trim()
-        : (profileName?.trim().isNotEmpty == true
-            ? profileName!.trim()
-            : 'Roshan');
+        : (profileName?.trim().isNotEmpty == true ? profileName!.trim() : 'Roshan');
     final cleanCurrentName = rawCreator
         .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
         .trim();
-    final currentUserName =
-        cleanCurrentName.isNotEmpty ? cleanCurrentName : 'Roshan';
+    final currentUserName = cleanCurrentName.isNotEmpty ? cleanCurrentName : 'Roshan';
 
     // Build member list: creator is guaranteed to be Member #1 with role 'creator'
     final List<StoryMember> rawMembers = [];
@@ -683,31 +665,31 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                         child: Container(
                           width: 44,
                           height: 44,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                            border: Border.all(
-                                color: const Color(0xFFE5E7EB), width: 1.0),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.chevron_left_rounded,
-                              size: 26,
-                              color: Color(0xFF111111),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          border: Border.all(
+                              color: const Color(0xFFE5E7EB), width: 1.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
+                          ],
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.chevron_left_rounded,
+                            size: 26,
+                            color: Color(0xFF111111),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ],
+                ),
+              ],
               ),
             ),
 
@@ -1047,9 +1029,8 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
   }
 
   Widget _buildMemberAvatarChip(String name) {
-    final isMe =
-        name.toLowerCase().trim() == _creatorName.toLowerCase().trim() ||
-            name.trim() == 'You';
+    final isMe = name.toLowerCase().trim() == _creatorName.toLowerCase().trim() ||
+        name.trim() == 'You';
 
     return AppAvatar(
       size: 40,

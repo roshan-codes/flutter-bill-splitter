@@ -86,7 +86,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // 6. Verify expense was added with food category
-    final updatedStory = StoryRepository.instance.getStoryById(story.storyId);
+    final updatedStory =
+        StoryRepository.instance.getStoryById(story.storyId);
     expect(updatedStory, isNotNull);
     expect(updatedStory!.expenses.length, 1);
     expect(updatedStory.expenses.first.title, 'Food');

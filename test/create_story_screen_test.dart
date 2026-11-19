@@ -7,8 +7,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('CreateStoryScreen Tests', () {
-    testWidgets('renders Create Story form with creator and dynamic fields',
-        (tester) async {
+    testWidgets('renders Create Story form with creator and dynamic fields', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: CreateStoryScreen(),
@@ -25,8 +24,7 @@ void main() {
       expect(find.text('Story name'), findsOneWidget);
       expect(find.text('Mumbai Trip'), findsOneWidget); // Hint
       expect(find.text('Description (optional)'), findsOneWidget);
-      expect(
-          find.text('Trip, stay, food, travel etc.'), findsOneWidget); // Hint
+      expect(find.text('Trip, stay, food, travel etc.'), findsOneWidget); // Hint
       expect(find.text('Start date'), findsNothing);
       expect(find.text('End date'), findsNothing);
       expect(find.text('Add members'), findsOneWidget);
@@ -35,13 +33,11 @@ void main() {
       expect(find.byIcon(Icons.add_rounded), findsOneWidget); // + button
 
       // Verify Bottom CTA Button
-      expect(
-          find.widgetWithText(ElevatedButton, 'Create Story'), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Create Story'), findsOneWidget);
       expect(find.byIcon(Icons.arrow_forward_rounded), findsWidgets);
     });
 
-    testWidgets('renders member avatar chips when initialMembers provided',
-        (tester) async {
+    testWidgets('renders member avatar chips when initialMembers provided', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: CreateStoryScreen(
@@ -84,8 +80,7 @@ void main() {
       expect(find.widgetWithText(ElevatedButton, 'Add'), findsOneWidget);
 
       // Add a member manually
-      final manualInput =
-          find.widgetWithText(TextField, 'Enter friend name...');
+      final manualInput = find.widgetWithText(TextField, 'Enter friend name...');
       expect(manualInput, findsOneWidget);
       await tester.enterText(manualInput, 'Pooja');
       await tester.tap(find.widgetWithText(ElevatedButton, 'Add'));
@@ -99,9 +94,7 @@ void main() {
       expect(find.byType(AppAvatar), findsNWidgets(2));
     });
 
-    testWidgets(
-        'tapping Copy invite link in modal shows copy confirmation toast',
-        (tester) async {
+    testWidgets('tapping Copy invite link in modal shows copy confirmation toast', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {

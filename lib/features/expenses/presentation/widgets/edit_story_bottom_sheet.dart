@@ -48,18 +48,7 @@ class _EditStoryBottomSheetState extends State<EditStoryBottomSheet> {
   bool _isSaving = false;
 
   static const List<String> _popularEmojis = [
-    '🌴',
-    '✈️',
-    '🏖️',
-    '🏔️',
-    '🎉',
-    '🍕',
-    '🚗',
-    '⛺',
-    '🏠',
-    '🎬',
-    '☕',
-    '🍻'
+    '🌴', '✈️', '🏖️', '🏔️', '🎉', '🍕', '🚗', '⛺', '🏠', '🎬', '☕', '🍻'
   ];
 
   @override
@@ -67,8 +56,7 @@ class _EditStoryBottomSheetState extends State<EditStoryBottomSheet> {
     super.initState();
     _titleController = TextEditingController(text: widget.story.title);
     _descController = TextEditingController(text: widget.story.description);
-    _selectedEmoji =
-        widget.story.coverEmoji.isNotEmpty ? widget.story.coverEmoji : '🌴';
+    _selectedEmoji = widget.story.coverEmoji.isNotEmpty ? widget.story.coverEmoji : '🌴';
   }
 
   @override
@@ -198,8 +186,8 @@ class _EditStoryBottomSheetState extends State<EditStoryBottomSheet> {
                           ),
                         ),
                         child: Center(
-                          child:
-                              Text(emoji, style: const TextStyle(fontSize: 20)),
+                          child: Text(emoji,
+                              style: const TextStyle(fontSize: 20)),
                         ),
                       ),
                     );

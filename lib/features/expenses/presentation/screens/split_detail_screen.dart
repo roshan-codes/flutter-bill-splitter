@@ -264,12 +264,11 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
       bool neededCalibration = false;
       for (final exp in _story.expenses) {
         if (exp.splitType == 'equal' && exp.category != 'reimbursement') {
-          final missingMembers = _story.members
-              .where((m) => !exp.participants.any((p) =>
+          final missingMembers = _story.members.where((m) =>
+              !exp.participants.any((p) =>
                   p == m.userId ||
                   p.toLowerCase().trim() == m.userId.toLowerCase().trim() ||
-                  p.toLowerCase().trim() == m.name.toLowerCase().trim()))
-              .toList();
+                  p.toLowerCase().trim() == m.name.toLowerCase().trim())).toList();
 
           final missingWereAddedLater = missingMembers.isNotEmpty &&
               missingMembers.every((m) {
@@ -314,8 +313,9 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
           endDate: _story.endDate,
           members: _story.members,
           expenses: calibratedExpenses,
-          existingSettlements:
-              _story.settlements.where((s) => s.status == 'completed').toList(),
+          existingSettlements: _story.settlements
+              .where((s) => s.status == 'completed')
+              .toList(),
           version: _story.version,
         );
         StoryRepository.instance.updateStory(_story);
@@ -406,7 +406,9 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
           sharePerPerson: advanceExpense.amount,
           timestamp: DateTime.now(),
           members: _story.members
-              .map((m) => Friend(name: m.name, phone: '+91 98765 00000'))
+              .map((m) => Friend(
+                  name: m.name,
+                  phone: '+91 98765 00000'))
               .toList(),
           memberExpenses: {sender.name: advanceExpense.amount},
           settlements: const [],
@@ -2149,8 +2151,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
 
                       final isGroupWide = expense.participants.isEmpty ||
                           expense.participants.length >= previousMemberCount ||
-                          previousMembers.every((pm) => expense.participants
-                              .any((p) =>
+                          previousMembers.every((pm) => expense.participants.any(
+                              (p) =>
                                   p == pm.userId ||
                                   p.toLowerCase().trim() ==
                                       pm.userId.toLowerCase().trim() ||

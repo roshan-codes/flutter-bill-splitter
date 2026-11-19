@@ -75,9 +75,9 @@ class ActiveStoryCard extends StatelessWidget {
     final currentName = SupabaseService.userDisplayName ??
         StorageService.instance.getStringSync('user_profile_name');
     final myClean = currentName
-            ?.replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
-            .toLowerCase()
-            .trim() ??
+        ?.replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+        .toLowerCase()
+        .trim() ??
         '';
 
     if (currentId != null && currentId.isNotEmpty) {
@@ -173,13 +173,12 @@ class ActiveStoryCard extends StatelessWidget {
     final resolvedMeId = _resolveCurrentMemberId();
     StoryMemberBalance? myBalance;
     if (resolvedMeId != null && story.memberBalances.isNotEmpty) {
-      final myClean =
-          (StorageService.instance.getStringSync('user_profile_name') ??
-                  SupabaseService.userDisplayName ??
-                  '')
-              .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
-              .toLowerCase()
-              .trim();
+      final myClean = (StorageService.instance.getStringSync('user_profile_name') ??
+              SupabaseService.userDisplayName ??
+              '')
+          .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+          .toLowerCase()
+          .trim();
       myBalance = story.memberBalances
           .where((b) =>
               b.userId == resolvedMeId ||
@@ -204,8 +203,7 @@ class ActiveStoryCard extends StatelessWidget {
           style: GoogleFonts.manrope(
             fontSize: 12,
             fontWeight: FontWeight.w700,
-            color:
-                isPositive ? const Color(0xFF1E8E3E) : const Color(0xFFDC2626),
+            color: isPositive ? const Color(0xFF1E8E3E) : const Color(0xFFDC2626),
           ),
         ),
       );

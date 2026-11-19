@@ -339,8 +339,7 @@ void main() {
       expect(find.text('Add members'), findsOneWidget);
 
       // Verify Continue button
-      expect(
-          find.widgetWithText(ElevatedButton, 'Create Story'), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Create Story'), findsOneWidget);
       expect(find.byIcon(Icons.arrow_forward_rounded), findsWidgets);
     });
 

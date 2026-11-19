@@ -245,7 +245,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Tap Create Story button
-    final createStoryBtn = find.widgetWithText(ElevatedButton, 'Create Story');
+    final createStoryBtn =
+        find.widgetWithText(ElevatedButton, 'Create Story');
     expect(createStoryBtn, findsOneWidget);
     await tester.tap(createStoryBtn);
     await tester.pumpAndSettle();
