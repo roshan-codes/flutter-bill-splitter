@@ -70,7 +70,9 @@ void main() {
       MaterialApp(
         home: SplitDetailScreen(
           groupName: story.title,
-          members: story.members.map((m) => Friend(name: m.name, phone: '')).toList(),
+          members: story.members
+              .map((m) => Friend(name: m.name, phone: ''))
+              .toList(),
           story: story,
         ),
       ),
@@ -99,8 +101,9 @@ void main() {
     expect(find.text('Expense Title'), findsWidgets);
     expect(find.text('Amount (₹)'), findsWidgets);
 
-    // Verify TextFormField widgets exist with floatingLabelBehavior.never
-    final titleField = find.widgetWithText(TextFormField, 'Expense Title');
+    // Verify TextFormField widgets exist
+    final titleField =
+        find.widgetWithText(TextFormField, 'e.g. Dinner, Taxi, Groceries');
     expect(titleField, findsOneWidget);
     final amountField = find.widgetWithText(TextFormField, 'Amount (₹)');
     expect(amountField, findsOneWidget);
@@ -131,7 +134,9 @@ void main() {
       MaterialApp(
         home: SplitDetailScreen(
           groupName: story.title,
-          members: story.members.map((m) => Friend(name: m.name, phone: '')).toList(),
+          members: story.members
+              .map((m) => Friend(name: m.name, phone: ''))
+              .toList(),
           story: story,
         ),
       ),
@@ -146,7 +151,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // 2. Fill in Title and Amount
-    final titleField = find.widgetWithText(TextFormField, 'Expense Title');
+    final titleField =
+        find.widgetWithText(TextFormField, 'e.g. Dinner, Taxi, Groceries');
     await tester.enterText(titleField, 'Fuel Refill');
     final amountField = find.widgetWithText(TextFormField, 'Amount (₹)');
     await tester.enterText(amountField, '2000');
@@ -162,9 +168,11 @@ void main() {
     await tester.pumpAndSettle();
 
     // 4. Verify only ONE expense was created with title 'Fuel Refill'
-    final currentStory = StoryRepository.instance.getStoryById('story_duplicate_expense_test');
+    final currentStory =
+        StoryRepository.instance.getStoryById('story_duplicate_expense_test');
     expect(currentStory, isNotNull);
-    final fuelExpenses = currentStory!.expenses.where((e) => e.title == 'Fuel Refill').toList();
+    final fuelExpenses =
+        currentStory!.expenses.where((e) => e.title == 'Fuel Refill').toList();
     expect(fuelExpenses.length, equals(1));
     expect(find.text('Fuel Refill'), findsOneWidget);
   });

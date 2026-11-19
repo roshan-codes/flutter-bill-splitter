@@ -77,8 +77,16 @@ class StoryRepository extends ChangeNotifier {
   Future<void> _syncFromSupabase() async {
     try {
       final remote = await SupabaseService.fetchStories();
-      _stories.clear();
-      _stories.addAll(remote);
+      if (remote.isNotEmpty) {
+        for (final r in remote) {
+          final idx = _stories.indexWhere((s) => s.storyId == r.storyId);
+          if (idx != -1) {
+            _stories[idx] = r;
+          } else {
+            _stories.add(r);
+          }
+        }
+      }
       final currentAvatar = SupabaseService.resolvedUserAvatar;
       if (currentAvatar != null) {
         _applyAvatarToUserMembers(currentAvatar);
@@ -158,10 +166,9 @@ class StoryRepository extends ChangeNotifier {
         await StorageService.instance
             .setString('local_unique_device_user_id', localGuestId);
       }
-      final currentDeviceUserId =
-          (authUserId != null && authUserId.isNotEmpty)
-              ? authUserId
-              : localGuestId;
+      final currentDeviceUserId = (authUserId != null && authUserId.isNotEmpty)
+          ? authUserId
+          : localGuestId;
 
       final cleanUser = effectiveUserName.toLowerCase().trim();
       final uFirst = cleanUser.split(' ').first;
@@ -194,7 +201,8 @@ class StoryRepository extends ChangeNotifier {
         final mFirst = cleanM.split(' ').first;
         if (mFirst == uFirst &&
             mFirst.length > 2 &&
-            (cleanM.length == mFirst.length || cleanUser.length == uFirst.length)) {
+            (cleanM.length == mFirst.length ||
+                cleanUser.length == uFirst.length)) {
           return true;
         }
 
@@ -210,10 +218,8 @@ class StoryRepository extends ChangeNotifier {
         final existing = story.members[existingIndex];
 
         // Ensure targetUserId does not clash with another member in the story
-        final isIdAlreadyUsedByOther = story.members
-            .asMap()
-            .entries
-            .any((e) => e.key != existingIndex && e.value.userId == currentDeviceUserId);
+        final isIdAlreadyUsedByOther = story.members.asMap().entries.any((e) =>
+            e.key != existingIndex && e.value.userId == currentDeviceUserId);
 
         final targetUserId = isIdAlreadyUsedByOther
             ? (existing.userId.isNotEmpty
@@ -227,7 +233,8 @@ class StoryRepository extends ChangeNotifier {
                   cleanUser.length > existing.name.length)
               ? effectiveUserName
               : existing.name
-                  .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
+                  .replaceAll(
+                      RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
                   .trim(),
           avatar: userAvatar ??
               existing.avatar ??
@@ -305,11 +312,10 @@ class StoryRepository extends ChangeNotifier {
 
         final isGroupWide = expense.participants.isEmpty ||
             expense.participants.length >= previousMemberCount ||
-            previousMembers.every((pm) => expense.participants.any(
-                (p) =>
-                    p == pm.userId ||
-                    p.toLowerCase().trim() == pm.userId.toLowerCase().trim() ||
-                    p.toLowerCase().trim() == pm.name.toLowerCase().trim()));
+            previousMembers.every((pm) => expense.participants.any((p) =>
+                p == pm.userId ||
+                p.toLowerCase().trim() == pm.userId.toLowerCase().trim() ||
+                p.toLowerCase().trim() == pm.name.toLowerCase().trim()));
 
         if (isGroupWide) {
           final newParticipants = {
@@ -466,8 +472,7 @@ class StoryRepository extends ChangeNotifier {
 
     if (storyToDelete != null) {
       final storyTitle = storyToDelete.title;
-      final expenseIds =
-          storyToDelete.expenses.map((e) => e.expenseId).toSet();
+      final expenseIds = storyToDelete.expenses.map((e) => e.expenseId).toSet();
       ActivityRepository.instance.deleteActivitiesForStory(
         storyTitle,
         storyId: storyId,
@@ -486,7 +491,9 @@ class StoryRepository extends ChangeNotifier {
     bool changed = false;
     final currentUserId = SupabaseService.currentUser?.id;
     final currentUserName = SupabaseService.userDisplayName?.toLowerCase() ??
-        StorageService.instance.getStringSync('user_profile_name')?.toLowerCase() ??
+        StorageService.instance
+            .getStringSync('user_profile_name')
+            ?.toLowerCase() ??
         '';
 
     for (int i = 0; i < _stories.length; i++) {

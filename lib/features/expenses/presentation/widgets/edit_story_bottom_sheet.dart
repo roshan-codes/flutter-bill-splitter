@@ -45,12 +45,21 @@ class _EditStoryBottomSheetState extends State<EditStoryBottomSheet> {
   late final TextEditingController _titleController;
   late final TextEditingController _descController;
   late String _selectedEmoji;
-  DateTime? _startDate;
-  DateTime? _endDate;
   bool _isSaving = false;
 
   static const List<String> _popularEmojis = [
-    '🌴', '✈️', '🏖️', '🏔️', '🎉', '🍕', '🚗', '⛺', '🏠', '🎬', '☕', '🍻'
+    '🌴',
+    '✈️',
+    '🏖️',
+    '🏔️',
+    '🎉',
+    '🍕',
+    '🚗',
+    '⛺',
+    '🏠',
+    '🎬',
+    '☕',
+    '🍻'
   ];
 
   @override
@@ -58,13 +67,8 @@ class _EditStoryBottomSheetState extends State<EditStoryBottomSheet> {
     super.initState();
     _titleController = TextEditingController(text: widget.story.title);
     _descController = TextEditingController(text: widget.story.description);
-    _selectedEmoji = widget.story.coverEmoji.isNotEmpty ? widget.story.coverEmoji : '🌴';
-    _startDate = widget.story.startDate != null
-        ? DateTime.tryParse(widget.story.startDate!)
-        : null;
-    _endDate = widget.story.endDate != null
-        ? DateTime.tryParse(widget.story.endDate!)
-        : null;
+    _selectedEmoji =
+        widget.story.coverEmoji.isNotEmpty ? widget.story.coverEmoji : '🌴';
   }
 
   @override
@@ -72,46 +76,6 @@ class _EditStoryBottomSheetState extends State<EditStoryBottomSheet> {
     _titleController.dispose();
     _descController.dispose();
     super.dispose();
-  }
-
-  String _formatDateRangeDisplay() {
-    if (_startDate == null || _endDate == null) return 'Select travel dates';
-    return '${_startDate!.day}/${_startDate!.month}/${_startDate!.year} – ${_endDate!.day}/${_endDate!.month}/${_endDate!.year}';
-  }
-
-  Future<void> _pickDateRange() async {
-    final now = DateTime.now();
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2035),
-      initialDateRange: _startDate != null && _endDate != null
-          ? DateTimeRange(start: _startDate!, end: _endDate!)
-          : DateTimeRange(
-              start: now,
-              end: now.add(const Duration(days: 3)),
-            ),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: AppColors.primary,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      setState(() {
-        _startDate = picked.start;
-        _endDate = picked.end;
-      });
-    }
   }
 
   Future<void> _handleSave() async {
@@ -123,19 +87,12 @@ class _EditStoryBottomSheetState extends State<EditStoryBottomSheet> {
       return;
     }
 
-    final startStr = _startDate != null
-        ? '${_startDate!.year}-${_startDate!.month.toString().padLeft(2, '0')}-${_startDate!.day.toString().padLeft(2, '0')}'
-        : widget.story.startDate;
-    final endStr = _endDate != null
-        ? '${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}'
-        : widget.story.endDate;
-
     final updated = widget.story.copyWith(
       title: newTitle,
       description: _descController.text.trim(),
       coverEmoji: _selectedEmoji,
-      startDate: startStr,
-      endDate: endStr,
+      startDate: null,
+      endDate: null,
     );
 
     setState(() => _isSaving = true);
@@ -241,8 +198,8 @@ class _EditStoryBottomSheetState extends State<EditStoryBottomSheet> {
                           ),
                         ),
                         child: Center(
-                          child: Text(emoji,
-                              style: const TextStyle(fontSize: 20)),
+                          child:
+                              Text(emoji, style: const TextStyle(fontSize: 20)),
                         ),
                       ),
                     );
@@ -332,50 +289,6 @@ class _EditStoryBottomSheetState extends State<EditStoryBottomSheet> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: AppColors.primary),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Date range selector
-              Text(
-                'Travel Dates',
-                style: GoogleFonts.manrope(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              InkWell(
-                onTap: _pickDateRange,
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF9FAFB),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today_rounded,
-                          size: 18, color: Color(0xFF6B7280)),
-                      const SizedBox(width: 10),
-                      Text(
-                        _formatDateRangeDisplay(),
-                        style: GoogleFonts.manrope(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const Spacer(),
-                      const Icon(Icons.arrow_forward_ios_rounded,
-                          size: 14, color: Color(0xFF9CA3AF)),
-                    ],
                   ),
                 ),
               ),

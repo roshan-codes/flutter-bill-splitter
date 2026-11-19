@@ -334,12 +334,13 @@ void main() {
       expect(find.text('Story name'), findsOneWidget);
       expect(find.text('Mumbai Trip'), findsOneWidget);
       expect(find.text('Description (optional)'), findsOneWidget);
-      expect(find.text('Start date'), findsOneWidget);
-      expect(find.text('End date'), findsOneWidget);
+      expect(find.text('Start date'), findsNothing);
+      expect(find.text('End date'), findsNothing);
       expect(find.text('Add members'), findsOneWidget);
 
       // Verify Continue button
-      expect(find.widgetWithText(ElevatedButton, 'Create Story'), findsOneWidget);
+      expect(
+          find.widgetWithText(ElevatedButton, 'Create Story'), findsOneWidget);
       expect(find.byIcon(Icons.arrow_forward_rounded), findsWidgets);
     });
 

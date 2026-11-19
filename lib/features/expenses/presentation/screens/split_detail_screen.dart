@@ -13,7 +13,6 @@ import 'package:flutter_bill_splitter/core/services/supabase_service.dart';
 import 'package:flutter_bill_splitter/core/theme/app_colors.dart';
 import 'package:flutter_bill_splitter/core/theme/app_radius.dart';
 import 'package:flutter_bill_splitter/core/utils/currency_formatter.dart';
-import 'package:flutter_bill_splitter/core/utils/date_formatter.dart';
 import 'package:flutter_bill_splitter/core/utils/avatar_resolver.dart';
 import 'package:flutter_bill_splitter/core/utils/user_identity_resolver.dart';
 import 'package:flutter_bill_splitter/features/activity/data/repositories/activity_repository.dart';
@@ -210,8 +209,6 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
 
     // Build real dynamic story from passed friends and groupName
     final now = DateTime.now();
-    final todayStr =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     final storyMembers = Story.deduplicateMembers(widget.members.map((f) {
       return StoryMember(
         userId: 'user_${f.name.toLowerCase().replaceAll(' ', '_')}',
@@ -243,8 +240,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
       createdBy:
           storyMembers.isNotEmpty ? storyMembers.first.userId : 'user_001',
       createdAt: now.toIso8601String(),
-      startDate: todayStr,
-      endDate: todayStr,
+      startDate: null,
+      endDate: null,
       members: storyMembers,
       summary: StorySummary(
         totalExpenses: 0.0,
@@ -267,11 +264,12 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
       bool neededCalibration = false;
       for (final exp in _story.expenses) {
         if (exp.splitType == 'equal' && exp.category != 'reimbursement') {
-          final missingMembers = _story.members.where((m) =>
-              !exp.participants.any((p) =>
+          final missingMembers = _story.members
+              .where((m) => !exp.participants.any((p) =>
                   p == m.userId ||
                   p.toLowerCase().trim() == m.userId.toLowerCase().trim() ||
-                  p.toLowerCase().trim() == m.name.toLowerCase().trim())).toList();
+                  p.toLowerCase().trim() == m.name.toLowerCase().trim()))
+              .toList();
 
           final missingWereAddedLater = missingMembers.isNotEmpty &&
               missingMembers.every((m) {
@@ -316,9 +314,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
           endDate: _story.endDate,
           members: _story.members,
           expenses: calibratedExpenses,
-          existingSettlements: _story.settlements
-              .where((s) => s.status == 'completed')
-              .toList(),
+          existingSettlements:
+              _story.settlements.where((s) => s.status == 'completed').toList(),
           version: _story.version,
         );
         StoryRepository.instance.updateStory(_story);
@@ -329,8 +326,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
   String _formatAmount(num value) => CurrencyFormatter.format(value);
 
   String _getDateSubtitle(int memberCount) =>
-      DateFormatter.formatStoryDateSubtitle(
-          memberCount, _story.startDate, _story.endDate);
+      memberCount == 1 ? '1 member' : '$memberCount members';
 
   Future<void> _persistExpense(StoryExpense expense, String payerName) async {
     final count = _story.members.isNotEmpty ? _story.members.length : 1;
@@ -410,9 +406,7 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
           sharePerPerson: advanceExpense.amount,
           timestamp: DateTime.now(),
           members: _story.members
-              .map((m) => Friend(
-                  name: m.name,
-                  phone: '+91 98765 00000'))
+              .map((m) => Friend(name: m.name, phone: '+91 98765 00000'))
               .toList(),
           memberExpenses: {sender.name: advanceExpense.amount},
           settlements: const [],
@@ -2155,8 +2149,8 @@ class _SplitDetailScreenState extends State<SplitDetailScreen>
 
                       final isGroupWide = expense.participants.isEmpty ||
                           expense.participants.length >= previousMemberCount ||
-                          previousMembers.every((pm) => expense.participants.any(
-                              (p) =>
+                          previousMembers.every((pm) => expense.participants
+                              .any((p) =>
                                   p == pm.userId ||
                                   p.toLowerCase().trim() ==
                                       pm.userId.toLowerCase().trim() ||

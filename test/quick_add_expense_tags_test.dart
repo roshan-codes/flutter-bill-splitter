@@ -78,7 +78,7 @@ void main() {
     expect(titleField, findsOneWidget);
 
     // 5. Enter amount and save
-    final amountField = find.widgetWithText(TextFormField, 'e.g. 2000');
+    final amountField = find.widgetWithText(TextFormField, 'Amount (₹)');
     await tester.enterText(amountField, '850');
     await tester.pumpAndSettle();
 
@@ -86,8 +86,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // 6. Verify expense was added with food category
-    final updatedStory =
-        StoryRepository.instance.getStoryById(story.storyId);
+    final updatedStory = StoryRepository.instance.getStoryById(story.storyId);
     expect(updatedStory, isNotNull);
     expect(updatedStory!.expenses.length, 1);
     expect(updatedStory.expenses.first.title, 'Food');

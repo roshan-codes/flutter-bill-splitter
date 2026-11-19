@@ -18,10 +18,9 @@ import 'package:flutter_bill_splitter/shared/widgets/app_avatar.dart';
 
 /// Screen 1 from design: High-fidelity "Create Story" form matching the mockup
 /// - Header: Back button `<` + Title "Create Story"
-/// - Field 1: Story name (icon + hint "Mumbai Trip")
-/// - Field 2: Description (optional) (hint "Trip, stay, food, travel etc.")
-/// - Field 3: Date range card (Start date -> End date with date picker)
-/// - Field 4: Add members card (icon + horizontal avatars list [R, S, Roshan] + `+` button)
+/// - Field 1: Story name (icon + hint "Goa")
+/// - Field 2: Description (optional) (hint "Stay, food, travel, groceries etc.")
+/// - Field 3: Add members card (icon + horizontal avatars list [R, S, Roshan] + `+` button)
 /// - Bottom button: "Create Story →" (black pill)
 class CreateStoryScreen extends StatefulWidget {
   final String? initialTitle;
@@ -45,16 +44,24 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;
 
-  late DateTime _startDate;
-  late DateTime _endDate;
-
   late final String _storyId;
   String _creatorName = 'You';
   String _selectedCoverEmoji = '🌴';
   final List<String> _selectedMembers = [];
 
   static const List<String> _popularEmojis = [
-    '🌴', '✈️', '🏖️', '🏔️', '🎉', '🍕', '🚗', '⛺', '🏠', '🎬', '☕', '🍻'
+    '🌴',
+    '✈️',
+    '🏖️',
+    '🏔️',
+    '🎉',
+    '🍕',
+    '🚗',
+    '⛺',
+    '🏠',
+    '🎬',
+    '☕',
+    '🍻'
   ];
 
   @override
@@ -63,11 +70,6 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
     _storyId = 'story_${DateTime.now().millisecondsSinceEpoch}';
     _nameController = TextEditingController(text: widget.initialTitle ?? '');
     _descriptionController = TextEditingController();
-
-    final now = DateTime.now();
-    _startDate = widget.initialStartDate ?? DateTime(now.year, now.month, now.day);
-    _endDate = widget.initialEndDate ??
-        DateTime(now.year, now.month, now.day).add(const Duration(days: 3));
 
     if (widget.initialMembers != null && widget.initialMembers!.isNotEmpty) {
       _selectedMembers.addAll(widget.initialMembers!);
@@ -88,7 +90,8 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         setState(() {
           final oldName = _creatorName;
           _creatorName = name.trim();
-          final idx = _selectedMembers.indexWhere((m) => m == oldName || m == 'You');
+          final idx =
+              _selectedMembers.indexWhere((m) => m == oldName || m == 'You');
           if (idx != -1) {
             _selectedMembers[idx] = _creatorName;
           } else if (!_selectedMembers.contains(_creatorName)) {
@@ -104,55 +107,6 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
     _nameController.dispose();
     _descriptionController.dispose();
     super.dispose();
-  }
-
-  static const List<String> _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec'
-  ];
-
-  String _formatDisplayDate(DateTime dt) {
-    return '${dt.day} ${_months[dt.month - 1]} ${dt.year}';
-  }
-
-  Future<void> _pickDateRange() async {
-    HapticFeedback.selectionClick();
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2035),
-      initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF111111),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Color(0xFF111111),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      setState(() {
-        _startDate = picked.start;
-        _endDate = picked.end;
-      });
-    }
   }
 
   bool _isMemberAlreadySelected(String name) {
@@ -390,8 +344,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                             minimumSize: const Size(76, 36),
                             backgroundColor: const Color(0xFF16A34A),
                             foregroundColor: Colors.white,
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 10),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -461,10 +414,8 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                               setState(() {
                                 _selectedMembers.add(name);
                               });
-                              if (!FriendsRepository.instance.friends.any(
-                                  (f) =>
-                                      f.name.toLowerCase() ==
-                                      name.toLowerCase())) {
+                              if (!FriendsRepository.instance.friends.any((f) =>
+                                  f.name.toLowerCase() == name.toLowerCase())) {
                                 FriendsRepository.instance
                                     .addFriend(Friend(name: name, phone: ''));
                               }
@@ -526,8 +477,9 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: friends.map((f) {
-                        final isSelected = _selectedMembers.any(
-                            (m) => m.toLowerCase().trim() == f.name.toLowerCase().trim());
+                        final isSelected = _selectedMembers.any((m) =>
+                            m.toLowerCase().trim() ==
+                            f.name.toLowerCase().trim());
                         return FilterChip(
                           label: Text(f.name),
                           selected: isSelected,
@@ -582,28 +534,32 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         : 'Trip, stay, food, travel etc.';
 
     final now = DateTime.now();
-    final startStr =
-        '${_startDate.year}-${_startDate.month.toString().padLeft(2, '0')}-${_startDate.day.toString().padLeft(2, '0')}';
-    final endStr =
-        '${_endDate.year}-${_endDate.month.toString().padLeft(2, '0')}-${_endDate.day.toString().padLeft(2, '0')}';
 
     final authUserId = SupabaseService.currentUser?.id;
-    String? localGuestId = StorageService.instance.getStringSync('local_unique_device_user_id');
+    String? localGuestId =
+        StorageService.instance.getStringSync('local_unique_device_user_id');
     if (localGuestId == null || localGuestId.isEmpty) {
       localGuestId = 'user_creator_${DateTime.now().millisecondsSinceEpoch}';
-      StorageService.instance.setString('local_unique_device_user_id', localGuestId);
+      StorageService.instance
+          .setString('local_unique_device_user_id', localGuestId);
     }
-    final currentUserId = (authUserId != null && authUserId.isNotEmpty) ? authUserId : localGuestId;
+    final currentUserId = (authUserId != null && authUserId.isNotEmpty)
+        ? authUserId
+        : localGuestId;
 
     final profileName = SupabaseService.userDisplayName ??
         StorageService.instance.getStringSync('user_profile_name');
-    final rawCreator = _creatorName.trim().isNotEmpty && _creatorName.trim().toLowerCase() != 'you'
+    final rawCreator = _creatorName.trim().isNotEmpty &&
+            _creatorName.trim().toLowerCase() != 'you'
         ? _creatorName.trim()
-        : (profileName?.trim().isNotEmpty == true ? profileName!.trim() : 'Roshan');
+        : (profileName?.trim().isNotEmpty == true
+            ? profileName!.trim()
+            : 'Roshan');
     final cleanCurrentName = rawCreator
         .replaceAll(RegExp(r'\s*\(you\)\s*$', caseSensitive: false), '')
         .trim();
-    final currentUserName = cleanCurrentName.isNotEmpty ? cleanCurrentName : 'Roshan';
+    final currentUserName =
+        cleanCurrentName.isNotEmpty ? cleanCurrentName : 'Roshan';
 
     // Build member list: creator is guaranteed to be Member #1 with role 'creator'
     final List<StoryMember> rawMembers = [];
@@ -674,8 +630,8 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
       status: 'active',
       createdBy: currentUserId,
       createdAt: now.toIso8601String(),
-      startDate: startStr,
-      endDate: endStr,
+      startDate: null,
+      endDate: null,
       members: membersList,
       summary: StorySummary(
         totalExpenses: 0.0,
@@ -727,31 +683,31 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                         child: Container(
                           width: 44,
                           height: 44,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white,
-                          border: Border.all(
-                              color: const Color(0xFFE5E7EB), width: 1.0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                            border: Border.all(
+                                color: const Color(0xFFE5E7EB), width: 1.0),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.chevron_left_rounded,
+                              size: 26,
+                              color: Color(0xFF111111),
                             ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.chevron_left_rounded,
-                            size: 26,
-                            color: Color(0xFF111111),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
               ),
             ),
 
@@ -967,92 +923,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Field 3: Date range card (interactive)
-                    GestureDetector(
-                      onTap: _pickDateRange,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 18, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                              color: const Color(0xFFEAEAEF), width: 1.2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.025),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.calendar_today_outlined,
-                              size: 22,
-                              color: Color(0xFF111111),
-                            ),
-                            const SizedBox(width: 16),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Start date',
-                                  style: GoogleFonts.manrope(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF6B7280),
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  _formatDisplayDate(_startDate),
-                                  style: GoogleFonts.manrope(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF111111),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Spacer(),
-                            const Icon(
-                              Icons.arrow_forward_rounded,
-                              size: 18,
-                              color: Color(0xFF111111),
-                            ),
-                            const Spacer(),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'End date',
-                                  style: GoogleFonts.manrope(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF6B7280),
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  _formatDisplayDate(_endDate),
-                                  style: GoogleFonts.manrope(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF111111),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Field 4: Add members
+                    // Field 3: Add members
                     Text(
                       'Add members',
                       style: GoogleFonts.manrope(
@@ -1176,8 +1047,9 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
   }
 
   Widget _buildMemberAvatarChip(String name) {
-    final isMe = name.toLowerCase().trim() == _creatorName.toLowerCase().trim() ||
-        name.trim() == 'You';
+    final isMe =
+        name.toLowerCase().trim() == _creatorName.toLowerCase().trim() ||
+            name.trim() == 'You';
 
     return AppAvatar(
       size: 40,
